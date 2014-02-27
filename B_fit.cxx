@@ -26,12 +26,17 @@
 #include "TPaveStats.h"
 #include "Fit/FitConfig.h"
 #include "TCanvas.h"
-#include "include/bdn.h"
-#include "include/sb135.h"
-#include "include/bdn_cases.h"
-#include "B_model.h"
+//#include "include/bdn.h"
+//#include "include/sb135.h"
+#include "bdn_cases.h"
+#include "B_fit_model.h"
 
-Int_t gdx; // global index to identify case
+// Global variables
+Int_t			gdx; // global index to identify case
+bdn_case_t		bdn_case;
+//B_fit_model::B_fit_case_t	fit_case;
+
+Double_t		tau1[2], tau2[2], tau3[2];
 
 void B_fit (const char*, const Int_t);
 
@@ -58,17 +63,37 @@ void B_fit (const char* case_code, const Int_t case_int) {
 	using namespace std;
 	using namespace TMath;
 	
-//	assign_bdn_cases();
-	bdn_case_t fit_case = bdn_cases[case_int];
-//	bdn_case_t fit_case = assign_bdn_cases();
+	bdn_case_t bdn_case = bdn_cases[case_int];
+	tau1 = { bdn_case.halflife1[0]/ln2, bdn_case.halflife1[1]/ln2};
+	tau2 = { bdn_case.halflife2[0]/ln2, bdn_case.halflife2[1]/ln2};
+	tau3 = { bdn_case.halflife3[0]/ln2, bdn_case.halflife3[1]/ln2};
 	
-	printf("\n");
-	printf("Hello. Here is your case data:\n");
-	printf("Case code from command line: %s\n",case_code);
-	printf("Integer index of this code: %d\n",case_int);
-	printf("T_capt = %8.3f s\n",bdn_cases[case_int].T_capt);
-	printf("Species 2 lifetime = %8.3f s  (half-life %8.3f s)\n",fit_case.lifetime2[0],fit_case.halflife2[0]);
-	printf("\n");
+//	fit_case = 
+	
+	TString separator = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+	std::cout << endl << separator << endl;
+	std::cout << "BETA SINGLES MODEL" << endl << separator << endl;
+	std::cout << "Case: " << bdn_case.code << endl;
+	std::cout << "File: " << bdn_case.file << endl;
+//	std::cout << "Histogram: " << fit_case.histname << endl;
+	printf("Total cycle time\t= %9.3f s\n",bdn_case.T_cycle/1000.0);
+	printf("Background time\t\t= %9.3f s\n",bdn_case.T_bkgd/1000.0);
+	printf("Capture cycle time\t= %9.3f s\n",bdn_case.T_capt/1000.0);
+	std::cout << bdn_case.species1; printf(" halflife\t\t= %9.3f s  (lifetime %9.3f s)\n",bdn_case.halflife1[0]/1000.0,bdn_case.lifetime1[0]/1000.0);
+	std::cout << bdn_case.species2; printf(" halflife\t\t= %9.3f s  (lifetime %9.3f s)\n",bdn_case.halflife2[0]/1000.0,bdn_case.lifetime2[0]/1000.0);
+	std::cout << bdn_case.species3; printf(" halflife\t\t= %9.3f s  (lifetime %9.3f s)\n",bdn_case.halflife3[0]/1000.0,bdn_case.lifetime3[0]/1000.0);
+	std::cout << separator << endl;
+//	if (fit_case.do_fit) std::cout << "Doing fit with option string: " << fit_case.options << endl;
+//	else std::cout << "Not fitting! Drawing functions using parameter seed values." << endl;
+	std::cout << separator << endl;
+	
+	// Get histogram
+	TFile *f = new TFile(bdn_case.file);
+//	TH1D *h	= (TH1D*)f->Get(fit_case.histname);
+//	Double_t rebin_factor = fit_case.bin_width/(h->GetBinWidth(1));
+//	TH1D *h1	= (TH1D*)h->Rebin(rebin_factor,fit_case.histname);
+//	TH1D *h2	= (TH1D*)h->Rebin(rebin_factor,fit_case.histname);
+	
 	
 //	file->WriteTObject(h_T_oops_vs_cycle_time);
 //	file->Close();

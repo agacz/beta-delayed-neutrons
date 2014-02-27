@@ -3,23 +3,20 @@
 
 bdn_case_t bdn_cases[] = {
 	{
-	"137i07",	// code
-	"~",		// file
-	"137-Te",	// species 1
-	"137-I",	// species 2
-	"137-Xe",	// species 3
-	6000.0,		// T_capt
-	1000.0,		// T_last
-	101000.0,	// T_bkgd
-	246000.0,	// T_cycle
-	{24.9, 0.05},	// Species 1 half-life {val, unc}
-	{24.5, 0.2},	// Species 2 half-life {val, unc}
-	{3.818, 0.013},	// Species 3 half-life {val, unc}
-	{24.9/ln2, 0.05/ln2},
-	{24.5/ln2, 0.2/ln2},
-	{3.818/ln2, 0.013/ln2}
+		/* code */		"137i07",
+		/* file */		"B_monte_carlo_feeding_lifetime_1.root",
+		/* species1 */	"137-Te",
+		/* species2 */	"137-I",
+		/* species3 */	"137-Xe",
+		/* T_capt */	6000.0,
+		/* T_last */	1000.0,
+		/* T_bkgd */	101000.0,
+		/* T_cycle */	246000.0,
+		/* halflife1 */	{ 1000.0 * 2.49, 1000.0 * 0.05},
+		/* halflife2 */	{ 1000.0 * 24.5, 1000.0 * 0.20},
+		/* halflife3 */	{ 60.0 * 1000.0 * 3.818, 60.0 * 1000.0 * 0.013}
 	},
-	{ 0, 0, 0, 0, 0, } // null struct at the end
+	{ 0, 0, 0, 0, 0, } // null struct at the end, to terminate the array
 };
 
 /*
