@@ -48,7 +48,7 @@ int main (int argc, char *argv[]) {
 	for (m = bdn_cases, gdx = 0; m->code != 0 && strcmp(m->code, argv[1]) != 0; ++m, ++gdx);
 	if (m->code == 0) {
 		cout << "No match found for casecode entered. Execute the program like this:" << endl;
-		cout << "'$ ./B_fit 137i07' for 137-I run 7" << endl << endl;
+		cout << "'$ ./PROGRAM 137i07' for 137-I run 7" << endl << endl;
 		return 0;
 	}
 	B_fit(m->code, gdx);
@@ -68,7 +68,7 @@ void B_fit (const char* case_code, const Int_t case_int) {
 	tau2 = { bdn_case.halflife2[0]/ln2, bdn_case.halflife2[1]/ln2};
 	tau3 = { bdn_case.halflife3[0]/ln2, bdn_case.halflife3[1]/ln2};
 	
-//	fit_case = 
+	B_fit_case_t fit_case = B_fit_cases[case_int];
 	
 	TString separator = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	std::cout << endl << separator << endl;
