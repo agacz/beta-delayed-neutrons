@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# 138i04
+#for NUMBER in $(seq 1098 1 1129)
+#do
+#./bdn_sort_20131125 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER
+#./deadtime_correction_138i5 ./bdn.root
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/138i/rootfiles/run0$NUMBER.root
+#done
+
+# 138i05
+#for NUMBER in $(seq 1291 1 1297)
+#do
+#./bdn_sort_20131125 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+#./deadtime_correction_138i5 ./bdn.root
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/138i/rootfiles/run0$NUMBER.root
+#done
+
+# 138i06
+for NUMBER in $(seq 1684 1 1719)
+do
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 138i06
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/138i/rootfiles/run0$NUMBER.root
+done
+
+# 138i07
+for NUMBER in $(seq 1720 1 1753)
+do
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 138i07
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/138i/rootfiles/run0$NUMBER.root
+done

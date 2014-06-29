@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#./DeadtimeCorrection 134sb01
+#./DeadtimeCorrection 134sb02
+#./DeadtimeCorrection 134sb03
+#./DeadtimeCorrection 134sb0103
+./DeadtimeCorrection 135sb08
+#./DeadtimeCorrection 136sb01
+#./DeadtimeCorrection 137i07
+#./DeadtimeCorrection 138i07

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# 137i05
+#for NUMBER in $(seq 1068 1 1088)
+#do
+#./bdn_sort_20131203 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER
+#./deadtime_correction_137i5 ./bdn.root
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/137i/rootfiles/run0$NUMBER.root
+#done
+
+# 137i06
+#for NUMBER in $(seq 1755 1 1762)
+#do
+#./bdn_sort_20131203 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+##./deadtime_correction_137i6 ./bdn.root
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/137i/rootfiles/run0$NUMBER.root
+#done
+
+# 137i07
+for NUMBER in $(seq 1763 1 1843)
+do
+#./bdn_sort_20140104 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140527 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 137i07
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 137i07
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/137i/rootfiles/run0$NUMBER.root
+done
+
+# 137i07_alt
+#for NUMBER in $(seq 1763 1 1843)
+#do
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+##./bdn_sort_20140417 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+##./deadtime_correction_137i7 ./bdn.root gotta do this on the sum file
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/137i/rootfiles/137i07_alt/run0$NUMBER.root
+#done

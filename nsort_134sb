@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# 134sb01
+for NUMBER in $(seq 2066 1 2111)
+do
+#./bdn_sort_20140417 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140527 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb01
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb01
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/134sb/rootfiles/run0$NUMBER.root
+done
+
+# 134sb02
+for NUMBER in $(seq 2112 1 2127)
+do
+#./bdn_sort_20140417 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140527 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb02
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb02
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/134sb/rootfiles/run0$NUMBER.root
+done
+
+# 134sb03
+for NUMBER in $(seq 2128 1 2153)
+do
+#./bdn_sort_20140417 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+#./bdn_sort_20140527 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb03
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 134sb03
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/134sb/rootfiles/run0$NUMBER.root
+done
+
+# 134sb03_alt -- old sort to compare / test new sort code
+#for NUMBER in $(seq 2128 1 2153)
+#do
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+##./deadtime_correction_135sb8 ./bdn.root
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/134sb/rootfiles/134sb03_alt/run0$NUMBER.root
+#done

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+for NUMBER in $(seq 1347 1 1430)
+do
+
+#./bdn_sort_20131120 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/144cs/rootfiles/run0$NUMBER.root
+
+./bdn_sort_20131125 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+./deadtime_correction ./bdn.root
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/144cs/rootfiles/run0$NUMBER.root
+
+#~/bdn/2013/code/bdn_sort_20131120 ~/bdn/2013/138i/datafiles/run000$NUMBER
+#cp -a ./bdn.root ~/bdn/2013/138i/rootfiles/run000$NUMBER.root
+
+done

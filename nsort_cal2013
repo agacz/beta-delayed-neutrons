@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# Right MCP Mask 2 -- no repair of posts data
+#for NUMBER in $(seq 305 1 306)
+#do
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run00$NUMBER raw
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run_rawMCP_00$NUMBER.root
+#done
+
+# Right MCP Mask 2
+for NUMBER in $(seq 305 1 306)
+do
+./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run00$NUMBER posts
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run00$NUMBER.root
+done
+
+# Top MCP Mask 3 -- no repair of posts data
+#for NUMBER in $(seq 1144 1 1147)
+#do
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER raw
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run_rawMCP_0$NUMBER.root
+#done
+
+# Top MCP Mask 3
+for NUMBER in $(seq 1144 1 1147)
+do
+./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER posts
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run0$NUMBER.root
+done
+
+# Top MCP Mask 2 -- no repair of posts data
+#for NUMBER in $(seq 1182 1 1195)
+#do
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER raw
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run_rawMCP_0$NUMBER.root
+#done
+
+# Top MCP Mask 2
+for NUMBER in $(seq 1182 1 1195)
+do
+./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/run0$NUMBER posts
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run0$NUMBER.root
+done
+
+#:<<'COMMENT'
+
+# Right MCP no mask -- no repair of posts data
+#for NUMBER in $(seq 2338 1 2383)
+#do
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER raw
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run_rawMCP_0$NUMBER.root
+#done
+
+# Top MCP no mask -- no repair of posts data
+#for NUMBER in $(seq 2309 1 2322)
+#do
+#./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER raw
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run_rawMCP_0$NUMBER.root
+#done
+
+# Right MCP no mask
+for NUMBER in $(seq 2338 1 2383)
+do
+./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run0$NUMBER.root
+done
+
+# Top MCP no mask
+for NUMBER in $(seq 2309 1 2322)
+do
+./bdn_sort_20140515 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal2013/rootfiles/run0$NUMBER.root
+done
+
+#COMMENT
+
+# plastics
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/run01131
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01131.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/run01132
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01132.root
+#./bdn_sort_ADC1_only /music/bpt1/bpt/bdn/2013/setup/run01133
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01133.root
+#./bdn_sort_ADC1_only /music/bpt1/bpt/bdn/2013/setup/run01134
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01134.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/run01135
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01135.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/run01136
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01136.root
+#./bdn_sort_ADC1_TDC1_only /music/bpt1/bpt/bdn/2013/setup/run01137
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01137.root
+#./bdn_sort_ADC1_TDC1_only /music/bpt1/bpt/bdn/2013/setup/run01138
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run01138.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02384
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02384.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02385
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02385.root
+#./bdn_sort_ADC1_only /music/bpt1/bpt/bdn/2013/setup/datafiles/run02387
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02387.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02388
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02388.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02389
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02389.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02390
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02390.root
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run02391
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02391.root
+#./bdn_sort_ADC1_only /music/bpt1/bpt/bdn/2013/setup/datafiles/run02393
+#cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/cal/rootfiles/run02393.root

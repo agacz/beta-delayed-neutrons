@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# 136sb01
+for NUMBER in $(seq 1844 1 1970)
+do
+#./bdn_sort_20131210 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER
+./bdn_sort_20140613 /music/bpt1/bpt/bdn/2013/setup/datafiles/run0$NUMBER posts 136sb01
+cp -a ./bdn.root /music/bpt1/bpt/bdn/shane/136sb/rootfiles/run0$NUMBER.root
+done
+

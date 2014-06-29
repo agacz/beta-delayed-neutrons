@@ -1,0 +1,4 @@
+#!/bin/bash
+
+bash nsort_cal2013
+bash nex_mcp_cal
