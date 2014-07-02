@@ -7,7 +7,7 @@
 
 namespace BFitNamespace {
 	
-	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, tau1, tau2, tau3, tauT1, tauT2, tauT3, tauU1, tauU2, tauU3 };
+	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
 	// a[dt]	= bin width in ms
 	// a[DC]	= DC detection rate in cycles/ms
 	// a[r1]	= Species 1 injection rate in cycles/ms
@@ -21,15 +21,12 @@ namespace BFitNamespace {
 	// a[epsW]	= Detection efficiency for untrapped pop W
 	// a[epsX]	= Detection efficiency for untrapped pop V
 	// a[epsY]	= Detection efficiency for untrapped pop W
-	// a[tau1]	= Radioactive lifetime of species 1 isotopes (ms)
-	// a[tau2]	= Radioactive lifetime of species 2 isotopes (ms)
-	// a[tau3]	= Radioactive lifetime of species 3 isotopes (ms)
-	// a[tauT1]	= Net lifetime of trapped species 1 population -- radioactive and other effects (T1) (ms)
-	// a[tauT2]	= Net lifetime of trapped species 2 population -- radioactive and other effects (T2) (ms)
-	// a[tauT3]	= Net lifetime of trapped species 3 population -- radioactive and other effects (T3) (ms)
-	// a[tauU1]	= Net lifetime of untrapped species 1 population -- radioactive and other effects (U1) (ms)
-	// a[tauU2]	= Net lifetime of untrapped species 2 population -- radioactive and other effects (U2) (ms)
-	// a[tauU3]	= Net lifetime of untrapped species 3 population -- radioactive and other effects (U3) (ms)
+	// a[gammaT1]	= Non-radioactive decay rate of trapped species 1 population (T1) (s)
+	// a[gammaT2]	= Non-radioactive decay rate of trapped species 2 population (T2) (s)
+	// a[gammaT3]	= Non-radioactive decay rate of trapped species 3 population (T3) (s)
+	// a[gammaU1]	= Non-radioactive decay rate of untrapped species 1 population (U1) (s)
+	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (s)
+	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (s)
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
@@ -93,26 +90,26 @@ namespace BFitNamespace {
 }
 
 // Variables to hold integrals of functions
-Double_t T1_integral = 0.0;
-Double_t T2_integral = 0.0;
-Double_t T3_integral = 0.0;
-Double_t U1_integral = 0.0;
-Double_t U2_integral = 0.0;
-Double_t U3_integral = 0.0;
-Double_t DC_integral = 0.0;
-Double_t All_integral = 0.0;
+static Double_t T1_integral = 0.0;
+static Double_t T2_integral = 0.0;
+static Double_t T3_integral = 0.0;
+static Double_t U1_integral = 0.0;
+static Double_t U2_integral = 0.0;
+static Double_t U3_integral = 0.0;
+static Double_t DC_integral = 0.0;
+static Double_t All_integral = 0.0;
 
-Double_t Integral_sum = 0.0;
+static Double_t Integral_sum = 0.0;
 
-Double_t T1_integral_error = 0.0;
-Double_t T2_integral_error = 0.0;
-Double_t T3_integral_error = 0.0;
-Double_t U1_integral_error = 0.0;
-Double_t U2_integral_error = 0.0;
-Double_t U3_integral_error = 0.0;
-Double_t DC_integral_error = 0.0;
-Double_t All_integral_error = 0.0;
+static Double_t T1_integral_error = 0.0;
+static Double_t T2_integral_error = 0.0;
+static Double_t T3_integral_error = 0.0;
+static Double_t U1_integral_error = 0.0;
+static Double_t U2_integral_error = 0.0;
+static Double_t U3_integral_error = 0.0;
+static Double_t DC_integral_error = 0.0;
+static Double_t All_integral_error = 0.0;
 
-Double_t Integral_sum_error = 0.0;
+static Double_t Integral_sum_error = 0.0;
 
 #endif

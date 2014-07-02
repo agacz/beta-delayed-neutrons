@@ -6,7 +6,8 @@
 	Making a standalone C++ version of B_fit.cpp, which is a ROOT program.
 	Big difference: this program does not output plots to screen. Instead it saves them to a
 	subdirectory of the ROOT file that is given to it.
-	
+2014-06-29
+	Just now noting this: Program now (as of like easrly March) uses the CSVtoStruct.h/cxx
 */
 
 #include <unistd.h>
