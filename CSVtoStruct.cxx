@@ -24,8 +24,7 @@
 //	- Changed some names of things
 //	- Removed the main function from this file
 //	- Made a new version of CSVtoStruct and ParseToStruct for each type of stuct we need to use
-//	- Added FindStructIndex, which Chris also wrote for me
-
+//	- Added FindStructIndex, which Chris also wrote for me 
 // Include Files
 #include "CSVtoStruct.h"
 #include <string>
@@ -626,15 +625,15 @@ int ParseToStruct_BFit (char *pcsLine, BFitCase_t *pstStruct) // change per stru
 
 // Get the bin width
 	pcsResult = strtok(NULL,",");
-        pstStruct->iBinWidth = atoi(pcsResult);
+    pstStruct->iBinWidth = atoi(pcsResult);
 #ifdef DEBUG
 	printf("Bin width is: %d\n", pstStruct->iBinWidth);
 #endif
 
 	// Get the number of parameters to follow
 	pcsResult = strtok(NULL,",");
-        iNumParams = atoi(pcsResult); // used below for looping over parameters
-        pstStruct->iNPars = iNumParams;
+    iNumParams = atoi(pcsResult); // used below for looping over parameters
+    pstStruct->iNPars = iNumParams;
 #ifdef DEBUG
 	printf("Total number of parameters is: %d\n", iNumParams);
 #endif

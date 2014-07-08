@@ -38,8 +38,10 @@ using namespace std;
 // Global variables
 BDNCase_t	stBDNCases[FILE_ROWS_BDN];
 BFitCase_t	stBFitCases[FILE_ROWS_BFit];
-int		iBDNCaseIndex, iBFitCaseIndex; // global index to identify case
-int		iNumStructs_BDN, iNumStructs_BFit;
+Int_t		iBDNCaseIndex, iBFitCaseIndex; // global index to identify case
+Int_t		iNumStructs_BDN, iNumStructs_BFit;
+//Double_t	tCap, tBac, tCyc;
+//Double_t	t1, t2, t3; //
 
 int BFit ();
 
@@ -52,13 +54,13 @@ int main (int argc, char *argv[]) {
 	iNumStructs_BDN  = CSVtoStruct_BDN  (csvBDNCases, stBDNCases);
 	cout << "Imported " << iNumStructs_BDN << " BDN cases" << endl;
 	iNumStructs_BFit = CSVtoStruct_BFit (csvBFitCases, stBFitCases);
-	cout << "Imported " << iNumStructs_BFit << " B_fit cases" << endl;
+	cout << "Imported " << iNumStructs_BFit << " BFit cases" << endl;
 	iBDNCaseIndex  = FindStructIndex ( stBDNCases,  sizeof(BDNCase_t),  iNumStructs_BDN,  argv[1] );
 	iBFitCaseIndex = FindStructIndex ( stBFitCases, sizeof(BFitCase_t), iNumStructs_BFit, argv[2] );
 	if ( iBDNCaseIndex == -1 || iBFitCaseIndex == -1 )
 	{ // One of the read-ins failed and already printed a message about it
 		cout << "How to run this program:" << endl;
-		cout << "'./B_fit <BDN case code> <B_fit case code>'" << endl;
+		cout << "'./BFit <BDN case code> <B_fit case code>'" << endl;
 		cout << "where valid case codes are listed in the CSV files." << endl << endl;
 		return -1; // error return
 	}
@@ -128,31 +130,40 @@ int BFit () {
 //		par[index] = stBFitCase.pdSeed[index];
 //		err[index] = stBFitCase.pdStep[index];
 //	}
+	
+//	bookGlobals();
+//	tCap	= 1000.0 * stBDNCases[iBDNCaseIndex].dCaptureTime;	// Time between BPT captures (ms)
+//	tBac	= 1000.0 * stBDNCases[iBDNCaseIndex].dBackgroundTime; // Time spent in background measurment, per cycle (ms)
+//	tCyc	= 1000.0 * stBDNCases[iBDNCaseIndex].dCycleTime;	// Time between BPT ejections (ms)
+//	t1		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime1[0]; // radioactive lifetime (1/e) in ms
+//	t2		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime2[0]; // radioactive lifetime (1/e) in ms
+//	t3		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime3[0]; // radioactive lifetime (1/e) in ms
+
 // Species populations
-	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, stBDNCase.dCycleTime, nPars); // This one fits the data!
+	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, 1000.0*stBDNCase.dCycleTime, nPars); // This one fits the data!
 // Beta rates to be used by TF1::Integral() and TF1::IntegralError()
-	TF1 *frDC	= new TF1("frDC", rDC, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frT1	= new TF1("frT1", rT1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frT2	= new TF1("frT2", rT2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frT3	= new TF1("frT3", rT3, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frU1	= new TF1("frU1", rU1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frU2	= new TF1("frU2", rU2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frU3	= new TF1("frU3", rU3, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *frAll	= new TF1("frAll",rAll, 0.0, stBDNCase.dCycleTime, nPars);
+	TF1 *frDC	= new TF1("frDC", rDC, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frT1	= new TF1("frT1", rT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frT2	= new TF1("frT2", rT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frT3	= new TF1("frT3", rT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frU1	= new TF1("frU1", rU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frU2	= new TF1("frU2", rU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frU3	= new TF1("frU3", rU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frAll	= new TF1("frAll",rAll, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
 // Offset functions for plotting
-	TF1 *foT1	= new TF1("foT1", oT1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *foT2	= new TF1("foT2", oT2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *foT3	= new TF1("foT3", oT3, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *foU1	= new TF1("foU1", oU1, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *foU2	= new TF1("foU2", oU2, 0.0, stBDNCase.dCycleTime, nPars);
-	TF1 *foU3	= new TF1("foU3", oU3, 0.0, stBDNCase.dCycleTime, nPars);
+	TF1 *foT1	= new TF1("foT1", oT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foT2	= new TF1("foT2", oT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foT3	= new TF1("foT3", oT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foU1	= new TF1("foU1", oU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foU2	= new TF1("foU2", oU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foU3	= new TF1("foU3", oU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
 // Initiailize function to fit the data
 	char pcsLifetime1ParName[100]; sprintf(pcsLifetime1ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies1Name);
 	char pcsLifetime2ParName[100]; sprintf(pcsLifetime2ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies2Name);
@@ -169,15 +180,15 @@ int BFit () {
 	fyAll->SetParName(epsW,"W det eff");
 	fyAll->SetParName(epsX,"X det eff");
 	fyAll->SetParName(epsY,"Y det eff");
-	fyAll->SetParName(tau1,pcsLifetime1ParName);//"Lifetime 1");//pcsSpecies1ParName);
-	fyAll->SetParName(tau2,pcsLifetime2ParName);//"Lifetime 2");//pcsSpecies2ParName);
-	fyAll->SetParName(tau3,pcsLifetime3ParName);//"Lifetime 3");//pcsSpecies3ParName);
-	fyAll->SetParName(tauT1,"T1 lifetime");
-	fyAll->SetParName(tauT2,"T2 lifetime");
-	fyAll->SetParName(tauT3,"T3 lifetime");
-	fyAll->SetParName(tauU1,"U1 lifetime");
-	fyAll->SetParName(tauU2,"U2 lifetime");
-	fyAll->SetParName(tauU3,"U3 lifetime");
+//	fyAll->SetParName(tau1,pcsLifetime1ParName);//"Lifetime 1");//pcsSpecies1ParName);
+//	fyAll->SetParName(tau2,pcsLifetime2ParName);//"Lifetime 2");//pcsSpecies2ParName);
+//	fyAll->SetParName(tau3,pcsLifetime3ParName);//"Lifetime 3");//pcsSpecies3ParName);
+	fyAll->SetParName(gammaT1,"T1 lifetime");
+	fyAll->SetParName(gammaT2,"T2 lifetime");
+	fyAll->SetParName(gammaT3,"T3 lifetime");
+	fyAll->SetParName(gammaU1,"U1 lifetime");
+	fyAll->SetParName(gammaU2,"U2 lifetime");
+	fyAll->SetParName(gammaU3,"U3 lifetime");
 	fyAll->SetParName(dt,"Bin width");
 	fyAll->SetParameters(par);
 	fyAll->SetParErrors(err);
@@ -337,7 +348,7 @@ int BFit () {
 	foU2->SetLineStyle(7);
 	foU3->SetLineStyle(7);
 	
-	Double_t nPoints = stBDNCase.dCycleTime;
+	Double_t nPoints = 1000.0 * stBDNCase.dCycleTime;
 	fyAll->SetNpx(nPoints);
 	foT1->SetNpx(nPoints);
 	foT2->SetNpx(nPoints);
@@ -376,18 +387,20 @@ int BFit () {
 	TLegend *leg_1 = new TLegend(0.13, 0.69, 0.32, 0.94);
 	leg_1->AddEntry(h1 , "Data");
 	leg_1->AddEntry(fyDC, "DC");
-//	leg_1->AddEntry(foT1, stBDNCase.pcsSpecies1Name + " trapped");
-//	leg_1->AddEntry(foU1, stBDNCase.pcsSpecies1Name + " untrapped");
-//	leg_1->AddEntry(foT2, stBDNCase.pcsSpecies2Name + " trapped");
-//	leg_1->AddEntry(foU2, stBDNCase.pcsSpecies2Name + " untrapped");
-//	leg_1->AddEntry(foT3, stBDNCase.pcsSpecies3Name + " trapped");
-//	leg_1->AddEntry(foU3, stBDNCase.pcsSpecies3Name + " untrapped");
-	leg_1->AddEntry(foT1, strcat(stBDNCase.pcsSpecies1Name, " trapped"));
-	leg_1->AddEntry(foU1, strcat(stBDNCase.pcsSpecies1Name, " untrapped"));
-	leg_1->AddEntry(foT2, strcat(stBDNCase.pcsSpecies2Name, " trapped"));
-	leg_1->AddEntry(foU2, strcat(stBDNCase.pcsSpecies2Name, " untrapped"));
-	leg_1->AddEntry(foT3, strcat(stBDNCase.pcsSpecies3Name, " trapped"));
-	leg_1->AddEntry(foU3, strcat(stBDNCase.pcsSpecies3Name, " untrapped"));
+	char pcsT1Name[STRING_SIZE], pcsT2Name[STRING_SIZE], pcsT3Name[STRING_SIZE];
+	char pcsU1Name[STRING_SIZE], pcsU2Name[STRING_SIZE], pcsU3Name[STRING_SIZE];
+	strcpy(pcsT1Name, stBDNCase.pcsSpecies1Name); strcat(pcsT1Name, " trapped");
+	strcpy(pcsT2Name, stBDNCase.pcsSpecies2Name); strcat(pcsT2Name, " trapped");
+	strcpy(pcsT3Name, stBDNCase.pcsSpecies3Name); strcat(pcsT3Name, " trapped");
+	strcpy(pcsU1Name, stBDNCase.pcsSpecies1Name); strcat(pcsU1Name, " untrapped");
+	strcpy(pcsU2Name, stBDNCase.pcsSpecies2Name); strcat(pcsU2Name, " untrapped");
+	strcpy(pcsU3Name, stBDNCase.pcsSpecies3Name); strcat(pcsU3Name, " untrapped");
+	leg_1->AddEntry(foT1, pcsT1Name);
+	leg_1->AddEntry(foU1, pcsU1Name);
+	leg_1->AddEntry(foT2, pcsT2Name);
+	leg_1->AddEntry(foU2, pcsU2Name);
+	leg_1->AddEntry(foT3, pcsT3Name);
+	leg_1->AddEntry(foU3, pcsU3Name);
 	leg_1->AddEntry(fyAll , "Fit function (all species)");
 	leg_1->SetFillColor(0);
 	leg_1->Draw();
@@ -619,7 +632,7 @@ int BFit () {
 	
 	
 	
-	cout << "BFit done." << endl;
+	cout << "BFit done." << endl << endl;
 	
 	return iReturn;
 }

@@ -5,6 +5,15 @@
 #include "Rtypes.h"
 #include "TString.h"
 
+//void bookGlobals();
+
+static Double_t tCap;	// Time between BPT captures (ms)
+static Double_t tBac;	// Time spent in background measurment, per cycle (ms)
+static Double_t tCyc;	// Time between BPT ejections (ms)
+static Double_t t1;		// radioactive lifetime (1/e) in ms
+static Double_t t2;		// radioactive lifetime (1/e) in ms
+static Double_t t3;		// radioactive lifetime (1/e) in ms
+
 namespace BFitNamespace {
 	
 	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
@@ -35,37 +44,6 @@ namespace BFitNamespace {
 	Double_t U1 (Double_t*, Double_t*);
 	Double_t U2 (Double_t*, Double_t*);
 	Double_t U3 (Double_t*, Double_t*);
-	Double_t All (Double_t*, Double_t*);
-	
-// Functions to plot: (obs. decay rate)x(bin dt) = counts by bin
-	Double_t yDC (Double_t*, Double_t*);
-	Double_t yT1 (Double_t*, Double_t*);
-	Double_t yT2 (Double_t*, Double_t*);
-	Double_t yT3 (Double_t*, Double_t*);
-	Double_t yU1 (Double_t*, Double_t*);
-	Double_t yU2 (Double_t*, Double_t*);
-	Double_t yU3 (Double_t*, Double_t*);
-	Double_t yAll (Double_t*, Double_t*);
-	
-// Detection rates (/ms) for calculating N-beta
-	Double_t rDC (Double_t*, Double_t*);
-	Double_t rT1 (Double_t*, Double_t*);
-	Double_t rT2 (Double_t*, Double_t*);
-	Double_t rT3 (Double_t*, Double_t*);
-	Double_t rU1 (Double_t*, Double_t*);
-	Double_t rU2 (Double_t*, Double_t*);
-	Double_t rU3 (Double_t*, Double_t*);
-	Double_t rAll (Double_t*, Double_t*);
-	
-// Offset functions to imporve visualization: offT1 = yT1 + yDC
-	Double_t oT1 (Double_t*, Double_t*);
-	Double_t oT2 (Double_t*, Double_t*);
-	Double_t oT3 (Double_t*, Double_t*);
-	Double_t oU1 (Double_t*, Double_t*);
-	Double_t oU2 (Double_t*, Double_t*);
-	Double_t oU3 (Double_t*, Double_t*);
-	
-// Functions for evaluating and plotting the V, W, X, and Y pops	
 	Double_t V1 (Double_t*, Double_t*);
 	Double_t V2 (Double_t*, Double_t*);
 	Double_t V3 (Double_t*, Double_t*);
@@ -76,6 +54,16 @@ namespace BFitNamespace {
 	Double_t X3 (Double_t*, Double_t*);
 	Double_t Y2 (Double_t*, Double_t*);
 	Double_t Y3 (Double_t*, Double_t*);
+	Double_t All (Double_t*, Double_t*);
+	
+// Functions to plot: (obs. decay rate)x(bin dt) = counts by bin
+	Double_t yDC (Double_t*, Double_t*);
+	Double_t yT1 (Double_t*, Double_t*);
+	Double_t yT2 (Double_t*, Double_t*);
+	Double_t yT3 (Double_t*, Double_t*);
+	Double_t yU1 (Double_t*, Double_t*);
+	Double_t yU2 (Double_t*, Double_t*);
+	Double_t yU3 (Double_t*, Double_t*);
 	Double_t yV1 (Double_t*, Double_t*);
 	Double_t yV2 (Double_t*, Double_t*);
 	Double_t yV3 (Double_t*, Double_t*);
@@ -86,6 +74,25 @@ namespace BFitNamespace {
 	Double_t yX3 (Double_t*, Double_t*);
 	Double_t yY2 (Double_t*, Double_t*);
 	Double_t yY3 (Double_t*, Double_t*);
+	Double_t yAll (Double_t*, Double_t*);
+	
+// Detection rates (/ms) for calculating integrals --> # of betas
+	Double_t rDC (Double_t*, Double_t*);
+	Double_t rT1 (Double_t*, Double_t*);
+	Double_t rT2 (Double_t*, Double_t*);
+	Double_t rT3 (Double_t*, Double_t*);
+	Double_t rU1 (Double_t*, Double_t*);
+	Double_t rU2 (Double_t*, Double_t*);
+	Double_t rU3 (Double_t*, Double_t*);
+	Double_t rAll (Double_t*, Double_t*);
+	
+// Offset functions to improve visualization: oTi = yTi + yDC
+	Double_t oT1 (Double_t*, Double_t*);
+	Double_t oT2 (Double_t*, Double_t*);
+	Double_t oT3 (Double_t*, Double_t*);
+	Double_t oU1 (Double_t*, Double_t*);
+	Double_t oU2 (Double_t*, Double_t*);
+	Double_t oU3 (Double_t*, Double_t*);
 	
 }
 
