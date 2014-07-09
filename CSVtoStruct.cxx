@@ -220,17 +220,17 @@ int ParseToStruct_BDN (char *pcsLine, BDNCase_t *pstStruct) // change per struct
 #endif
 
 // Get species 2 name
-//	pcsResult = strtok(NULL,",");
-//	strcpy(pstStruct->pcsSpecies2Name, pcsResult);
-	strcpy(pstStruct->pcsSpecies2Name, pstStruct->pcsPrecursorName);
+	pcsResult = strtok(NULL,",");
+	strcpy(pstStruct->pcsSpecies2Name, pcsResult);
+//	strcpy(pstStruct->pcsSpecies2Name, pstStruct->pcsPrecursorName);
 #ifdef DEBUG
 	printf("Species2Name = %s\n", pstStruct->pcsSpecies2Name);
 #endif
 
 // Get species 3 name
-//	pcsResult = strtok(NULL,",");
-//	strcpy(pstStruct->pcsSpecies3Name, pcsResult);
-	strcpy(pstStruct->pcsSpecies3Name, pstStruct->pcsEmitterName);
+	pcsResult = strtok(NULL,",");
+	strcpy(pstStruct->pcsSpecies3Name, pcsResult);
+//	strcpy(pstStruct->pcsSpecies3Name, pstStruct->pcsEmitterName);
 #ifdef DEBUG
 	printf("Species3Name = %s\n", pstStruct->pcsSpecies3Name);
 #endif

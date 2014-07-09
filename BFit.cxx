@@ -96,10 +96,10 @@ int BFit () {
 	cout << "Case: " << stBDNCase.pcsCaseCode << endl;
 	cout << "File: " << stBDNCase.pcsFilePath << endl;
 	cout << "Histogram: " << stBFitCase.pcsHistName << endl;
-	printf("Total cycle time\t= %10.3f s\n",stBDNCase.dCycleTime);
-	printf("Background time\t\t= %10.3f s\n",stBDNCase.dBackgroundTime);
-	printf("Capture cycle time\t= %10.3f s\n",stBDNCase.dCaptureTime);
-	printf("Last capture time\t= %10.3f s\n",stBDNCase.dLastCaptureTime);
+	printf("Total cycle time\t= %10.3f s\n",	stBDNCase.dCycleTime);
+	printf("Background time\t\t= %10.3f s\n",	stBDNCase.dBackgroundTime);
+	printf("Capture cycle time\t= %10.3f s\n",	stBDNCase.dCaptureTime);
+	printf("Last capture time\t= %10.3f s\n",	stBDNCase.dLastCaptureTime);
 	cout << stBDNCase.pcsSpecies1Name; printf(" halflife\t\t= %10.3f s  (lifetime %10.3f s)\n", stBDNCase.dHalfLife1[0], stBDNCase.dLifetime1[0]);
 	cout << stBDNCase.pcsSpecies2Name; printf(" halflife\t\t= %10.3f s  (lifetime %10.3f s)\n", stBDNCase.dHalfLife2[0], stBDNCase.dLifetime2[0]);
 	cout << stBDNCase.pcsSpecies3Name; printf(" halflife\t\t= %10.3f s  (lifetime %10.3f s)\n", stBDNCase.dHalfLife3[0], stBDNCase.dLifetime3[0]);
@@ -138,32 +138,32 @@ int BFit () {
 //	t1		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime1[0]; // radioactive lifetime (1/e) in ms
 //	t2		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime2[0]; // radioactive lifetime (1/e) in ms
 //	t3		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime3[0]; // radioactive lifetime (1/e) in ms
-
+	Double_t tMax	= 1000.0 * stBDNCase.dCycleTime;
 // Species populations
-	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, 1000.0*stBDNCase.dCycleTime, nPars); // This one fits the data!
+	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, tMax, nPars);
+	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, tMax, nPars);
+	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, tMax, nPars);
+	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, tMax, nPars);
+	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, tMax, nPars);
+	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, tMax, nPars);
+	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, tMax, nPars);
+	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, tMax, nPars); // This one fits the data!
 // Beta rates to be used by TF1::Integral() and TF1::IntegralError()
-	TF1 *frDC	= new TF1("frDC", rDC, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frT1	= new TF1("frT1", rT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frT2	= new TF1("frT2", rT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frT3	= new TF1("frT3", rT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frU1	= new TF1("frU1", rU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frU2	= new TF1("frU2", rU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frU3	= new TF1("frU3", rU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *frAll	= new TF1("frAll",rAll, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *frDC	= new TF1("frDC", rDC, 0.0, tMax, nPars);
+	TF1 *frT1	= new TF1("frT1", rT1, 0.0, tMax, nPars);
+	TF1 *frT2	= new TF1("frT2", rT2, 0.0, tMax, nPars);
+	TF1 *frT3	= new TF1("frT3", rT3, 0.0, tMax, nPars);
+	TF1 *frU1	= new TF1("frU1", rU1, 0.0, tMax, nPars);
+	TF1 *frU2	= new TF1("frU2", rU2, 0.0, tMax, nPars);
+	TF1 *frU3	= new TF1("frU3", rU3, 0.0, tMax, nPars);
+	TF1 *frAll	= new TF1("frAll",rAll, 0.0, tMax, nPars);
 // Offset functions for plotting
-	TF1 *foT1	= new TF1("foT1", oT1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *foT2	= new TF1("foT2", oT2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *foT3	= new TF1("foT3", oT3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *foU1	= new TF1("foU1", oU1, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *foU2	= new TF1("foU2", oU2, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
-	TF1 *foU3	= new TF1("foU3", oU3, 0.0, 1000.0*stBDNCase.dCycleTime, nPars);
+	TF1 *foT1	= new TF1("foT1", oT1, 0.0, tMax, nPars);
+	TF1 *foT2	= new TF1("foT2", oT2, 0.0, tMax, nPars);
+	TF1 *foT3	= new TF1("foT3", oT3, 0.0, tMax, nPars);
+	TF1 *foU1	= new TF1("foU1", oU1, 0.0, tMax, nPars);
+	TF1 *foU2	= new TF1("foU2", oU2, 0.0, tMax, nPars);
+	TF1 *foU3	= new TF1("foU3", oU3, 0.0, tMax, nPars);
 // Initiailize function to fit the data
 	char pcsLifetime1ParName[100]; sprintf(pcsLifetime1ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies1Name);
 	char pcsLifetime2ParName[100]; sprintf(pcsLifetime2ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies2Name);
@@ -183,12 +183,12 @@ int BFit () {
 //	fyAll->SetParName(tau1,pcsLifetime1ParName);//"Lifetime 1");//pcsSpecies1ParName);
 //	fyAll->SetParName(tau2,pcsLifetime2ParName);//"Lifetime 2");//pcsSpecies2ParName);
 //	fyAll->SetParName(tau3,pcsLifetime3ParName);//"Lifetime 3");//pcsSpecies3ParName);
-	fyAll->SetParName(gammaT1,"T1 lifetime");
-	fyAll->SetParName(gammaT2,"T2 lifetime");
-	fyAll->SetParName(gammaT3,"T3 lifetime");
-	fyAll->SetParName(gammaU1,"U1 lifetime");
-	fyAll->SetParName(gammaU2,"U2 lifetime");
-	fyAll->SetParName(gammaU3,"U3 lifetime");
+	fyAll->SetParName(gammaT1,"T1 extra decay rate");
+	fyAll->SetParName(gammaT2,"T2 extra decay rate");
+	fyAll->SetParName(gammaT3,"T3 extra decay rate");
+	fyAll->SetParName(gammaU1,"U1 extra decay rate");
+	fyAll->SetParName(gammaU2,"U2 extra decay rate");
+	fyAll->SetParName(gammaU3,"U3 extra decay rate");
 	fyAll->SetParName(dt,"Bin width");
 	fyAll->SetParameters(par);
 	fyAll->SetParErrors(err);
@@ -292,25 +292,25 @@ int BFit () {
 	//	printf("\n");
 		
 	// Estimate # of betas detected and error
-		T1_integral = frT1->Integral( 0.0, stBDNCase.dCycleTime);
-		T2_integral = frT2->Integral( 0.0, stBDNCase.dCycleTime);
-		T3_integral = frT3->Integral( 0.0, stBDNCase.dCycleTime);
-		U1_integral = frU1->Integral( 0.0, stBDNCase.dCycleTime);
-		U2_integral = frU2->Integral( 0.0, stBDNCase.dCycleTime);
-		U3_integral = frU3->Integral( 0.0, stBDNCase.dCycleTime);
-		DC_integral = frDC->Integral( 0.0, stBDNCase.dCycleTime);
-		All_integral = frAll->Integral( 0.0, stBDNCase.dCycleTime);
+		T1_integral = frT1->Integral( 0.0, tMax);
+		T2_integral = frT2->Integral( 0.0, tMax);
+		T3_integral = frT3->Integral( 0.0, tMax);
+		U1_integral = frU1->Integral( 0.0, tMax);
+		U2_integral = frU2->Integral( 0.0, tMax);
+		U3_integral = frU3->Integral( 0.0, tMax);
+		DC_integral = frDC->Integral( 0.0, tMax);
+		All_integral = frAll->Integral( 0.0, tMax);
 		
 		Integral_sum = DC_integral + T1_integral + T2_integral + T3_integral + U1_integral + U2_integral + U3_integral;
 		
-		T1_integral_error = frT1->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		T2_integral_error = frT2->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		T3_integral_error = frT3->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		U1_integral_error = frU1->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		U2_integral_error = frU2->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		U3_integral_error = frU3->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		DC_integral_error = frDC->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
-		All_integral_error = frAll->IntegralError( 0.0, stBDNCase.dCycleTime, par, cov.GetMatrixArray() );
+		T1_integral_error = frT1->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		T2_integral_error = frT2->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		T3_integral_error = frT3->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		U1_integral_error = frU1->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		U2_integral_error = frU2->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		U3_integral_error = frU3->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		DC_integral_error = frDC->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		All_integral_error = frAll->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
 		
 		Integral_sum_error = Sqrt( Power(DC_integral_error,2.0) + Power(T1_integral_error,2.0) + Power(T2_integral_error,2.0) + Power(T3_integral_error,2.0) + Power(U1_integral_error,2.0) + Power(U2_integral_error,2.0) + Power(U3_integral_error,2.0) );
 		
@@ -381,8 +381,8 @@ int BFit () {
 	//printf("Range = (%f,%f)\n", yMin, yMax);
 	h1->GetYaxis()->SetRangeUser(yMin,yMax);
 //	h2->GetYaxis()->SetRangeUser(yMin,yMax);
-	h1->GetXaxis()->SetRangeUser(-1000,stBDNCase.dCycleTime+1000);
-//	h2->GetXaxis()->SetRangeUser(-1000,stBDNCase.dCycleTime+1000);
+	h1->GetXaxis()->SetRangeUser(-1000,tMax+1000);
+//	h2->GetXaxis()->SetRangeUser(-1000,tMax+1000);
 	
 	TLegend *leg_1 = new TLegend(0.13, 0.69, 0.32, 0.94);
 	leg_1->AddEntry(h1 , "Data");
@@ -491,7 +491,7 @@ int BFit () {
 		fyU3->SetNpx(nPoints);
 		
 		h2->GetYaxis()->SetRangeUser(0,yMax);
-		h2->GetXaxis()->SetRangeUser(-1000,stBDNCase.dCycleTime+1000);
+		h2->GetXaxis()->SetRangeUser(-1000,tMax+1000);
 		
 		TCanvas *c_decays_cyctime = new TCanvas("c_decays_cyctime","Decays versus cycle time",945,600);
 		h2->Draw();
@@ -568,13 +568,13 @@ int BFit () {
 			h_DU2_1->SetLineColor(kBlack);
 			h_DU3_1->SetLineColor(kBlack);
 			
-			TF1 *fyV1	= new TF1("fyV1", yV1, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyV2	= new TF1("fyV2", yV2, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyV3	= new TF1("fyV3", yV3, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyX2	= new TF1("fyX2", yX2, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyX3	= new TF1("fyX3", yX3, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, stBDNCase.dCycleTime, nPars);
-			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, stBDNCase.dCycleTime, nPars);
+			TF1 *fyV1	= new TF1("fyV1", yV1, 0.0, tMax, nPars);
+			TF1 *fyV2	= new TF1("fyV2", yV2, 0.0, tMax, nPars);
+			TF1 *fyV3	= new TF1("fyV3", yV3, 0.0, tMax, nPars);
+			TF1 *fyX2	= new TF1("fyX2", yX2, 0.0, tMax, nPars);
+			TF1 *fyX3	= new TF1("fyX3", yX3, 0.0, tMax, nPars);
+			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, tMax, nPars);
+			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, tMax, nPars);
 			
 			fyV1->SetParameters(par);
 			fyV2->SetParameters(par);

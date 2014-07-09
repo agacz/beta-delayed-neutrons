@@ -41,6 +41,8 @@ Double_t BFitNamespace::T1 (Double_t *t, Double_t *a) {
 //	printf("t1 = %f\n", t1);
 //	printf("t2 = %f\n", t2);
 //	printf("t3 = %f\n", t3);
+//	static Double_t x = t[0];
+//	printf("(t, n, f) = (%f, %d, %f)\n", t[0], n, f);
 	return f;
 }
 
@@ -59,6 +61,7 @@ Double_t BFitNamespace::T2 (Double_t *t, Double_t *a) {
 		ST2 = ( Exp(n*tCap/tT2) - Power(a[rho],n) ) / ( Exp(tCap/tT2) - a[rho] );
 		f = a[p] * a[r2] * tCap * ST2 * Exp(-(t[0]-tBac)/tT2);
 	}
+//	printf("(t, n, f) = (%f, %d, %f)\n", t[0], n, f);
 	return f;
 }
 
