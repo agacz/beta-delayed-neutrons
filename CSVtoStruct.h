@@ -34,7 +34,7 @@
 //#define DEBUG
 #define STRING_SIZE     4096
 #define FILE_ROWS_BDN     14 // number of structs in stBDNCases
-#define FILE_ROWS_BFit    4 // number of structs in stBFitCases
+#define FILE_ROWS_BFit    5 // number of structs in stBFitCases
 
 struct BDNCase_t
 {

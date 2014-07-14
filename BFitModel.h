@@ -7,13 +7,6 @@
 
 //void bookGlobals();
 
-static Double_t tCap;	// Time between BPT captures (ms)
-static Double_t tBac;	// Time spent in background measurment, per cycle (ms)
-static Double_t tCyc;	// Time between BPT ejections (ms)
-static Double_t t1;		// radioactive lifetime (1/e) in ms
-static Double_t t2;		// radioactive lifetime (1/e) in ms
-static Double_t t3;		// radioactive lifetime (1/e) in ms
-
 namespace BFitNamespace {
 	
 	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
@@ -36,7 +29,7 @@ namespace BFitNamespace {
 	// a[gammaU1]	= Non-radioactive decay rate of untrapped species 1 population (U1) (s)
 	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (s)
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (s)
-	
+
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
 	Double_t T2 (Double_t*, Double_t*);

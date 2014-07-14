@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include "time.h"
 #include "TROOT.h"
 #include "TString.h"
 #include "TStyle.h"
@@ -40,8 +41,8 @@ BDNCase_t	stBDNCases[FILE_ROWS_BDN];
 BFitCase_t	stBFitCases[FILE_ROWS_BFit];
 Int_t		iBDNCaseIndex, iBFitCaseIndex; // global index to identify case
 Int_t		iNumStructs_BDN, iNumStructs_BFit;
-//Double_t	tCap, tBac, tCyc;
-//Double_t	t1, t2, t3; //
+Double_t	tCap, tBac, tCyc;
+Double_t	t1, t2, t3;
 
 int BFit ();
 
@@ -75,6 +76,9 @@ int BFit () {
 	using namespace BFitNamespace;
 	using namespace TMath;
 	TFile *outfile = new TFile("BFit.root","recreate");
+	
+// Timer for debugging code
+	clock_t timer;
 	
 // Local copies of the relevant metadata structs
 	BDNCase_t  stBDNCase = stBDNCases[iBDNCaseIndex];
@@ -115,29 +119,8 @@ int BFit () {
 	TH1D *h1	= (TH1D*)h->Rebin(dRebinFactor,stBFitCase.pcsHistName);
 	TH1D *h2	= (TH1D*)h->Rebin(dRebinFactor,stBFitCase.pcsHistName);
 	
-// Initial parameter values and initial step sizes
-// err contains initial step sizes now, will contain error estimates later.
+// Define functions
 	Int_t nPars = stBFitCase.iNPars;
-	Int_t *tog;
-	Double_t *par;//[nPars];
-	Double_t *err;//[nPars];
-	tog = stBFitCase.pbToggle;
-	par = stBFitCase.pdSeed;
-	err = stBFitCase.pdStep;
-	Int_t index;
-//	for (index = 0; index < nPars; index++) {
-//	//	cout << stBFitCase.seed[index] << "+/-" << stBFitCase.step[index] << endl;
-//		par[index] = stBFitCase.pdSeed[index];
-//		err[index] = stBFitCase.pdStep[index];
-//	}
-	
-//	bookGlobals();
-//	tCap	= 1000.0 * stBDNCases[iBDNCaseIndex].dCaptureTime;	// Time between BPT captures (ms)
-//	tBac	= 1000.0 * stBDNCases[iBDNCaseIndex].dBackgroundTime; // Time spent in background measurment, per cycle (ms)
-//	tCyc	= 1000.0 * stBDNCases[iBDNCaseIndex].dCycleTime;	// Time between BPT ejections (ms)
-//	t1		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime1[0]; // radioactive lifetime (1/e) in ms
-//	t2		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime2[0]; // radioactive lifetime (1/e) in ms
-//	t3		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime3[0]; // radioactive lifetime (1/e) in ms
 	Double_t tMax	= 1000.0 * stBDNCase.dCycleTime;
 // Species populations
 	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, tMax, nPars);
@@ -190,9 +173,27 @@ int BFit () {
 	fyAll->SetParName(gammaU2,"U2 extra decay rate");
 	fyAll->SetParName(gammaU3,"U3 extra decay rate");
 	fyAll->SetParName(dt,"Bin width");
+	
+// Initial parameter values and initial step sizes
+// err contains initial step sizes now, will contain error estimates later.
+	Int_t		*tog;
+	Double_t	*par;//[nPars];
+	Double_t	*err;//[nPars];
+	tog	= stBFitCase.pbToggle;
+	par = stBFitCase.pdSeed;
+	err = stBFitCase.pdStep;
+	Int_t index;
+	
+//	bookGlobals();
+	tCap	= 1000.0 * stBDNCases[iBDNCaseIndex].dCaptureTime;	// Time between BPT captures (ms)
+	tBac	= 1000.0 * stBDNCases[iBDNCaseIndex].dBackgroundTime; // Time spent in background measurment, per cycle (ms)
+	tCyc	= 1000.0 * stBDNCases[iBDNCaseIndex].dCycleTime;	// Time between BPT ejections (ms)
+	t1		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime1[0]; // radioactive lifetime (1/e) in ms
+	t2		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime2[0]; // radioactive lifetime (1/e) in ms
+	t3		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime3[0]; // radioactive lifetime (1/e) in ms
+	
 	fyAll->SetParameters(par);
 	fyAll->SetParErrors(err);
-	
 // Print seed values that are assigned to the fit function
 	cout << "PARAMETER SEED VALUES" << endl << separator << endl;
 	cout << setw(34) << "Par name" << setw(10) << "Varying?" << "\t" << "Par init val and step" << endl << separator << endl;
@@ -202,30 +203,27 @@ int BFit () {
 	cout << separator << endl << endl;
 	
 // Initialize all functions to parameter seed values
-	for (index = 0; index < nPars; index++) {
-		fyDC	-> SetParameters(par);
-		fyT1	-> SetParameters(par);
-		fyT2	-> SetParameters(par);
-		fyT3	-> SetParameters(par);
-		fyU1	-> SetParameters(par);
-		fyU2	-> SetParameters(par);
-		fyU3	-> SetParameters(par);
-		fyAll	-> SetParameters(par);
-		frDC	-> SetParameters(par);
-		frT1	-> SetParameters(par);
-		frT2	-> SetParameters(par);
-		frT3	-> SetParameters(par);
-		frU1	-> SetParameters(par);
-		frU2	-> SetParameters(par);
-		frU3	-> SetParameters(par);
-		frAll	-> SetParameters(par);
-		foT1	-> SetParameters(par);
-		foT2	-> SetParameters(par);
-		foT3	-> SetParameters(par);
-		foU1	-> SetParameters(par);
-		foU2	-> SetParameters(par);
-		foU3	-> SetParameters(par);
-	}
+	fyDC	-> SetParameters(par);
+	fyT1	-> SetParameters(par);
+	fyT2	-> SetParameters(par);
+	fyT3	-> SetParameters(par);
+	fyU1	-> SetParameters(par);
+	fyU2	-> SetParameters(par);
+	fyU3	-> SetParameters(par);
+	frDC	-> SetParameters(par);
+	frT1	-> SetParameters(par);
+	frT2	-> SetParameters(par);
+	frT3	-> SetParameters(par);
+	frU1	-> SetParameters(par);
+	frU2	-> SetParameters(par);
+	frU3	-> SetParameters(par);
+	frAll	-> SetParameters(par);
+	foT1	-> SetParameters(par);
+	foT2	-> SetParameters(par);
+	foT3	-> SetParameters(par);
+	foU1	-> SetParameters(par);
+	foU2	-> SetParameters(par);
+	foU3	-> SetParameters(par);
 	
 	if (stBFitCase.bDoFit) {
 	// Fix the parameters that are supposed to be fixed
@@ -233,7 +231,10 @@ int BFit () {
 			if (tog[index] == 0) fyAll->FixParameter(index, stBFitCase.pdSeed[index]);
 		}
 	// Do fit and get results
+		timer = clock();
 		TFitResultPtr fit = h1->Fit("fyAll",stBFitCase.pcsOptions);
+		timer = clock() - timer;
+		printf("Fitting done in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		TMatrixDSym cov = fit->GetCovarianceMatrix();
 		fit->Print("V");
 	// Get parameter values from fit
