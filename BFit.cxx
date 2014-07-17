@@ -43,6 +43,7 @@ Int_t		iBDNCaseIndex, iBFitCaseIndex; // global index to identify case
 Int_t		iNumStructs_BDN, iNumStructs_BFit;
 Double_t	tCap, tBac, tCyc;
 Double_t	t1, t2, t3;
+bool		b134sbFlag = 0;
 
 int BFit ();
 
@@ -200,8 +201,16 @@ int BFit () {
 	for (index = 0; index < nPars; index++) {
 		cout << setw(34) << fyAll->GetParName(index) << setw(10) << tog[index] << "\t" << fyAll->GetParameter(index) << " +/- " << fyAll->GetParError(index) << endl;
 	}
-	cout << separator << endl << endl;
-	
+	cout << separator << endl;
+	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb02") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb03") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb0103"))
+	{
+		b134sbFlag = 1;
+		cout << "134-Sb data detected. Forcing gammaT3 = gammaT2. YOU SHOULD GUARANTEE THAT X3 = Y3 = 0. You can set epsX = epsY = 0." << endl << endl;
+	}
+	else cout << endl;
 // Initialize all functions to parameter seed values
 	fyDC	-> SetParameters(par);
 	fyT1	-> SetParameters(par);
@@ -230,6 +239,7 @@ int BFit () {
 		for (index = 0; index < nPars; index++) {
 			if (tog[index] == 0) fyAll->FixParameter(index, stBFitCase.pdSeed[index]);
 		}
+		if (b134sbFlag && tog[gammaT2]==0) fyAll->FixParameter(gammaT3, stBFitCase.pdSeed[gammaT2]);
 	// Do fit and get results
 		timer = clock();
 		TFitResultPtr fit = h1->Fit("fyAll",stBFitCase.pcsOptions);
@@ -440,6 +450,7 @@ int BFit () {
 	gPad->Update();
 	c_BFit->Modified();
 	outfile->WriteTObject(c_BFit);
+	outfile->WriteTObject(h1);
 	
 	if (stBFitCase.bMonteCarlo) {
 		
