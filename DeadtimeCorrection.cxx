@@ -334,7 +334,46 @@ int DeadtimeCorrection () {
 	h_bkgd_LR_slow_vs_rf_phase	->Multiply(h_deadtime_correction_vs_rf_phase);
 	h_bkgd_BT_slow_vs_rf_phase	->Multiply(h_deadtime_correction_vs_rf_phase);
 	h_bkgd_BR_slow_vs_rf_phase	->Multiply(h_deadtime_correction_vs_rf_phase);
-	
+
+// Update # of entries
+	// _vs_cycle_time
+	h_all_vs_cycle_time			->SetEntries(h_all_vs_cycle_time		->Integral());
+	h_betas_vs_cycle_time		->SetEntries(h_betas_vs_cycle_time		->Integral() );
+	h_B_betas_vs_cycle_time		->SetEntries(h_B_betas_vs_cycle_time	->Integral() );
+	h_L_betas_vs_cycle_time		->SetEntries(h_L_betas_vs_cycle_time	->Integral() );
+	h_zero_vs_cycle_time		->SetEntries(h_zero_vs_cycle_time		->Integral() );
+	h_R_zero_vs_cycle_time		->SetEntries(h_R_zero_vs_cycle_time		->Integral() );
+	h_T_zero_vs_cycle_time		->SetEntries(h_T_zero_vs_cycle_time		->Integral() );
+	h_lowTOF_vs_cycle_time		->SetEntries(h_lowTOF_vs_cycle_time		->Integral() );
+	h_R_lowTOF_vs_cycle_time	->SetEntries(h_R_lowTOF_vs_cycle_time	->Integral() );
+	h_T_lowTOF_vs_cycle_time	->SetEntries(h_T_lowTOF_vs_cycle_time	->Integral() );
+	h_fast_vs_cycle_time		->SetEntries(h_fast_vs_cycle_time		->Integral() );
+	h_R_fast_vs_cycle_time		->SetEntries(h_R_fast_vs_cycle_time		->Integral() );
+	h_T_fast_vs_cycle_time		->SetEntries(h_T_fast_vs_cycle_time		->Integral() );
+	h_slow_vs_cycle_time		->SetEntries(h_slow_vs_cycle_time		->Integral() );
+	h_R_slow_vs_cycle_time		->SetEntries(h_R_slow_vs_cycle_time		->Integral() );
+	h_T_slow_vs_cycle_time		->SetEntries(h_T_slow_vs_cycle_time		->Integral() );
+	h_oops_vs_cycle_time		->SetEntries(h_oops_vs_cycle_time		->Integral() );
+	h_R_oops_vs_cycle_time		->SetEntries(h_R_oops_vs_cycle_time		->Integral() );
+	h_T_oops_vs_cycle_time		->SetEntries(h_T_oops_vs_cycle_time		->Integral() );
+	// _vs_rf_phase
+	h_all_vs_rf_phase			->SetEntries(h_all_vs_rf_phase			->Integral() );
+	h_slow_vs_rf_phase			->SetEntries(h_slow_vs_rf_phase			->Integral() );
+	h_LT_slow_vs_rf_phase		->SetEntries(h_LT_slow_vs_rf_phase		->Integral() );
+	h_LR_slow_vs_rf_phase		->SetEntries(h_LR_slow_vs_rf_phase		->Integral() );
+	h_BT_slow_vs_rf_phase		->SetEntries(h_BT_slow_vs_rf_phase		->Integral() );
+	h_BR_slow_vs_rf_phase		->SetEntries(h_BR_slow_vs_rf_phase		->Integral() );
+	h_oops_vs_rf_phase			->SetEntries(h_oops_vs_rf_phase			->Integral() );
+	h_LT_oops_vs_rf_phase		->SetEntries(h_LT_oops_vs_rf_phase		->Integral() );
+	h_LR_oops_vs_rf_phase		->SetEntries(h_LR_oops_vs_rf_phase		->Integral() );
+	h_BT_oops_vs_rf_phase		->SetEntries(h_BT_oops_vs_rf_phase		->Integral() );
+	h_BR_oops_vs_rf_phase		->SetEntries(h_BR_oops_vs_rf_phase		->Integral() );
+	h_bkgd_slow_vs_rf_phase		->SetEntries(h_bkgd_slow_vs_rf_phase	->Integral() );
+	h_bkgd_LT_slow_vs_rf_phase	->SetEntries(h_bkgd_LT_slow_vs_rf_phase	->Integral() );
+	h_bkgd_LR_slow_vs_rf_phase	->SetEntries(h_bkgd_LR_slow_vs_rf_phase	->Integral() );
+	h_bkgd_BT_slow_vs_rf_phase	->SetEntries(h_bkgd_BT_slow_vs_rf_phase	->Integral() );
+	h_bkgd_BR_slow_vs_rf_phase	->SetEntries(h_bkgd_BR_slow_vs_rf_phase	->Integral() );
+		
 /*	h_all_vs_cycle_time		->SetName("h_all_vs_cycle_time");
 	h_betas_vs_cycle_time	->SetName("h_betas_vs_cycle_time");
 	h_B_betas_vs_cycle_time	->SetName("h_B_betas_vs_cycle_time");
