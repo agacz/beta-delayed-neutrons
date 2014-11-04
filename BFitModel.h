@@ -23,13 +23,16 @@ namespace BFitNamespace {
 	// a[epsW]	= Detection efficiency for untrapped pop W
 	// a[epsX]	= Detection efficiency for untrapped pop V
 	// a[epsY]	= Detection efficiency for untrapped pop W
-	// a[gammaT1]	= Non-radioactive decay rate of trapped species 1 population (T1) (s)
-	// a[gammaT2]	= Non-radioactive decay rate of trapped species 2 population (T2) (s)
-	// a[gammaT3]	= Non-radioactive decay rate of trapped species 3 population (T3) (s)
-	// a[gammaU1]	= Non-radioactive decay rate of untrapped species 1 population (U1) (s)
-	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (s)
-	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (s)
-
+	// a[gammaT1]	= Non-radioactive decay rate of trapped species 1 population (T1) (1/s)
+	// a[gammaT2]	= Non-radioactive decay rate of trapped species 2 population (T2) (1/s)
+	// a[gammaT3]	= Non-radioactive decay rate of trapped species 3 population (T3) (1/s)
+	// a[gammaU1]	= Non-radioactive decay rate of untrapped species 1 population (U1) (1/s)
+	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (1/s)
+	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
+	
+// Sum of many decaying terms
+	Double_t Sigma (Double_t, Double_t, Int_t);
+	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
 	Double_t T2 (Double_t*, Double_t*);
@@ -47,6 +50,9 @@ namespace BFitNamespace {
 	Double_t X3 (Double_t*, Double_t*);
 	Double_t Y2 (Double_t*, Double_t*);
 	Double_t Y3 (Double_t*, Double_t*);
+	Double_t Z1 (Double_t*, Double_t*);
+	Double_t Z2 (Double_t*, Double_t*);
+	Double_t Z3 (Double_t*, Double_t*);
 	Double_t All (Double_t*, Double_t*);
 	
 // Functions to plot: (obs. decay rate)x(bin dt) = counts by bin
@@ -67,6 +73,9 @@ namespace BFitNamespace {
 	Double_t yX3 (Double_t*, Double_t*);
 	Double_t yY2 (Double_t*, Double_t*);
 	Double_t yY3 (Double_t*, Double_t*);
+	Double_t yZ1 (Double_t*, Double_t*);
+	Double_t yZ2 (Double_t*, Double_t*);
+	Double_t yZ3 (Double_t*, Double_t*);
 	Double_t yAll (Double_t*, Double_t*);
 	
 // Detection rates (/ms) for calculating integrals --> # of betas
@@ -98,6 +107,13 @@ static Double_t U2_integral = 0.0;
 static Double_t U3_integral = 0.0;
 static Double_t DC_integral = 0.0;
 static Double_t All_integral = 0.0;
+
+static Double_t U1_integral_trap_empty = 0.0;
+static Double_t U2_integral_trap_empty = 0.0;
+static Double_t U3_integral_trap_empty = 0.0;
+static Double_t U1_integral_trap_full = 0.0;
+static Double_t U2_integral_trap_full = 0.0;
+static Double_t U3_integral_trap_full = 0.0;
 
 static Double_t Integral_sum = 0.0;
 
