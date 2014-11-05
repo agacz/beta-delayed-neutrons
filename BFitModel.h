@@ -9,7 +9,7 @@
 
 namespace BFitNamespace {
 	
-	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
+	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, epsZ, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
 	// a[dt]	= bin width in ms
 	// a[DC]	= DC detection rate in cycles/ms
 	// a[r1]	= Species 1 injection rate in cycles/ms
@@ -18,11 +18,13 @@ namespace BFitNamespace {
 	// a[p]		= Fraction of injected ions that is succesfully trapped
 	// a[rho]	= Fraction of already-trapped ions that is retained in trap at each capture
 	// a[epsT]	= Detection efficiency for trapped pop T
-	// a[epsU]	= Detection efficiency for untrapped pop U
+// Note: epsU is multiplied on top of other untrapped eps's
+	// a[epsU]	= Detection efficiency for all untrapped pops U
 	// a[epsV]	= Detection efficiency for untrapped pop V
 	// a[epsW]	= Detection efficiency for untrapped pop W
-	// a[epsX]	= Detection efficiency for untrapped pop V
-	// a[epsY]	= Detection efficiency for untrapped pop W
+	// a[epsX]	= Detection efficiency for untrapped pop X
+	// a[epsY]	= Detection efficiency for untrapped pop Y
+	// a[epsZ]	= Detection efficiency for untrapped pop Z
 	// a[gammaT1]	= Non-radioactive decay rate of trapped species 1 population (T1) (1/s)
 	// a[gammaT2]	= Non-radioactive decay rate of trapped species 2 population (T2) (1/s)
 	// a[gammaT3]	= Non-radioactive decay rate of trapped species 3 population (T3) (1/s)
@@ -30,8 +32,10 @@ namespace BFitNamespace {
 	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (1/s)
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
 	
-// Sum of many decaying terms
+// Sums of many decaying terms
 	Double_t Sigma (Double_t, Double_t, Int_t);
+	Double_t Wn (Double_t, Double_t, Double_t, Int_t);
+	Double_t Zn (Double_t, Double_t, Double_t, Int_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
