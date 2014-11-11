@@ -23,7 +23,8 @@
 Double_t BFitNamespace::Sigma (Double_t rho, Double_t tau, Int_t n) {
 	using namespace TMath;
 	extern Double_t tCap;
-	return ( Exp(n*tCap/tau) - Power(rho,n) ) / ( Exp(tCap/tau) - rho );
+	return ( 1 - Power(rho*Exp(-tCap/tau),n) ) / ( 1 - rho*Exp(-tCap/tau) );
+//	return ( Exp(n*tCap/tau) - Power(rho,n) ) / ( Exp(tCap/tau) - rho );
 }
 Double_t BFitNamespace::T1 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
@@ -36,7 +37,7 @@ Double_t BFitNamespace::T1 (Double_t *t, Double_t *a) {
 	{
 		tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
 		n = Ceil((t[0]-tBac)/tCap);
-		f = a[p] * a[r1] * tCap * Sigma(a[rho],tT1,n) * Exp(-(t[0]-tBac)/tT1);
+		f = a[p] * a[r1] * tCap * Sigma(a[rho],tT1,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tT1);
 	}
 	return f;
 }
@@ -52,7 +53,7 @@ Double_t BFitNamespace::T2 (Double_t *t, Double_t *a) {
 	{
 		tT2 = 1.0 / ( 1.0/t2 + a[gammaT2]/1000.0 ); // net variable lifetime (1/e) in ms
 		n = Ceil((t[0]-tBac)/tCap);
-		f = a[p] * a[r2] * tCap * Sigma(a[rho],tT2,n) * Exp(-(t[0]-tBac)/tT2);
+		f = a[p] * a[r2] * tCap * Sigma(a[rho],tT2,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tT2);
 	}
 	return f;
 }
@@ -72,7 +73,7 @@ Double_t BFitNamespace::T3 (Double_t *t, Double_t *a) {
 		if (b134sbFlag) a[gammaT3] = a[gammaT2];
 		tT3 = 1.0 / ( 1.0/t3 + a[gammaT3]/1000.0 ); // net variable lifetime (1/e) in ms
 		n = Ceil((t[0]-tBac)/tCap);
-		f = a[p] * a[r3] * tCap * Sigma(a[rho],tT3,n) * Exp(-(t[0]-tBac)/tT3);
+		f = a[p] * a[r3] * tCap * Sigma(a[rho],tT3,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tT3);
 	}
 	return f;
 }
@@ -152,20 +153,14 @@ Double_t BFitNamespace::V1 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	using namespace TMath;
 	static Int_t n, N;
-	static Double_t tT1, tU1, SU1, SU10, v10, v1, V1, f;
+	static Double_t tU1, v10, v1, V1, f;
 	extern Double_t tCap, tBac, tCyc, t1;
-//	bookGlobals();
-	tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
 	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetime (1/e) in ms
 	f = 0.0; //catch bad values of t[0]
 	n = Ceil((t[0]-tBac)/tCap);
 	N = Ceil((tCyc-tBac)/tCap);
-	SU1  = ( Exp(n*tCap/tU1) - 1 ) / ( Exp(tCap/tU1) - 1 );
-	SU10 = ( Exp(N*tCap/tU1) - 1 ) / ( Exp(tCap/tU1) - 1 );
-//	D1   = ( Exp(n*tCap/tT1) - 1 ) / ( Exp(tCap/tT1) - 1 ) - ( Exp(n*tCap/tT1) - Power(a[rho],n) ) / ( Exp(tCap/tT1) - a[rho] );
-//	D10  = ( Exp(N*tCap/tT1) - 1 ) / ( Exp(tCap/tT1) - 1 ) - ( Exp(N*tCap/tT1) - Power(a[rho],N) ) / ( Exp(tCap/tT1) - a[rho] );
 	// Untrapped populations at t=0
-	v10 = ( a[r1] * tCap * (1-a[p]) * SU10 * Exp(-(tCyc-tBac)/tU1) ) / ( 1 - Exp(-tCyc/tU1) );
+	v10 = ( a[r1] * tCap * (1-a[p]) * Sigma(1,tU1,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU1) ) / ( 1 - Exp(-tCyc/tU1) );
 	// Untrapped population during background period
 	v1 = v10 * Exp(-t[0]/tU1);
 	// Background period
@@ -175,30 +170,23 @@ Double_t BFitNamespace::V1 (Double_t *t, Double_t *a) {
 	// Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
-		V1 = a[r1] * tCap * (1-a[p]) * SU1 * Exp(-(t[0]-tBac)/tU1);
+		V1 = a[r1] * tCap * (1-a[p]) * Sigma(1,tU1,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU1);
 		f = v1+V1;
 	}
 	return f;
 }
-
 Double_t BFitNamespace::V2 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	using namespace TMath;
 	static Int_t n, N;
-	static Double_t tT2, tU2, SU2, SU20, v20, v2, V2, f;
+	static Double_t tU2, v20, v2, V2, f;
 	extern Double_t tCap, tBac, tCyc, t2;
-//	bookGlobals();
-	tT2 = 1.0 / ( 1.0/t2 + a[gammaT2]/1000.0 ); // net variable lifetime (1/e) in ms
 	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
 	f = 0.0; //catch bad values of t[0]
 	n = Ceil((t[0]-tBac)/tCap);
 	N = Ceil((tCyc-tBac)/tCap);
-	SU2  = ( Exp(n*tCap/tU2) - 1 ) / ( Exp(tCap/tU2) - 1 );
-	SU20 = ( Exp(N*tCap/tU2) - 1 ) / ( Exp(tCap/tU2) - 1 );
-//	D2   = ( Exp(n*tCap/tT2) - 1 ) / ( Exp(tCap/tT2) - 1 ) - ( Exp(n*tCap/tT2) - Power(a[rho],n) ) / ( Exp(tCap/tT2) - a[rho] );
-//	D20  = ( Exp(N*tCap/tT2) - 1 ) / ( Exp(tCap/tT2) - 1 ) - ( Exp(N*tCap/tT2) - Power(a[rho],N) ) / ( Exp(tCap/tT2) - a[rho] );
 	// Untrapped populations at t=0
-	v20 = ( a[r2] * tCap * (1-a[p]) * SU20 * Exp(-(tCyc-tBac)/tU2) ) / ( 1 - Exp(-tCyc/tU2) );
+	v20 = ( a[r2] * tCap * (1-a[p]) * Sigma(1,tU2,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) ) / ( 1 - Exp(-tCyc/tU2) );
 	// Untrapped population during background period
 	v2 = v20 * Exp(-t[0]/tU2);
 	// Background period
@@ -208,30 +196,23 @@ Double_t BFitNamespace::V2 (Double_t *t, Double_t *a) {
 	// Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
-		V2 = a[r2] * tCap * (1-a[p]) * SU2 * Exp(-(t[0]-tBac)/tU2);
+		V2 = a[r2] * tCap * (1-a[p]) * Sigma(1,tU2,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU2);
 		f = v2+V2;
 	}
 	return f;
 }
-
 Double_t BFitNamespace::V3 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	using namespace TMath;
 	static Int_t n, N;
-	static Double_t tT3, tU3, SU3, SU30, v30, v3, V3, f;
+	static Double_t tU3, v30, v3, V3, f;
 	extern Double_t tCap, tBac, tCyc, t3;
-//	bookGlobals();
-	tT3 = 1.0 / ( 1.0/t3 + a[gammaT3]/1000.0 ); // net variable lifetime (1/e) in ms
 	tU3 = 1.0 / ( 1.0/t3 + a[gammaU3]/1000.0 ); // net variable lifetime (1/e) in ms
 	f = 0.0; //catch bad values of t[0]
 	n = Ceil((t[0]-tBac)/tCap);
 	N = Ceil((tCyc-tBac)/tCap);
-	SU3  = ( Exp(n*tCap/tU3) - 1 ) / ( Exp(tCap/tU3) - 1 );
-	SU30 = ( Exp(N*tCap/tU3) - 1 ) / ( Exp(tCap/tU3) - 1 );
-//	D3   = ( Exp(n*tCap/tT3) - 1 ) / ( Exp(tCap/tT3) - 1 ) - ( Exp(n*tCap/tT3) - Power(a[rho],n) ) / ( Exp(tCap/tT3) - a[rho] );
-//	D30  = ( Exp(N*tCap/tT3) - 1 ) / ( Exp(tCap/tT3) - 1 ) - ( Exp(N*tCap/tT3) - Power(a[rho],N) ) / ( Exp(tCap/tT3) - a[rho] );
 	// Untrapped populations at t=0
-	v30 = ( a[r3] * tCap * (1-a[p]) * SU30 * Exp(-(tCyc-tBac)/tU3) ) / ( 1 - Exp(-tCyc/tU3) );
+	v30 = ( a[r3] * tCap * (1-a[p]) * Sigma(1,tU3,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU3) ) / ( 1 - Exp(-tCyc/tU3) );
 	// Untrapped population during background period
 	v3 = v30 * Exp(-t[0]/tU3);
 	// Background period
@@ -241,7 +222,7 @@ Double_t BFitNamespace::V3 (Double_t *t, Double_t *a) {
 	// Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
-		V3 = a[r3] * tCap * (1-a[p]) * SU3 * Exp(-(t[0]-tBac)/tU3);
+		V3 = a[r3] * tCap * (1-a[p]) * Sigma(1,tU3,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU3);
 		f = v3+V3;
 	}
 	return f;
@@ -267,10 +248,12 @@ Double_t BFitNamespace::yV3 (Double_t *t, Double_t *a) {
 // W populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Double_t BFitNamespace::Wn (Double_t rho, Double_t tT, Double_t tU, Int_t n) {
-	static Double_t f = 0.0;
+	static Double_t f;
 	static Int_t k;
-	extern Double_t tCap;
-	if (n>=2) for (k=1; k<=n-1; k++) f += Sigma(1,tU,n-k) * TMath::Exp(-k*tCap/tT);
+	extern Double_t iota, tCap;
+	f = 0.0;
+	if (n>=2) for (k=1; k<=n-1; k++) f += Sigma(1,tU,n-k) * TMath::Power(rho*TMath::Exp(-tCap/tT),k);
+	f *= 1.0/(rho+iota);
 	return f;
 }
 Double_t BFitNamespace::W1 (Double_t *t, Double_t *a) {
@@ -290,15 +273,15 @@ Double_t BFitNamespace::W1 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = (1-a[rho]) * a[p] * a[r1] * tCap;
 // Initial value (t=0)
-	w10 = amplitude * Wn(a[rho],tT1,tU1,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tU1) / (1 - Exp(-tCyc/tU1) );
+	w10 = amplitude * Wn(a[rho],tT1,tU1,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU1) / (1 - Exp(-tCyc/tU1) );
 // Background solution
 	w1 = w10 * Exp(-t[0]/tU1);
 // Background period
-	if (0 <= t[0] && t[0] < tBac) {
+	if (0 <= t[0] && t[0] < tBac + tCap) { // Different from other pops: No effect from 1st injection
 		f = w1;
 	}
 	// Trapping period
-	if (tBac <= t[0] && t[0] <= tCyc) {
+	if (tBac + tCap <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
 		W1 = amplitude * Wn(a[rho],tT1,tU1,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU1);
 		f = w1 + W1;
@@ -322,15 +305,15 @@ Double_t BFitNamespace::W2 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = (1-a[rho]) * a[p] * a[r2] * tCap;
 // Initial value (t=0)
-	w20 = amplitude * Wn(a[rho],tT2,tU2,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tU2) / (1 - Exp(-tCyc/tU2) );
+	w20 = amplitude * Wn(a[rho],tT2,tU2,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) / (1 - Exp(-tCyc/tU2) );
 // Background solution
 	w2 = w20 * Exp(-t[0]/tU2);
 // Background period
-	if (0 <= t[0] && t[0] < tBac) {
+	if (0 <= t[0] && t[0] < tBac + tCap) { // Different from other pops: No effect from 1st injection
 		f = w2;
 	}
 	// Trapping period
-	if (tBac <= t[0] && t[0] <= tCyc) {
+	if (tBac + tCap <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
 		W2 = amplitude * Wn(a[rho],tT2,tU2,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU2);
 		f = w2 + W2;
@@ -354,15 +337,15 @@ Double_t BFitNamespace::W3 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = (1-a[rho]) * a[p] * a[r3] * tCap;
 // Initial value (t=0)
-	w30 = amplitude * Wn(a[rho],tT3,tU3,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tU3) / (1 - Exp(-tCyc/tU3) );
+	w30 = amplitude * Wn(a[rho],tT3,tU3,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tU3) / (1 - Exp(-tCyc/tU3) );
 // Background solution
 	w3 = w30 * Exp(-t[0]/tU3);
 // Background period
-	if (0 <= t[0] && t[0] < tBac) {
+	if (0 <= t[0] && t[0] < tBac + tCap) { // Different from other pops: No effect from 1st injection
 		f = w3;
 	}
 	// Trapping period
-	if (tBac <= t[0] && t[0] <= tCyc) {
+	if (tBac + tCap <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
 		W3 = amplitude * Wn(a[rho],tT3,tU3,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tU3);
 		f = w3 + W3;
@@ -389,10 +372,12 @@ Double_t BFitNamespace::yW3 (Double_t *t, Double_t *a) {
 // Z populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Double_t BFitNamespace::Zn (Double_t rho, Double_t tT, Double_t tU, Int_t n) {
-	static Double_t f = 0.0;
+	static Double_t f;
 	static Int_t k;
 	extern Double_t tCap;
+	f = 0.0;
 	if (n>=2) for (k=1; k<=n-1; k++) f += Sigma(rho,tT,k) * TMath::Exp(-(n-k-1)*tCap/tU);
+	f *= ( TMath::Exp(-tCap/tU) - TMath::Exp(-tCap/tT) );
 	return f;
 }
 Double_t BFitNamespace::Z1 (Double_t *t, Double_t *a) {
@@ -412,7 +397,7 @@ Double_t BFitNamespace::Z1 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = a[p] * a[r1] * tCap * (a[gammaT1]+iota)/((a[gammaT1]-a[gammaU1])+iota);
 // Initial value (t=0)
-	z10 = amplitude * ( (Zn(a[rho],tT1,tU1,N)+Sigma(a[rho],tT1,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU1) - Sigma(a[rho],tT1,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tT1) ) / (1 - Exp(-tCyc/tU1) );
+	z10 = amplitude * ( (Zn(a[rho],tT1,tU1,N)+Sigma(a[rho],tT1,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU1) - Sigma(a[rho],tT1,N)*Exp(-(tCyc-tBac-(N-1)*tCap)/tT1) ) / (1 - Exp(-tCyc/tU1) );
 // Background solution
 	z1 = z10 * Exp(-t[0]/tU1);
 // Background period
@@ -422,7 +407,7 @@ Double_t BFitNamespace::Z1 (Double_t *t, Double_t *a) {
 	// Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
-		Z1 = amplitude * ( (Zn(a[rho],tT1,tU1,n)+Sigma(a[rho],tT1,n))*Exp(-(t[0]-tBac-(n-1)*tCap)/tU1) - Sigma(a[rho],tT1,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tT1) );
+		Z1 = amplitude * ( (Zn(a[rho],tT1,tU1,n)+Sigma(a[rho],tT1,n))*Exp(-(t[0]-tBac-(n-1)*tCap)/tU1) - Sigma(a[rho],tT1,n)*Exp(-(t[0]-tBac-(n-1)*tCap)/tT1) );
 		f = z1 + Z1;
 	}
 	return f;
@@ -440,11 +425,13 @@ Double_t BFitNamespace::Z2 (Double_t *t, Double_t *a) {
 // Recompute variables
 	tT2 = 1.0 / ( 1.0/t2 + a[gammaT2]/1000.0 ); // net variable lifetime (1/e) in ms
 	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
-	n = Ceil((t[0]-tBac)/tCap);
+	if (t[0]==tBac)	n = 1;
+	else			n = Ceil((t[0]-tBac)/tCap);
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = a[p] * a[r2] * tCap * (a[gammaT2]+iota)/((a[gammaT2]-a[gammaU2])+iota);
 // Initial value (t=0)
-	z20 = amplitude * ( (Zn(a[rho],tT2,tU2,N)+Sigma(a[rho],tT2,N))*Exp(-(t[0]-tBac-(N-1)*tCap)/tU2) - Sigma(a[rho],tT2,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tT2) ) / (1 - Exp(-tCyc/tU2) );
+	z20 = amplitude * ( (Zn(a[rho],tT2,tU2,N)+Sigma(a[rho],tT2,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) - Sigma(a[rho],tT2,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tT2) ) / (1 - Exp(-tCyc/tU2) );
+//	z20 = amplitude * ( Zn(a[rho],tT2,tU2,N)*Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) + Sigma(a[rho],tT2,N) * (Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) - Exp(-(tCyc-tBac-(N-1)*tCap)/tT2)) ) / (1 - Exp(-tCyc/tU2) );
 // Background solution
 	z2 = z20 * Exp(-t[0]/tU2);
 // Background period
@@ -455,6 +442,7 @@ Double_t BFitNamespace::Z2 (Double_t *t, Double_t *a) {
 	if (tBac <= t[0] && t[0] <= tCyc) {
 		// Untrapped populations during trapping
 		Z2 = amplitude * ( (Zn(a[rho],tT2,tU2,n)+Sigma(a[rho],tT2,n))*Exp(-(t[0]-tBac-(n-1)*tCap)/tU2) - Sigma(a[rho],tT2,n) * Exp(-(t[0]-tBac-(n-1)*tCap)/tT2) );
+//		Z2 = amplitude * ( Zn(a[rho],tT2,tU2,n)*Exp(-(t[0]-tBac-(n-1)*tCap)/tU2) + Sigma(a[rho],tT2,n) * (Exp(-(t[0]-tBac-(n-1)*tCap)/tU2) - Exp(-(t[0]-tBac-(n-1)*tCap)/tT2)) );
 		f = z2 + Z2;
 	}
 	return f;
@@ -476,7 +464,7 @@ Double_t BFitNamespace::Z3 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = a[p] * a[r3] * tCap * (a[gammaT3]+iota)/((a[gammaT3]-a[gammaU3])+iota);
 // Initial value (t=0)
-	z30 = amplitude * ( (Zn(a[rho],tT3,tU3,N)+Sigma(a[rho],tT3,N))*Exp(-(t[0]-tBac-(N-1)*tCap)/tU3) - Sigma(a[rho],tT3,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tT3) ) / (1 - Exp(-tCyc/tU3) );
+	z30 = amplitude * ( (Zn(a[rho],tT3,tU3,N)+Sigma(a[rho],tT3,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU3) - Sigma(a[rho],tT3,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tT3) ) / (1 - Exp(-tCyc/tU3) );
 // Background solution
 	z3 = z30 * Exp(-t[0]/tU3);
 // Background period
@@ -524,7 +512,7 @@ Double_t BFitNamespace::X2 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = a[p] * a[r1] * tCap * (1/t1) * (tT1*tU2/(tU2-tT1));
 // Initial value (t=0)
-	x20 = amplitude * ( (Zn(a[rho],tT1,tU2,N)+Sigma(a[rho],tT1,N))*Exp(-(t[0]-tBac-(N-1)*tCap)/tU2) - Sigma(a[rho],tT1,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tT1) ) / (1 - Exp(-tCyc/tU2) );
+	x20 = amplitude * ( (Zn(a[rho],tT1,tU2,N)+Sigma(a[rho],tT1,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU2) - Sigma(a[rho],tT1,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tT1) ) / (1 - Exp(-tCyc/tU2) );
 // Background solution
 	x2 = x20 * Exp(-t[0]/tU2);
 // Background period
@@ -556,7 +544,7 @@ Double_t BFitNamespace::X3 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	amplitude = a[p] * a[r2] * tCap * (1/t2) * (tT2*tU3/(tU3-tT2));
 // Initial value (t=0)
-	x30 = amplitude * ( (Zn(a[rho],tT2,tU3,N)+Sigma(a[rho],tT2,N))*Exp(-(t[0]-tBac-(N-1)*tCap)/tU3) - Sigma(a[rho],tT2,N) * Exp(-(t[0]-tBac-(N-1)*tCap)/tT2) ) / (1 - Exp(-tCyc/tU3) );
+	x30 = amplitude * ( (Zn(a[rho],tT2,tU3,N)+Sigma(a[rho],tT2,N))*Exp(-(tCyc-tBac-(N-1)*tCap)/tU3) - Sigma(a[rho],tT2,N) * Exp(-(tCyc-tBac-(N-1)*tCap)/tT2) ) / (1 - Exp(-tCyc/tU3) );
 // Background solution
 	x3 = x30 * Exp(-t[0]/tU3);
 // Background period
