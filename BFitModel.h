@@ -33,9 +33,10 @@ namespace BFitNamespace {
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
 	
 // Sums of many decaying terms
-	Double_t Sigma (Double_t, Double_t, Int_t);
-	Double_t Wn (Double_t, Double_t, Double_t, Int_t);
-	Double_t Zn (Double_t, Double_t, Double_t, Int_t);
+	Double_t SigmaT		(Double_t, Double_t, Int_t);
+	Double_t SigmaW		(Double_t, Double_t, Double_t, Int_t);
+	Double_t SigmaZ		(Double_t, Double_t, Double_t, Int_t);
+	Double_t SigmaY2	(Double_t*, Double_t, Double_t, Double_t, Int_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
