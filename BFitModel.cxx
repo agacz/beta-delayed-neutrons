@@ -23,7 +23,9 @@
 Double_t BFitNamespace::SigmaT (Double_t rho, Double_t tau, Int_t n) {
 	using namespace TMath;
 	extern Double_t tCap;
-	return ( 1 - Power(rho*Exp(-tCap/tau),n) ) / ( 1 - rho*Exp(-tCap/tau) );
+	static Double_t a;
+	a = Exp(-tCap/tau);
+	return ( 1-Power(rho*a,n) ) / (1-rho*a);
 //	return ( Exp(n*tCap/tau) - Power(rho,n) ) / ( Exp(tCap/tau) - rho );
 }
 Double_t BFitNamespace::T1 (Double_t *t, Double_t *a) {
@@ -248,12 +250,19 @@ Double_t BFitNamespace::yV3 (Double_t *t, Double_t *a) {
 // W populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Double_t BFitNamespace::SigmaW (Double_t rho, Double_t tT, Double_t tU, Int_t n) {
-	static Double_t f;
+	using namespace TMath;
+	static Double_t expT, expU, f;
 	static Int_t k;
 	extern Double_t iota, tCap;
 	f = 0.0;
-	if (n>=2) for (k=1; k<=n-1; k++) f += SigmaT(1,tU,n-k) * TMath::Power(rho*TMath::Exp(-tCap/tT),k);
-	f *= 1.0/(rho+iota);
+	if (n>=2) {
+		expT = Exp(-tCap/tT);
+		expU = Exp(-tCap/tU);
+		f = 1.0/(rho*(expU-1.0)) * ( Power(expU,n)*(Power(rho*expT/expU,n)-rho*expT/expU)/(rho*expT/expU-1.0) - (Power(rho*expT,n)-rho*expT)/(rho*expT-1.0) );
+		//for (k=1; k<=n-1; k++) f += SigmaT(1,tU,n-k) * TMath::Power(rho*TMath::Exp(-tCap/tT),k);
+//		f = 1.0/(rho*(Exp(-tCap/tU)-1.0)) * ( Exp(-n*tCap/tU)*(Power(rho*Exp(-tCap*(1.0/tT-1.0/tU)),n)-rho*Exp(-tCap*(1.0/tT-1.0/tU)))/(rho*Exp(-tCap*(1.0/tT-1.0/tU))-1.0) - (Power(rho*Exp(-tCap/tT),n)-rho*Exp(-tCap/tT))/(rho*Exp(-tCap/tT)-1.0) );
+	}
+//	f *= 1.0/(rho+iota);
 	return f;
 }
 Double_t BFitNamespace::W1 (Double_t *t, Double_t *a) {
@@ -372,12 +381,19 @@ Double_t BFitNamespace::yW3 (Double_t *t, Double_t *a) {
 // Z populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Double_t BFitNamespace::SigmaZ (Double_t rho, Double_t tT, Double_t tU, Int_t n) {
-	static Double_t f;
+	using namespace TMath;
+	static Double_t expT, expU, f;
 	static Int_t k;
 	extern Double_t tCap;
 	f = 0.0;
-	if (n>=2) for (k=1; k<=n-1; k++) f += SigmaT(rho,tT,k) * TMath::Exp(-(n-k-1)*tCap/tU);
-	f *= ( TMath::Exp(-tCap/tU) - TMath::Exp(-tCap/tT) );
+	if (n>=2) {
+		expT = Exp(-tCap/tT);
+		expU = Exp(-tCap/tU);
+		f = (expU-expT) * Power(expU,n-1)/(1.0-rho*expT) * ( (Power(1/expU,n)-1/expU)/(1/expU-1.0) - (Power(rho*expT/expU,n)-rho*expT/expU)/(rho*expT/expU-1.0) );
+//		for (k=1; k<=n-1; k++) f += SigmaT(rho,tT,k) * TMath::Exp(-(n-k-1)*tCap/tU);
+//		f = Exp(-(n-1)*tCap/tU)/(1.0-rho*Exp(-tCap/tT)) * ( (Exp(n*tCap/tU)-Exp(tCap/tU))/(Exp(tCap/tU)-1.0) - (Power(rho*Exp(tCap*(1.0/tU-1.0/tT)),n)-rho*Exp(tCap*(1.0/tU-1.0/tT)))/(rho*Exp(tCap*(1.0/tU-1.0/tT))-1.0) );
+	}
+//	f *= ( TMath::Exp(-tCap/tU) - TMath::Exp(-tCap/tT) );
 	return f;
 }
 Double_t BFitNamespace::Z1 (Double_t *t, Double_t *a) {
@@ -578,16 +594,24 @@ Double_t BFitNamespace::SigmaY2 (Double_t *a, Double_t tT1, Double_t tU1, Double
 	// tT1, tU1, tU2 are the modified pop. lifetimes, 1 and 2 just define the parent-child relationship and don't imply species 1 and 2
 	using namespace BFitNamespace;
 	using namespace TMath;
-	static Double_t A, B, f;
+	static Double_t expT1, expU1, expU2, A, B, f;
 	static Int_t k;
 	extern Double_t iota, tCap;
-	f = A = B = 0.0;
+	f = 0.0;
+	A = 0.0;
+	B = 0.0;
+	expT1 = Exp(-tCap/tT1);
+	expU1 = Exp(-tCap/tU1);
+	expU2 = Exp(-tCap/tU2);
 	if (n>=2) {
 		for (k=1; k<=n-1; k++) {
-			A += SigmaT(rho,tT1,k) * Exp(-(n-k-1)*tCap/tU2);
-			B += ( (1-a[p])*SigmaT(a[rho],tT1,k) + p*(1-a[rho])*SigmaW(a[rho],tT1,tU1,k) + p*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,n) ) * ( Exp(-(n-k-1)*tCap/tU2) - Exp(-(n-k-1)*tCap/tU1) );
+			A += SigmaT(rho,tT1,k) * Power(expU2,n-k-1);
+			B += ( (1-a[p])*SigmaT(a[rho],tT1,k) + p*(1-a[rho])*SigmaW(a[rho],tT1,tU1,k) + p*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,n) ) * ( Power(expU2,n-k-1) - Power(expU1,n-k-1) );
+//			A += SigmaT(rho,tT1,k) * Exp(-(n-k-1)*tCap/tU2);
+//			B += ( (1-a[p])*SigmaT(a[rho],tT1,k) + p*(1-a[rho])*SigmaW(a[rho],tT1,tU1,k) + p*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,n) ) * ( Exp(-(n-k-1)*tCap/tU2) - Exp(-(n-k-1)*tCap/tU1) );
 		}
-		A *= a[p] * (a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota) * tT1/(tU2-tT1) * ( tT1*(tU2-tU1)*Exp(-tCap/tT1) - tU1*(tU2-tT1)*Exp(-tCap/tU1) + tU2*(tU1-tT1)*Exp(-tCap/tU2) );
+		A *= a[p] * (a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota) * tT1/(tU2-tT1) * ( tT1*(tU2-tU1)*expT1 - tU1*(tU2-tT1)*expU1 + tU2*(tU1-tT1)*expU2 );
+		B *= (expU2-expU1);
 		f = A + B;
 	}
 	return f;
