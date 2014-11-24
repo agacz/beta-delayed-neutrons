@@ -37,6 +37,8 @@ namespace BFitNamespace {
 	Double_t SigmaW		(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaZ		(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaY2	(Double_t*, Double_t, Double_t, Double_t, Int_t);
+	Double_t myY2		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Int_t);
+	Double_t myY3		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Double_t, Double_t, Int_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
@@ -102,6 +104,11 @@ namespace BFitNamespace {
 	Double_t oU3 (Double_t*, Double_t*);
 	
 }
+
+// Global variables to aid evaluation of functions
+//void bookGlobals();
+//Double_t	Y20 = 0.0;
+//Double_t cT1, cU1, cU2;
 
 // Variables to hold integrals of functions
 static Double_t T1_integral = 0.0;
