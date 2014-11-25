@@ -37,8 +37,11 @@ namespace BFitNamespace {
 	Double_t SigmaW		(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaZ		(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaY2	(Double_t*, Double_t, Double_t, Double_t, Int_t);
-	Double_t myY2		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Int_t);
-	Double_t myY3		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Double_t, Double_t, Int_t);
+	Double_t myY2		(Double_t*, Double_t*, Int_t);
+//	Double_t myY3		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Double_t, Double_t, Int_t);
+	Double_t myY3		(Double_t*, Double_t*, Int_t);
+	Double_t Y2InitialValue (Double_t*, Double_t*, Double_t, Double_t);
+	Double_t Y3InitialValue (Double_t*, Double_t*, Double_t, Double_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);

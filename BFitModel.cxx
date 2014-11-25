@@ -618,26 +618,155 @@ Double_t BFitNamespace::SigmaY2 (Double_t *a, Double_t tT1, Double_t tU1, Double
 	}
 	return f;
 }
-Double_t BFitNamespace::myY2 (Double_t *t, Double_t *a, Double_t tT1, Double_t tU1, Double_t tU2, Int_t n) {
+Double_t BFitNamespace::Y2InitialValue (Double_t *t, Double_t *a, Double_t t0, Double_t y0) {
 	using namespace BFitNamespace;
 	using namespace TMath;
-	static Double_t expT1, expU1, expU2, tk, A, B, f;
-	static Int_t k;
-	extern Double_t iota, tCap, tBac, t1;
+	static Double_t tT1, tU1, tU2, cT1, cU1, cU2, expT1, expU1, expU2, tk, A, B, f;
+	extern Double_t iota, tCap, tBac, t1, t2;
+	tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
 	f = 0.0;
 	A = 0.0;
 	B = 0.0;
-	static Double_t cT1 = tT1*(tU2-tU1);
-	static Double_t cU1	= tU1*(tU2-tT1);
-	static Double_t cU2	= tU2*(tU1-tT1);
-	for (k=1; k<=n; k++) {
-		tk = t[0]-tBac-(k-1)*tCap;
-		A += SigmaT(a[rho],tT1,k) * (cT1*Exp(-tk/tT1) - cU1*Exp(-tk/tU1) + cU2*Exp(-tk/tU2));
-//		A += a[p] * (a[gammaT1]/1000.0+iota)/(tU1-tT1+iota) * tT1/(tU2-tT1) * SigmaT(rho,tT1,k) * (cT1*Exp(-(t[0]-tBac-(k-1)*tCap)/tT1) - cU1*Exp(-(t[0]-tBac-(k-1)*tCap)/tU1) + cU2*Exp(-(t[0]-tBac-(k-1)*tCap)/tU2));
-		B += ( (1-a[p])*SigmaT(a[rho],tT1,k) + a[p]*(1-a[rho])*SigmaW(a[rho],tT1,tU1,k) + a[p]*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,k) ) * ( Exp(-tk/tU2) - Exp(-tk/tU1) );
-	}
-	A *= a[p] * (a[gammaT1]/1000.0+iota)/(tU1-tT1+iota) * tT1/(tU2-tT1);// * ( tT1*(tU2-tU1)*expT1 - tU1*(tU2-tT1)*expU1 + tU2*(tU1-tT1)*expU2 );
+	cT1 = tT1*(tU2-tU1);
+	cU1	= tU1*(tU2-tT1);
+	cU2	= tU2*(tU1-tT1);
+	tk = t[0]-t0;
+	A = a[p] * (a[gammaT1]/1000.0+iota)/(tU1-tT1+iota) * tT1/(tU2-tT1) * SigmaT(a[rho],tT1,1) * (cT1*Exp(-tk/tT1) - cU1*Exp(-tk/tU1) + cU2*Exp(-tk/tU2));
+	B = ( (1-a[p])*SigmaT(a[rho],tT1,1) + a[p]*(1-a[rho])*SigmaW(a[rho],tT1,tU1,1) + a[p]*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,1) ) * ( Exp(-tk/tU2) - Exp(-tk/tU1) );
 	f = a[r1] * (tCap/t1) * tU1*tU2/(tU2-tU1) * (A + B);
+	return y0*Exp(-(t[0]-t0)/tU2) + f;
+}
+Double_t BFitNamespace::myY2 (Double_t *t, Double_t *a, Int_t n) {
+	using namespace BFitNamespace;
+	using namespace TMath;
+	static Double_t tT1, tU1, tU2, cT1, cU1, cU2, expT1, expU1, expU2, tk, A, B, f;
+	static Int_t k;
+	extern Double_t iota, tCap, tBac, t1, t2;
+//	tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
+//	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetime (1/e) in ms
+//	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
+	f = 0.0;
+//	A = 0.0;
+//	B = 0.0;
+//	cT1 = tT1*(tU2-tU1);
+//	cU1	= tU1*(tU2-tT1);
+//	cU2	= tU2*(tU1-tT1);
+	for (k=1; k<=n; k++) {
+		tk = tBac+(k-1)*tCap;
+//		A += SigmaT(a[rho],tT1,k) * (cT1*Exp(-tk/tT1) - cU1*Exp(-tk/tU1) + cU2*Exp(-tk/tU2));
+////		A += a[p] * (a[gammaT1]/1000.0+iota)/(tU1-tT1+iota) * tT1/(tU2-tT1) * SigmaT(rho,tT1,k) * (cT1*Exp(-(t[0]-tBac-(k-1)*tCap)/tT1) - cU1*Exp(-(t[0]-tBac-(k-1)*tCap)/tU1) + cU2*Exp(-(t[0]-tBac-(k-1)*tCap)/tU2));
+//		B += ( (1-a[p])*SigmaT(a[rho],tT1,k) + a[p]*(1-a[rho])*SigmaW(a[rho],tT1,tU1,k) + a[p]*(a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SigmaZ(a[rho],tT1,tU1,k) ) * ( Exp(-tk/tU2) - Exp(-tk/tU1) );
+		f += Y2InitialValue(t, a, tk, 0.0);
+	}
+//	A *= a[p] * (a[gammaT1]/1000.0+iota)/(tU1-tT1+iota) * tT1/(tU2-tT1);// * ( tT1*(tU2-tU1)*expT1 - tU1*(tU2-tT1)*expU1 + tU2*(tU1-tT1)*expU2 );
+//	f = a[r1] * (tCap/t1) * tU1*tU2/(tU2-tU1) * (A + B);
+	return f;
+}
+Double_t BFitNamespace::Y3InitialValue (Double_t *t, Double_t *a, Double_t t0, Double_t y0) {
+	using namespace BFitNamespace;
+	using namespace TMath;
+	static Double_t tk, tT1, tT2, tU1, tU2, tU3, expT1, expT2, expU1, expU2, expU3, ThetaU, ST1, SW11, SZ11, ST2, SW22, SZ22, bU1, bU2, bU3, cT2, cU2, cU3, dT1, dU1, dU2, dU3, A, B, C, D, f;
+	static Int_t k;
+	extern Double_t iota, tCap, tBac, t1, t2, t3;
+	tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tT2 = 1.0 / ( 1.0/t2 + a[gammaT2]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU3 = 1.0 / ( 1.0/t3 + a[gammaU3]/1000.0 ); // net variable lifetime (1/e) in ms
+	f		= 0.0;
+	A		= 0.0;
+	B		= 0.0;
+	C		= 0.0;
+	D		= 0.0;
+	cT2		= tT2*(tU3-tU2);
+	cU2		= tU2*(tU3-tT2);
+	cU3		= tU3*(tU2-tT2);
+	bU1		= tU1*(tU3-tU2);
+	bU2		= tU2*(tU3-tU1);
+	bU3		= tU3*(tU2-tU1);
+	dT1		= a[p]*(a[gammaT1]/1000.0)*Power(tT1,3)/(tU3-tT1)/(tU2-tT1)/(tU1-tT1);
+	dU1		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU1/(tU1-tT1)+(1-a[p]))*tU1*(tU3-tU2)/ThetaU;
+	dU2		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU2/(tU2-tT1)+(1-a[p]))*tU2*(tU3-tU1)/ThetaU;
+	dU3		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU3/(tU3-tT1)+(1-a[p]))*tU3*(tU2-tU1)/ThetaU;
+	ThetaU	= (tU3-tU2)*(tU3-tU1)*(tU2-tU1);
+	for (k=1; k<=1; k++) {
+		tk		= t[0]-t0;
+		expT1	= Exp(-tk/tT1);
+		expT2	= Exp(-tk/tT2);
+		expU1	= Exp(-tk/tU1);
+		expU2	= Exp(-tk/tU2);
+		expU3	= Exp(-tk/tU3);
+		ST1		= SigmaT(a[rho],tT1,k);
+		ST2		= SigmaT(a[rho],tT2,k);
+		SW11	= SigmaW(a[rho],tT1,tU1,k);
+		SW22	= SigmaW(a[rho],tT2,tU2,k);
+		SZ11	= SigmaZ(a[rho],tT1,tU1,k);
+		SZ22	= SigmaZ(a[rho],tT2,tU2,k);
+		A += ST2 * (cT2*expT2 - cU2*expU2 + cU3*expU3);
+		B += ( (1-a[p])*ST2 + a[p]*(1-a[rho])*SW22 + a[p]*(a[gammaT2]+iota)/(a[gammaT2]-a[gammaU2]+iota)*SZ22 ) * ( expU3 - expU2 );
+		C += ST1 * ( dT1*expT1 +  dU1*expU1 - dU2*expU2 + dU3*expU3);
+		D += ( (1-a[rho])*SW11 + (a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SZ11 ) * (bU1*expU1 - bU2*expU2 + bU3*expU3) / ThetaU;
+	}
+	A *= a[p] * (a[gammaT2]/1000.0+iota)/(tU2-tT2+iota) * tT2/(tU3-tT2);
+	f = a[r2]*(tCap/t2)*tU2*tU3/(tU3-tU2)*(A+B) + a[r1]*(tCap/t1)*tU1*tU2*tU3/t2*(C+D);
+	return y0*Exp(-(t[0]-t0)/tU3) + f;
+}
+//Double_t BFitNamespace::myY3 (Double_t *t, Double_t *a, Double_t tT1, Double_t tT2, Double_t tU1, Double_t tU2, Double_t tU3, Int_t n) {
+Double_t BFitNamespace::myY3 (Double_t *t, Double_t *a, Int_t n) {
+	using namespace BFitNamespace;
+	using namespace TMath;
+	static Double_t tk, expT1, expT2, expU1, expU2, expU3, ThetaU, ST1, SW11, SZ11, ST2, SW22, SZ22, bU1, bU2, bU3, cT2, cU2, cU3, dT1, dU1, dU2, dU3, A, B, C, D, f;
+	static Double_t tT1, tT2, tU1, tU2, tU3;
+	static Int_t k;
+	extern Double_t iota, tCap, tBac, t1, t2, t3;
+	f		= 0.0;
+	tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tT2 = 1.0 / ( 1.0/t2 + a[gammaT2]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetime (1/e) in ms
+	tU3 = 1.0 / ( 1.0/t3 + a[gammaU3]/1000.0 ); // net variable lifetime (1/e) in ms
+/*	A		= 0.0;
+	B		= 0.0;
+	C		= 0.0;
+	D		= 0.0;
+	cT2		= tT2*(tU3-tU2);
+	cU2		= tU2*(tU3-tT2);
+	cU3		= tU3*(tU2-tT2);
+	bU1		= tU1*(tU3-tU2);
+	bU2		= tU2*(tU3-tU1);
+	bU3		= tU3*(tU2-tU1);
+	dT1		= a[p]*(a[gammaT1]/1000.0)*Power(tT1,3)/(tU3-tT1)/(tU2-tT1)/(tU1-tT1);
+	dU1		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU1/(tU1-tT1)+(1-a[p]))*tU1*(tU3-tU2)/ThetaU;
+	dU2		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU2/(tU2-tT1)+(1-a[p]))*tU2*(tU3-tU1)/ThetaU;
+	dU3		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU3/(tU3-tT1)+(1-a[p]))*tU3*(tU2-tU1)/ThetaU;
+	ThetaU	= (tU3-tU2)*(tU3-tU1)*(tU2-tU1);
+	for (k=1; k<=n; k++) {
+		tk		= t[0]-(tBac+(k-1)*tCap);
+		expT1	= Exp(-tk/tT1);
+		expT2	= Exp(-tk/tT2);
+		expU1	= Exp(-tk/tU1);
+		expU2	= Exp(-tk/tU2);
+		expU3	= Exp(-tk/tU3);
+		ST1		= SigmaT(a[rho],tT1,k);
+		ST2		= SigmaT(a[rho],tT2,k);
+		SW11	= SigmaW(a[rho],tT1,tU1,k);
+		SW22	= SigmaW(a[rho],tT2,tU2,k);
+		SZ11	= SigmaZ(a[rho],tT1,tU1,k);
+		SZ22	= SigmaZ(a[rho],tT2,tU2,k);
+		A += ST2 * (cT2*expT2 - cU2*expU2 + cU3*expU3);
+		B += ( (1-a[p])*ST2 + a[p]*(1-a[rho])*SW22 + a[p]*(a[gammaT2]+iota)/(a[gammaT2]-a[gammaU2]+iota)*SZ22 ) * ( expU3 - expU2 );
+		C += ST1 * ( dT1*expT1 +  dU1*expU1 - dU2*expU2 + dU3*expU3);
+		D += ( (1-a[rho])*SW11 + (a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SZ11 ) * (bU1*expU1 - bU2*expU2 + bU3*expU3) / ThetaU;
+*/		
+	for (k=1; k<=n; k++) {
+		tk		= tBac+(k-1)*tCap;
+		f += Y3InitialValue(t, a, tk, 0.0);
+	}
+//	A *= a[p] * (a[gammaT2]/1000.0+iota)/(tU2-tT2+iota) * tT2/(tU3-tT2);
+//	f = a[r2]*(tCap/t2)*tU2*tU3/(tU3-tU2)*(A+B) + a[r1]*(tCap/t1)*tU1*tU2*tU3/t2*(C+D);
+//	printf("t=%f,myY3=%f\n",t[0],f);
 	return f;
 }
 Double_t BFitNamespace::Y2 (Double_t *t, Double_t *a) {
@@ -683,16 +812,16 @@ Double_t BFitNamespace::Y2 (Double_t *t, Double_t *a) {
 //	y20 = amplitude * ( SigmaY2(a,tT1,tU1,tU2,N)*expU2N + ( AN * ( cT1*expT1N - cU1*expU1N + cU2*expU2N ) + BN * ( expU2N - expU1N ) ) ) / (1 - Exp(-tCyc/tU2) );
 	Double_t tNN[1] = {tCyc};
 //	y20 = 0;//myY2(tNN,a,tT1,tU1,tU2,N);
-	y20 = myY2(tNN,a,tT1,tU1,tU2,N);
+	y20 = myY2(tNN,a,N);
 // Background solution
-	y2 = y20 * Exp(-t[0]/tU2);
+	y2 = Y2InitialValue(t, a, 0.0, y20);
 // Background period
 	if (0 <= t[0] && t[0] < tBac) {
 		f = y2;
 	}
 // Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
-		f = y2 + myY2(t,a,tT1,tU1,tU2,n);
+		f = y2 + myY2(t,a,n);
 /*
 // Untrapped populations during trapping
 //		Y2 = amplitude * ( SigmaY2(a,tT1,tU1,tU2,n)*expU2n + ( An * ( cT1*expT1n - cU1*expU1n + cU2*expU2n ) + Bn * ( expU2n - expU1n ) ) );
@@ -710,50 +839,6 @@ Double_t BFitNamespace::Y2 (Double_t *t, Double_t *a) {
 		f = A + B;
 */
 	}
-	return f;
-}
-Double_t BFitNamespace::myY3 (Double_t *t, Double_t *a, Double_t tT1, Double_t tU1, Double_t tT2, Double_t tU2, Double_t tU3, Int_t n) {
-	using namespace BFitNamespace;
-	using namespace TMath;
-	static Double_t tk, expT1, expT2, expU1, expU2, expU3, ThetaU, ST1, SW11, SZ11, ST2, SW22, SZ22, bU1, bU2, bU3, cT2, cU2, cU3, dT1, dU1, dU2, dU3, A, B, C, D, f;
-	static Int_t k;
-	extern Double_t iota, tCap, tBac, t1, t2;
-	f		= 0.0;
-	A		= 0.0;
-	B		= 0.0;
-	C		= 0.0;
-	D		= 0.0;
-	cT2		= tT2*(tU3-tU2);
-	cU2		= tU2*(tU3-tT2);
-	cU3		= tU3*(tU2-tT2);
-	bU1		= tU1*(tU3-tU2);
-	bU2		= tU2*(tU3-tU1);
-	bU3		= tU3*(tU2-tU1);
-	dT1		= a[p]*(a[gammaT1]/1000.0)*Power(tT1,3)/(tU3-tT1)/(tU2-tT1)/(tU1-tT1);
-	dU1		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU1/(tU1-tT1)+(1-a[p]))*tU1*(tU3-tU2)/ThetaU;
-	dU2		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU2/(tU2-tT1)+(1-a[p]))*tU2*(tU3-tU1)/ThetaU;
-	dU3		= (a[p]*(a[gammaT1]/1000.0)*tT1*tU3/(tU3-tT1)+(1-a[p]))*tU3*(tU2-tU1)/ThetaU;
-	ThetaU	= (tU3-tU2)*(tU3-tU1)*(tU2-tU1);
-	for (k=1; k<=n; k++) {
-		tk		= t[0]-tBac-(k-1)*tCap;
-		expT1	= Exp(-tk/tT1);
-		expT2	= Exp(-tk/tT2);
-		expU1	= Exp(-tk/tU1);
-		expU2	= Exp(-tk/tU2);
-		expU3	= Exp(-tk/tU3);
-		ST1		= SigmaT(a[rho],tT1,k);
-		ST2		= SigmaT(a[rho],tT2,k);
-		SW11	= SigmaW(a[rho],tT1,tU1,k);
-		SW22	= SigmaW(a[rho],tT2,tU2,k);
-		SZ11	= SigmaZ(a[rho],tT1,tU1,k);
-		SZ22	= SigmaZ(a[rho],tT2,tU2,k);
-		A += ST2 * (cT2*expT2 - cU2*expU2 + cU3*expU3);
-		B += ( (1-a[p])*ST2 + a[p]*(1-a[rho])*SW22 + a[p]*(a[gammaT2]+iota)/(a[gammaT2]-a[gammaU2]+iota)*SZ22 ) * ( expU3 - expU2 );
-		C += ST1 * ( dT1*expT1 +  dU1*expU1 - dU2*expU2 + dU3*expU3);
-		D += ( (1-a[rho])*SW11 + (a[gammaT1]+iota)/(a[gammaT1]-a[gammaU1]+iota)*SZ11 ) * (bU1*expU1 - bU2*expU2 + bU3*expU3) / ThetaU;
-	}
-	A *= a[p] * (a[gammaT2]/1000.0+iota)/(tU2-tT2+iota) * tT2/(tU3-tT2);
-	f = a[r2]*(tCap/t2)*tU2*tU3/(tU3-tU2)*(A+B) + a[r1]*(tCap/t1)*tU1*tU2*tU3/t2*(C+D);
 	return f;
 }
 Double_t BFitNamespace::Y3 (Double_t *t, Double_t *a) {
@@ -778,17 +863,22 @@ Double_t BFitNamespace::Y3 (Double_t *t, Double_t *a) {
 	N = Ceil((tCyc-tBac)/tCap);
 	Double_t tNN[1] = {tCyc};
 //	y30 = 0;
-	y30 = myY3(tNN,a,tT1,tU1,tT2,tU2,tU3,N);
+//	y30 = myY3(tNN,a,tT1,tT2,tU1,tU2,tU3,N);
+	y30 = myY3(tNN,a,N);
+//	printf("y30 = %f\n",y30);
 // Background solution
-	y3 = y30 * Exp(-t[0]/tU3);
+//	y3 = y30*Exp(-t[0]/tU3);
+	y3 = Y3InitialValue(t, a, 0.0, y30);
 // Background period
 	if (0 <= t[0] && t[0] < tBac) {
 		f = y3;
 	}
 // Trapping period
 	if (tBac <= t[0] && t[0] <= tCyc) {
-		f = y3 + myY3(t,a,tT1,tU1,tT1,tU2,tU3,n);
+//		f = y3 + myY3(t,a,tT1,tT2,tU1,tU2,tU3,n);
+		f = y3 + myY3(t,a,n);
 	}
+//	printf("t=%f,Y3=%f\n",t[0],f);
 	return f;
 }
 /*
