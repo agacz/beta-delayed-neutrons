@@ -32,6 +32,7 @@
 //#include "include/bdn.h"
 //#include "include/sb135.h"
 //#include "bdn_cases.h"
+#include "bdn_histograms.h"
 #include "CSVtoStruct.h"
 #include "BFitModel.h"
 using namespace std;
@@ -43,8 +44,11 @@ Int_t		iBDNCaseIndex, iBFitCaseIndex; // global index to identify case
 Int_t		iNumStructs_BDN, iNumStructs_BFit;
 Double_t	tCap, tBac, tCyc;
 Double_t	t1, t2, t3;
+Double_t	iota; // tiny number for avoiding divide-by-0
 bool		b134sbFlag = 0;
 
+void HistPrep (TH1*, Int_t);
+void FuncPrep (TF1*, Double_t*, Int_t, Int_t);
 int BFit ();
 
 // MAIN FUNCTION
@@ -71,29 +75,28 @@ int main (int argc, char *argv[]) {
 }
 
 int BFit () {
-	
-	cout << "BFit started." << endl;
+
+// Timer for debugging code
+	clock_t timer, timerStart, timerStop;
+	timerStart = clock();
+	cout << "BFit started. Timer = "<< (Float_t)timerStart/CLOCKS_PER_SEC << " sec." << endl;
 	int iReturn = SUCCESS;
 	using namespace BFitNamespace;
 	using namespace TMath;
 	TFile *outfile = new TFile("BFit.root","recreate");
 	
-// Timer for debugging code
-	clock_t timer;
-	
 // Local copies of the relevant metadata structs
 	BDNCase_t  stBDNCase = stBDNCases[iBDNCaseIndex];
 	BFitCase_t stBFitCase = stBFitCases[iBFitCaseIndex];
 	//printf("Bdn Case index = %d, BFit case index = %d\n", iBDNCaseIndex, iBFitCaseIndex);
-	
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Ad-hoc modifications of parameters, for rapid iteration
-// Include final values in the CSV files
-///////////////////////////////////////////////////////////////////////////////////////////////
-//	stBFitCase.pbToggle[dt = 500;
-//	stBFitCase. = 0;
-//	stBFitCase.pdSeed[dt] = 500;
-//	stBFitCase.iBinWidth = 500;
+	//	bookGlobals();
+	iota	= 0.000000000001;
+	tCap	= 1000.0 * stBDNCase.dCaptureTime;	// Time between BPT captures (ms)
+	tBac	= 1000.0 * stBDNCase.dBackgroundTime; // Time spent in background measurment, per cycle (ms)
+	tCyc	= 1000.0 * stBDNCase.dCycleTime;	// Time between BPT ejections (ms)
+	t1		= 1000.0 * stBDNCase.dLifetime1[0]; // radioactive lifetime (1/e) in ms
+	t2		= 1000.0 * stBDNCase.dLifetime2[0]; // radioactive lifetime (1/e) in ms
+	t3		= 1000.0 * stBDNCase.dLifetime3[0]; // radioactive lifetime (1/e) in ms
 	
 	TString separator = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	cout << endl << separator << endl;
@@ -109,45 +112,61 @@ int BFit () {
 	cout << stBDNCase.pcsSpecies2Name; printf(" halflife\t\t= %10.3f s  (lifetime %10.3f s)\n", stBDNCase.dHalfLife2[0], stBDNCase.dLifetime2[0]);
 	cout << stBDNCase.pcsSpecies3Name; printf(" halflife\t\t= %10.3f s  (lifetime %10.3f s)\n", stBDNCase.dHalfLife3[0], stBDNCase.dLifetime3[0]);
 	cout << separator << endl;
-	if (stBFitCase.bDoFit) cout << "Doing fit with option string: " << stBFitCase.pcsOptions << endl;
-	else cout << "Not fitting! Drawing functions using parameter seed values." << endl;
-	cout << separator << endl;
 	
 // Get histogram from ROOT file
 	TFile *f = new TFile(stBDNCase.pcsFilePath);
 	TH1D *h	= (TH1D*)f->Get(stBFitCase.pcsHistName);
-	Double_t dRebinFactor = stBFitCase.iBinWidth/(h->GetBinWidth(1));
+	Double_t dBinWidth		= stBFitCase.pdSeed[0];
+	Double_t dNBins			= tCyc/dBinWidth;// # of bins covered by funtion  //h->GetNbinsX();
+	Double_t pointsPerBin	= 5;
+	Double_t nPoints		= pointsPerBin * dNBins;
+	Double_t dRebinFactor	= dBinWidth/(h->GetBinWidth(1));
+//	Double_t dRebinFactor = stBFitCase.iBinWidth/(h->GetBinWidth(1));
+	Double_t binZero  = (1.0/dRebinFactor)*(0.0  - tCycMin) + 1.0;
+	Double_t binCapt  = (1.0/dRebinFactor)*(tBac - tCycMin) + 1.0;
+	Double_t binCycle = (1.0/dRebinFactor)*(tCyc - tCycMin) + 1.0;
 	TH1D *h1	= (TH1D*)h->Rebin(dRebinFactor,stBFitCase.pcsHistName);
 	TH1D *h2	= (TH1D*)h->Rebin(dRebinFactor,stBFitCase.pcsHistName);
+	cout << "HISTOGRAM REBINNED" << endl;
+	cout << "   Number of hist bins = " << dNBins << endl;
+	cout << "   Number of fn points = " << nPoints << endl;
+	cout << "   Number of pts/bin   = " << pointsPerBin << endl;
+	cout << separator << endl;
+	if (stBFitCase.bDoFit) cout << "Doing fit with option string: " << stBFitCase.pcsOptions << endl;
+	else cout << "Not fitting! Drawing functions using parameter seed values." << endl;
+	cout << separator << endl;
 	
 // Define functions
 	Int_t nPars = stBFitCase.iNPars;
-	Double_t tMax	= 1000.0 * stBDNCase.dCycleTime;
+//	Double_t tMax	= 1000.0 * stBDNCase.dCycleTime;
 // Species populations
-	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, tMax, nPars);
-	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, tMax, nPars);
-	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, tMax, nPars);
-	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, tMax, nPars);
-	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, tMax, nPars);
-	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, tMax, nPars);
-	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, tMax, nPars);
-	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, tMax, nPars); // This one fits the data!
+	TF1 *fyDC	= new TF1("fyDC", yDC, 0.0, tCyc, nPars);
+	TF1 *fyT1	= new TF1("fyT1", yT1, 0.0, tCyc, nPars);
+	TF1 *fyT2	= new TF1("fyT2", yT2, 0.0, tCyc, nPars);
+	TF1 *fyT3	= new TF1("fyT3", yT3, 0.0, tCyc, nPars);
+	TF1 *fyU1	= new TF1("fyU1", yU1, 0.0, tCyc, nPars);
+	TF1 *fyU2	= new TF1("fyU2", yU2, 0.0, tCyc, nPars);
+	TF1 *fyU3	= new TF1("fyU3", yU3, 0.0, tCyc, nPars);
+//**************************************************************************
+// This one fits the data:
+	TF1 *fyAll	= new TF1("fyAll",yAll, 0.0, tCyc, nPars);
+//**************************************************************************
 // Beta rates to be used by TF1::Integral() and TF1::IntegralError()
-	TF1 *frDC	= new TF1("frDC", rDC, 0.0, tMax, nPars);
-	TF1 *frT1	= new TF1("frT1", rT1, 0.0, tMax, nPars);
-	TF1 *frT2	= new TF1("frT2", rT2, 0.0, tMax, nPars);
-	TF1 *frT3	= new TF1("frT3", rT3, 0.0, tMax, nPars);
-	TF1 *frU1	= new TF1("frU1", rU1, 0.0, tMax, nPars);
-	TF1 *frU2	= new TF1("frU2", rU2, 0.0, tMax, nPars);
-	TF1 *frU3	= new TF1("frU3", rU3, 0.0, tMax, nPars);
-	TF1 *frAll	= new TF1("frAll",rAll, 0.0, tMax, nPars);
+	TF1 *frDC	= new TF1("frDC", rDC, 0.0, tCyc, nPars);
+	TF1 *frT1	= new TF1("frT1", rT1, 0.0, tCyc, nPars);
+	TF1 *frT2	= new TF1("frT2", rT2, 0.0, tCyc, nPars);
+	TF1 *frT3	= new TF1("frT3", rT3, 0.0, tCyc, nPars);
+	TF1 *frU1	= new TF1("frU1", rU1, 0.0, tCyc, nPars);
+	TF1 *frU2	= new TF1("frU2", rU2, 0.0, tCyc, nPars);
+	TF1 *frU3	= new TF1("frU3", rU3, 0.0, tCyc, nPars);
+	TF1 *frAll	= new TF1("frAll",rAll, 0.0, tCyc, nPars);
 // Offset functions for plotting
-	TF1 *foT1	= new TF1("foT1", oT1, 0.0, tMax, nPars);
-	TF1 *foT2	= new TF1("foT2", oT2, 0.0, tMax, nPars);
-	TF1 *foT3	= new TF1("foT3", oT3, 0.0, tMax, nPars);
-	TF1 *foU1	= new TF1("foU1", oU1, 0.0, tMax, nPars);
-	TF1 *foU2	= new TF1("foU2", oU2, 0.0, tMax, nPars);
-	TF1 *foU3	= new TF1("foU3", oU3, 0.0, tMax, nPars);
+	TF1 *foT1	= new TF1("foT1", oT1, 0.0, tCyc, nPars);
+	TF1 *foT2	= new TF1("foT2", oT2, 0.0, tCyc, nPars);
+	TF1 *foT3	= new TF1("foT3", oT3, 0.0, tCyc, nPars);
+	TF1 *foU1	= new TF1("foU1", oU1, 0.0, tCyc, nPars);
+	TF1 *foU2	= new TF1("foU2", oU2, 0.0, tCyc, nPars);
+	TF1 *foU3	= new TF1("foU3", oU3, 0.0, tCyc, nPars);
 // Initiailize function to fit the data
 	char pcsLifetime1ParName[100]; sprintf(pcsLifetime1ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies1Name);
 	char pcsLifetime2ParName[100]; sprintf(pcsLifetime2ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies2Name);
@@ -156,23 +175,24 @@ int BFit () {
 	fyAll->SetParName(r1,"Rate 1");
 	fyAll->SetParName(r2,"Rate 2");
 	fyAll->SetParName(r3,"Rate 3");
-	fyAll->SetParName(p,"Capture eff");
-	fyAll->SetParName(rho,"Capture ret");
-	fyAll->SetParName(epsT,"T det eff");
-	fyAll->SetParName(epsU,"U det eff");
-	fyAll->SetParName(epsV,"V det eff");
-	fyAll->SetParName(epsW,"W det eff");
-	fyAll->SetParName(epsX,"X det eff");
-	fyAll->SetParName(epsY,"Y det eff");
+	fyAll->SetParName(p,"Capt eff");
+	fyAll->SetParName(rho,"Capt ret");
+	fyAll->SetParName(epsT,"T eff");
+	fyAll->SetParName(epsU,"U eff");
+	fyAll->SetParName(epsV,"V eff");
+	fyAll->SetParName(epsW,"W eff");
+	fyAll->SetParName(epsX,"X eff");
+	fyAll->SetParName(epsY,"Y eff");
+	fyAll->SetParName(epsZ,"Z eff");
 //	fyAll->SetParName(tau1,pcsLifetime1ParName);//"Lifetime 1");//pcsSpecies1ParName);
 //	fyAll->SetParName(tau2,pcsLifetime2ParName);//"Lifetime 2");//pcsSpecies2ParName);
 //	fyAll->SetParName(tau3,pcsLifetime3ParName);//"Lifetime 3");//pcsSpecies3ParName);
-	fyAll->SetParName(gammaT1,"T1 extra decay rate");
-	fyAll->SetParName(gammaT2,"T2 extra decay rate");
-	fyAll->SetParName(gammaT3,"T3 extra decay rate");
-	fyAll->SetParName(gammaU1,"U1 extra decay rate");
-	fyAll->SetParName(gammaU2,"U2 extra decay rate");
-	fyAll->SetParName(gammaU3,"U3 extra decay rate");
+	fyAll->SetParName(gammaT1,"T1 loss");
+	fyAll->SetParName(gammaT2,"T2 loss");
+	fyAll->SetParName(gammaT3,"T3 loss");
+	fyAll->SetParName(gammaU1,"U1 loss");
+	fyAll->SetParName(gammaU2,"U2 loss");
+	fyAll->SetParName(gammaU3,"U3 loss");
 	fyAll->SetParName(dt,"Bin width");
 	
 // Initial parameter values and initial step sizes
@@ -185,21 +205,13 @@ int BFit () {
 	err = stBFitCase.pdStep;
 	Int_t index;
 	
-//	bookGlobals();
-	tCap	= 1000.0 * stBDNCases[iBDNCaseIndex].dCaptureTime;	// Time between BPT captures (ms)
-	tBac	= 1000.0 * stBDNCases[iBDNCaseIndex].dBackgroundTime; // Time spent in background measurment, per cycle (ms)
-	tCyc	= 1000.0 * stBDNCases[iBDNCaseIndex].dCycleTime;	// Time between BPT ejections (ms)
-	t1		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime1[0]; // radioactive lifetime (1/e) in ms
-	t2		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime2[0]; // radioactive lifetime (1/e) in ms
-	t3		= 1000.0 * stBDNCases[iBDNCaseIndex].dLifetime3[0]; // radioactive lifetime (1/e) in ms
-	
 	fyAll->SetParameters(par);
 	fyAll->SetParErrors(err);
 // Print seed values that are assigned to the fit function
 	cout << "PARAMETER SEED VALUES" << endl << separator << endl;
-	cout << setw(34) << "Par name" << setw(10) << "Varying?" << "\t" << "Par init val and step" << endl << separator << endl;
+	cout << setw(14) << "Par name" << setw(10) << "Varying?" << "\t" << "Par init val and step" << endl << separator << endl;
 	for (index = 0; index < nPars; index++) {
-		cout << setw(34) << fyAll->GetParName(index) << setw(10) << tog[index] << "\t" << fyAll->GetParameter(index) << " +/- " << fyAll->GetParError(index) << endl;
+		cout << setw(14) << fyAll->GetParName(index) << setw(10) << tog[index] << "\t" << fyAll->GetParameter(index) << " +/- " << fyAll->GetParError(index) << endl;
 	}
 	cout << separator << endl;
 	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
@@ -303,27 +315,43 @@ int BFit () {
 	//	printf("\n");
 		
 	// Estimate # of betas detected and error
-		T1_integral = frT1->Integral( 0.0, tMax);
-		T2_integral = frT2->Integral( 0.0, tMax);
-		T3_integral = frT3->Integral( 0.0, tMax);
-		U1_integral = frU1->Integral( 0.0, tMax);
-		U2_integral = frU2->Integral( 0.0, tMax);
-		U3_integral = frU3->Integral( 0.0, tMax);
-		DC_integral = frDC->Integral( 0.0, tMax);
-		All_integral = frAll->Integral( 0.0, tMax);
+		T1_integral = frT1->Integral( 0.0, tCyc);
+		T2_integral = frT2->Integral( 0.0, tCyc);
+		T3_integral = frT3->Integral( 0.0, tCyc);
+		U1_integral = frU1->Integral( 0.0, tCyc);
+		U2_integral = frU2->Integral( 0.0, tCyc);
+		U3_integral = frU3->Integral( 0.0, tCyc);
+		DC_integral = frDC->Integral( 0.0, tCyc);
+		All_integral = frAll->Integral( 0.0, tCyc);
+		
+		timer = clock() - timer;
+		printf("\nIntegrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
+		
+		U1_integral_trap_empty = frU1->Integral( 0.0, tBac);
+		U2_integral_trap_empty = frU2->Integral( 0.0, tBac);
+		U3_integral_trap_empty = frU3->Integral( 0.0, tBac);
+		U1_integral_trap_full  = frU1->Integral( tBac, tCyc);
+		U2_integral_trap_full  = frU2->Integral( tBac, tCyc);
+		U3_integral_trap_full  = frU3->Integral( tBac, tCyc);
 		
 		Integral_sum = DC_integral + T1_integral + T2_integral + T3_integral + U1_integral + U2_integral + U3_integral;
 		
-		T1_integral_error = frT1->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		T2_integral_error = frT2->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		T3_integral_error = frT3->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		U1_integral_error = frU1->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		U2_integral_error = frU2->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		U3_integral_error = frU3->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		DC_integral_error = frDC->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
-		All_integral_error = frAll->IntegralError( 0.0, tMax, par, cov.GetMatrixArray() );
+		timer = clock() - timer;
+		printf("Other integrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
+		
+		T1_integral_error = frT1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T2_integral_error = frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T3_integral_error = frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U1_integral_error = frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U2_integral_error = frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U3_integral_error = frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		DC_integral_error = frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
 		
 		Integral_sum_error = Sqrt( Power(DC_integral_error,2.0) + Power(T1_integral_error,2.0) + Power(T2_integral_error,2.0) + Power(T3_integral_error,2.0) + Power(U1_integral_error,2.0) + Power(U2_integral_error,2.0) + Power(U3_integral_error,2.0) );
+		
+		timer = clock() - timer;
+		printf("Errors computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		
 		cout << endl << separator << endl;
 		printf("NUMBER OF BETAS DETECTED, by population:\n");
@@ -338,6 +366,13 @@ int BFit () {
 		cout << separator << endl;
 		printf("Sum of above = %f +/- %f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
 		printf("All integral = %f +/- %f\n", All_integral, All_integral_error);
+		cout << separator << endl;
+		printf("U1 with trap emtpy = %f; trap full = %f\n", U1_integral_trap_empty, U1_integral_trap_full);
+		printf("U2 with trap emtpy = %f; trap full = %f\n", U2_integral_trap_empty, U2_integral_trap_full);
+		printf("U3 with trap emtpy = %f; trap full = %f\n", U3_integral_trap_empty, U3_integral_trap_full);
+//		printf("All untrapped with trap empty = %f (bin %f to bin %f)\n", h1->Integral(binZero, binCapt-1) - par[DC]*tBac, binZero, binCapt);
+//		printf("All data area in histogram = %f\n", h1->Integral(binZero, binCycle-1));
+//		printf("All data area in histogram = %f\n", h1->Integral());
 		cout << separator << endl << endl;
 		
 	} // end if (stBFitCase.bDoFit)
@@ -359,7 +394,8 @@ int BFit () {
 	foU2->SetLineStyle(7);
 	foU3->SetLineStyle(7);
 	
-	Double_t nPoints = 1000.0 * stBDNCase.dCycleTime;
+//	Double_t nPoints = 2 * (1000.0 * stBDNCase.dCycleTime / dRebinFactor); // leading interger is number of points per bin
+// Now defined above
 	fyAll->SetNpx(nPoints);
 	foT1->SetNpx(nPoints);
 	foT2->SetNpx(nPoints);
@@ -386,14 +422,15 @@ int BFit () {
 	//Double_t xMax = h1->GetXaxis()->GetXmax();
 	Double_t yMin = par[DC]*par[dt];
 	Double_t yMax = h1->GetMaximum();
+//	printf("\nY Range is %f to %f\n\n",yMin,yMax);
 	Double_t yRange = yMax - yMin;
 	yMin = yMin - 0.05*yRange;
 	yMax = yMax + 0.05*yRange;
 	//printf("Range = (%f,%f)\n", yMin, yMax);
 	h1->GetYaxis()->SetRangeUser(yMin,yMax);
 //	h2->GetYaxis()->SetRangeUser(yMin,yMax);
-	h1->GetXaxis()->SetRangeUser(-1000,tMax+1000);
-//	h2->GetXaxis()->SetRangeUser(-1000,tMax+1000);
+	h1->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
+//	h2->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
 	
 	TLegend *leg_1 = new TLegend(0.13, 0.69, 0.32, 0.94);
 	leg_1->AddEntry(h1 , "Data");
@@ -503,7 +540,7 @@ int BFit () {
 		fyU3->SetNpx(nPoints);
 		
 		h2->GetYaxis()->SetRangeUser(0,yMax);
-		h2->GetXaxis()->SetRangeUser(-1000,tMax+1000);
+		h2->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
 		
 		TCanvas *c_decays_cyctime = new TCanvas("c_decays_cyctime","Decays versus cycle time",945,600);
 		h2->Draw();
@@ -542,95 +579,220 @@ int BFit () {
 		if (stBFitCase.bHasDDC) printf("DC entries:    %10d\n",(Int_t)h_DDC->GetEntries());
 		printf("Total entries: %10d\n",(Int_t)h1->GetEntries());
 		
-		if (stBFitCase.bHasVWXY) { // X and Y pops	
+		if (stBFitCase.bHasVWXY) { // used for Monte Carlo data where V, W, X, Y pops are known
 			
 			TH1D *h_DV1	= (TH1D*)f->Get("h_DV1_cyctime");
 			TH1D *h_DV2	= (TH1D*)f->Get("h_DV2_cyctime");
 			TH1D *h_DV3	= (TH1D*)f->Get("h_DV3_cyctime");
+			TH1D *h_DW1	= (TH1D*)f->Get("h_DW1_cyctime");
+			TH1D *h_DW2	= (TH1D*)f->Get("h_DW2_cyctime");
+			TH1D *h_DW3	= (TH1D*)f->Get("h_DW3_cyctime");
+			TH1D *h_DZ1	= (TH1D*)f->Get("h_DZ1_cyctime");
+			TH1D *h_DZ2	= (TH1D*)f->Get("h_DZ2_cyctime");
+			TH1D *h_DZ3	= (TH1D*)f->Get("h_DZ3_cyctime");
 			TH1D *h_DX2	= (TH1D*)f->Get("h_DX2_cyctime");
 			TH1D *h_DX3	= (TH1D*)f->Get("h_DX3_cyctime");
 			TH1D *h_DY2	= (TH1D*)f->Get("h_DY2_cyctime");
 			TH1D *h_DY3	= (TH1D*)f->Get("h_DY3_cyctime");
 			
-			h_DV1 ->Rebin(dRebinFactor);
+			HistPrep(h_DV1,dRebinFactor);
+			HistPrep(h_DV2,dRebinFactor);
+			HistPrep(h_DV3,dRebinFactor);
+			HistPrep(h_DW1,dRebinFactor);
+			HistPrep(h_DW2,dRebinFactor);
+			HistPrep(h_DW3,dRebinFactor);
+			HistPrep(h_DZ1,dRebinFactor);
+			HistPrep(h_DZ2,dRebinFactor);
+			HistPrep(h_DZ3,dRebinFactor);
+			HistPrep(h_DX2,dRebinFactor);
+			HistPrep(h_DX3,dRebinFactor);
+			HistPrep(h_DY2,dRebinFactor);
+			HistPrep(h_DY3,dRebinFactor);
+			
+/*			h_DV1 ->Rebin(dRebinFactor);
 			h_DV2 ->Rebin(dRebinFactor);
 			h_DV3 ->Rebin(dRebinFactor);
+			h_DW1 ->Rebin(dRebinFactor);
+			h_DW2 ->Rebin(dRebinFactor);
+			h_DW3 ->Rebin(dRebinFactor);
+			h_DZ1 ->Rebin(dRebinFactor);
+			h_DZ2 ->Rebin(dRebinFactor);
+			h_DZ3 ->Rebin(dRebinFactor);
 			h_DX2 ->Rebin(dRebinFactor);
 			h_DX3 ->Rebin(dRebinFactor);
 			h_DY2 ->Rebin(dRebinFactor);
 			h_DY3 ->Rebin(dRebinFactor);
 			
 			h_DV1->SetLineColor(kBlack);
-//			h_DX2->SetLineStyle(8);
-//			h_DY2->SetLineStyle(3);
 			h_DV2->SetLineColor(kBlack);
+			h_DV3->SetLineColor(kBlack);
 			h_DX2->SetLineColor(kBlack);
 			h_DY2->SetLineColor(kBlack);
-//			h_DX3->SetLineStyle(8);
-//			h_DY3->SetLineStyle(3);
-			h_DV3->SetLineColor(kBlack);
 			h_DX3->SetLineColor(kBlack);
 			h_DY3->SetLineColor(kBlack);
+*/			
+//			h_DX2->SetLineStyle(8);
+//			h_DY2->SetLineStyle(3);
+//			h_DX3->SetLineStyle(8);
+//			h_DY3->SetLineStyle(3);
 			
-			TH1D *h_DU2_1	= (TH1D*)h_DU2->Rebin(dRebinFactor,"h_DU2_1");
-			TH1D *h_DU3_1	= (TH1D*)h_DU3->Rebin(dRebinFactor,"h_DU3_1");
+			TH1D *h_DU2_1	= (TH1D*)h_DU2->Rebin(1,"h_DU2_1");
+			TH1D *h_DU3_1	= (TH1D*)h_DU3->Rebin(1,"h_DU3_1");
 			
 			h_DU2_1->SetLineStyle(1);
 			h_DU3_1->SetLineStyle(1);
 			h_DU2_1->SetLineColor(kBlack);
 			h_DU3_1->SetLineColor(kBlack);
 			
-			TF1 *fyV1	= new TF1("fyV1", yV1, 0.0, tMax, nPars);
-			TF1 *fyV2	= new TF1("fyV2", yV2, 0.0, tMax, nPars);
-			TF1 *fyV3	= new TF1("fyV3", yV3, 0.0, tMax, nPars);
-			TF1 *fyX2	= new TF1("fyX2", yX2, 0.0, tMax, nPars);
-			TF1 *fyX3	= new TF1("fyX3", yX3, 0.0, tMax, nPars);
-			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, tMax, nPars);
-			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, tMax, nPars);
+			TF1 *fyV1	= new TF1("fyV1", yV1, 0.0, tCyc, nPars);
+			TF1 *fyV2	= new TF1("fyV2", yV2, 0.0, tCyc, nPars);
+			TF1 *fyV3	= new TF1("fyV3", yV3, 0.0, tCyc, nPars);
+			TF1 *fyW1	= new TF1("fyW1", yW1, 0.0, tCyc, nPars);
+			TF1 *fyW2	= new TF1("fyW2", yW2, 0.0, tCyc, nPars);
+			TF1 *fyW3	= new TF1("fyW3", yW3, 0.0, tCyc, nPars);
+			TF1 *fyZ1	= new TF1("fyZ1", yZ1, 0.0, tCyc, nPars);
+			TF1 *fyZ2	= new TF1("fyZ2", yZ2, 0.0, tCyc, nPars);
+			TF1 *fyZ3	= new TF1("fyZ3", yZ3, 0.0, tCyc, nPars);
+			TF1 *fyX2	= new TF1("fyX2", yX2, 0.0, tCyc, nPars);
+			TF1 *fyX3	= new TF1("fyX3", yX3, 0.0, tCyc, nPars);
+			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, tCyc, nPars);
+			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, tCyc, nPars);
 			
-			fyV1->SetParameters(par);
+			FuncPrep(fyV1,par,nPoints,kGreen);
+			FuncPrep(fyV2,par,nPoints,kBlue);
+			FuncPrep(fyV3,par,nPoints,kRed);
+			FuncPrep(fyW1,par,nPoints,kGreen);
+			FuncPrep(fyW2,par,nPoints,kBlue);
+			FuncPrep(fyW3,par,nPoints,kRed);
+			FuncPrep(fyZ1,par,nPoints,kGreen);
+			FuncPrep(fyZ2,par,nPoints,kBlue);
+			FuncPrep(fyZ3,par,nPoints,kRed);
+			FuncPrep(fyX2,par,nPoints,kBlue);
+			FuncPrep(fyX3,par,nPoints,kRed);
+			FuncPrep(fyY2,par,nPoints,kBlue);
+			FuncPrep(fyY3,par,nPoints,kRed);
+/*			fyV1->SetParameters(par);
 			fyV2->SetParameters(par);
 			fyV3->SetParameters(par);
+			fyW1->SetParameters(par);
+			fyW2->SetParameters(par);
+			fyW3->SetParameters(par);
+			fyZ1->SetParameters(par);
+			fyZ2->SetParameters(par);
+			fyZ3->SetParameters(par);
+			fyX2->SetParameters(par);
+			fyX3->SetParameters(par);
+			fyY2->SetParameters(par);
+			fyY3->SetParameters(par);
+			
 			fyV1->SetNpx(nPoints);
 			fyV2->SetNpx(nPoints);
 			fyV3->SetNpx(nPoints);
-			fyX2->SetParameters(par);
-			fyX3->SetParameters(par);
+			fyW1->SetNpx(nPoints);
+			fyW2->SetNpx(nPoints);
+			fyW3->SetNpx(nPoints);
+			fyZ1->SetNpx(nPoints);
+			fyZ2->SetNpx(nPoints);
+			fyZ3->SetNpx(nPoints);
 			fyX2->SetNpx(nPoints);
 			fyX3->SetNpx(nPoints);
-			fyY2->SetParameters(par);
-			fyY3->SetParameters(par);
 			fyY2->SetNpx(nPoints);
 			fyY3->SetNpx(nPoints);
 			
 			fyV1->SetLineColor(kGreen);
 			fyV2->SetLineColor(kBlue);
-			fyX2->SetLineColor(kBlue);
-			fyY2->SetLineColor(kBlue);
 			fyV3->SetLineColor(kRed);
+			fyW1->SetLineColor(kGreen);
+			fyW2->SetLineColor(kBlue);
+			fyW3->SetLineColor(kRed);
+			fyZ1->SetLineColor(kGreen);
+			fyZ2->SetLineColor(kBlue);
+			fyZ3->SetLineColor(kRed);
+			fyX2->SetLineColor(kBlue);
 			fyX3->SetLineColor(kRed);
+			fyY2->SetLineColor(kBlue);
 			fyY3->SetLineColor(kRed);
+*/			
 			
 			TCanvas *c_feeding = new TCanvas("c_feeding","Decays from pops X and Y versus cycle time",945,600);
-			h_DU3_1->Draw();
+			h1->Draw();
+//			h_DU3_1->Draw("SAME");
 //			fyU2->Draw("SAME");
 //			fyU3->Draw("SAME");
-//			fyV3->Draw("SAME");
-//			h_DV1->Draw("SAME");
-//			h_DV2->Draw("SAME");
-//			fyV1->Draw("SAME");
-//			fyV2->Draw("SAME");
-//			h_DV3->Draw("SAME");
+			h_DV3->Draw("SAME");
+			fyV3->Draw("SAME");
+			h_DV1->Draw("SAME");
+			h_DV2->Draw("SAME");
+			fyV1->Draw("SAME");
+			fyV2->Draw("SAME");
 //			h_DX2->Draw("SAME");
 //			h_DX3->Draw("SAME");
 //			fyX2->Draw("SAME");
 //			fyX3->Draw("SAME");
-			h_DY2->Draw("SAME");
-			h_DY3->Draw("SAME");
-			fyY2->Draw("SAME");
-			fyY3->Draw("SAME");
+//			h_DY2->Draw("SAME");
+//			h_DY3->Draw("SAME");
+//			fyY2->Draw("SAME");
+//			fyY3->Draw("SAME");
 //			h_DU2_1->Draw("SAME");
 			outfile->WriteTObject(c_feeding);
+			
+			TCanvas *c_Ti = new TCanvas("c_Ti","Decays from T pops versus cycle time",945,600);
+//			h1->Draw();
+//			fyT2->Draw();
+			fyT2->Draw();
+			fyT3->Draw("SAME");
+			fyT1->Draw("SAME");
+			h_DT1->Draw("SAME");
+			h_DT2->Draw("SAME");
+			h_DT3->Draw("SAME");
+			outfile->WriteTObject(c_Ti);
+			
+			TCanvas *c_Vi = new TCanvas("c_Vi","Decays from V pops versus cycle time",945,600);
+//			h1->Draw();
+//			fyV2->Draw();
+			fyV2->Draw();
+			fyV3->Draw("SAME");
+			fyV1->Draw("SAME");
+			h_DV1->Draw("SAME");
+			h_DV2->Draw("SAME");
+			h_DV3->Draw("SAME");
+			outfile->WriteTObject(c_Vi);
+			
+			TCanvas *c_Wi = new TCanvas("c_Wi","Decays from W pops versus cycle time",945,600);
+//			h1->Draw();
+			fyW2->Draw();
+			fyW3->Draw("SAME");
+			fyW1->Draw("SAME");
+			h_DW1->Draw("SAME");
+			h_DW2->Draw("SAME");
+			h_DW3->Draw("SAME");
+			outfile->WriteTObject(c_Wi);
+			
+			TCanvas *c_Zi = new TCanvas("c_Zi","Decays from Z pops versus cycle time",945,600);
+//			h1->Draw();
+			fyZ2->Draw();
+			fyZ3->Draw("SAME");
+			fyZ1->Draw("SAME");
+			h_DZ1->Draw("SAME");
+			h_DZ2->Draw("SAME");
+			h_DZ3->Draw("SAME");
+			outfile->WriteTObject(c_Zi);
+			
+			TCanvas *c_Xi = new TCanvas("c_Xi","Decays from X pops versus cycle time",945,600);
+//			h1->Draw();
+			fyX3->Draw();
+			fyX2->Draw("SAME");
+			h_DX2->Draw("SAME");
+			h_DX3->Draw("SAME");
+			outfile->WriteTObject(c_Xi);
+			
+			TCanvas *c_Yi = new TCanvas("c_Yi","Decays from Y pops versus cycle time",945,600);
+//			h1->Draw();
+			fyY3->Draw();
+			fyY2->Draw("SAME");
+			h_DY2->Draw("SAME");
+			h_DY3->Draw("SAME");
+			outfile->WriteTObject(c_Yi);
 			
 		} // end if (has_VWXY == 1)
 		
@@ -642,11 +804,22 @@ int BFit () {
 //	if (stBFitCase.bHasVXWY)	outfile->WriteTObject(c_feeding);
 	outfile->Close();
 	
-	
-	
-	cout << "BFit done." << endl << endl;
+	timerStop = clock();
+	cout << "BFit done. Timer = " << (Float_t)timerStop/CLOCKS_PER_SEC << " sec." << endl;
+	cout << "Elapsed time = " << (Float_t)(timerStop-timerStart)/CLOCKS_PER_SEC << " sec." << endl << endl;
 	
 	return iReturn;
+}
+
+void HistPrep (TH1 *h, Int_t rebin) {
+	h->Rebin(rebin);
+	h->SetLineColor(kBlack);
+}
+
+void FuncPrep (TF1 *f, Double_t *pars, Int_t nPoints, Int_t color) {
+	f->SetParameters(pars);
+	f->SetNpx(nPoints);
+	f->SetLineColor(color);
 }
 
 //int find_struct_index (void *p, char* pcsSearchString, int numStructs, int struct_size ) {
