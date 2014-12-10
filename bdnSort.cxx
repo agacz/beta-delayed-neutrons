@@ -847,7 +847,7 @@ int main(int argc, char *argv[]) {
 					tdc_ch = *p;
 					*p++;
 					x = int(*p & 0x00ffffff); // take only the 24-bit data word
-					if (x & 0x0080000) x -= 0x00ffffff; // test for neg value
+					if (x & 0x00800000) x -= 0x00ffffff; // test for neg value
 						// if neg then you need to shift because the leading 1 in 24-bit
 						// is not leading in 32-bit; the shift is by "-0x00ffffff"
 					if (tdc_ch==1) {
@@ -904,7 +904,7 @@ int main(int argc, char *argv[]) {
 					tdc_ch = *p;
 					*p++;
 					x = int(*p & 0x00ffffff); // take only the 24-bit data word
-					if (x & 0x0080000) x -= 0x00ffffff; // test for neg value
+					if (x & 0x00800000) x -= 0x00ffffff; // test for neg value
 						// if neg then you need to shift because the leading 1 in 24-bit
 						// is not leading in 32-bit; the shift is by "-0x00ffffff"
 					if (tdc_ch==1) {
