@@ -743,7 +743,7 @@ Double_t BFitNamespace::Y3InitialValue (Double_t *t, Double_t *a, Double_t t0, D
 	
 	Double_t u10, u20;
 //	y20		= V2(tp,a) + W2(tp,a) + X2(tp,a) + Y2(tp,a) + Z2(tp,a);
-	y20		= Y2(tp,a);
+//	y20		= Y2(tN,a);
 //	y20		= 0.0;
 //	u10 = V1(tp,a) + W1(tp,a) + Z1(tp,a);
 //	u20 = V2(tp,a) + W2(tp,a) + Z2(tp,a) + X2(tp,a) + Y2(tp,a);
@@ -892,7 +892,7 @@ Double_t BFitNamespace::myY3 (Double_t *t, Double_t *a, Int_t n) {
 	static Double_t tT1, tT2, tU1, tU2, tU3;
 	static Int_t k;
 	extern Double_t iota, tCap, tBac, tCyc, t1, t2, t3;
-	if (t[0] < tBac || t[0] > tCyc) return 0.0;
+	if (t[0] < tBac || t[0] > tCyc) f=0.0;
 	else {
 		f	= 0.0;
 		tT1 = 1.0 / ( 1.0/t1 + a[gammaT1]/1000.0 ); // net variable lifetime (1/e) in ms
@@ -940,8 +940,9 @@ Double_t BFitNamespace::myY3 (Double_t *t, Double_t *a, Int_t n) {
 //		A *= a[p] * (a[gammaT2]/1000.0+iota)/(tU2-tT2+iota) * tT2/(tU3-tT2);
 //		f = a[r2]*(tCap/t2)*tU2*tU3/(tU3-tU2)*(A+B) + a[r1]*(tCap/t1)*tU1*tU2*tU3/t2*(C+D);
 //		printf("t=%f,myY3=%f\n",t[0],f);
-		return f;
 	}
+	if ((int)t[0]%10000==0 && t[0] != 246000.0) printf("t=%8f, myY3(t)=%8f\n", t[0], f);
+	return f;
 }
 Double_t BFitNamespace::Y2 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
@@ -1044,16 +1045,17 @@ Double_t BFitNamespace::Y3 (Double_t *t, Double_t *a) {
 	u10 = V1(tNN,a) + W1(tNN,a) + Z1(tNN,a);
 	u20 = V2(tNN,a) + W2(tNN,a) + Z2(tNN,a) + X2(tNN,a) + Y2(tNN,a);
 	y30 = myY3(tNN,a,N)/(1-Exp(-tCyc/tU3));
-//	printf("y30 = %8f\n",y30);
+	printf("y30 = %8f\n",y30);
 //	printf("y30 = %f\n",y30);
 // Background solution
 //	y3 = 0.0;
-//	y3 = y30*Exp(-t[0]/tU3);
+	y3 = y30*Exp(-t[0]/tU3);
 //	y3 = Y3InitialValue(t, a, 0.0, y30);
-	y3 = 
-		y30 * Exp(-t[0]/tU3) + 
-		u20 * tU2/t2 * tU3/(tU3-tU2) * ( Exp(-t[0]/tU3) - Exp(-t[0]/tU2) ) + 
-		u10 * tU1/t1 * tU2/t2 * tU3/ThetaU * ( tU1 * (tU3-tU2) * Exp(-t[0]/tU1) - tU2 * (tU3-tU1) * Exp(-t[0]/tU2) + tU3 * (tU2-tU1) * Exp(-t[0]/tU3) );
+//	y3 = 
+//		y30 * Exp(-t[0]/tU3) + 
+//		u20 * tU2/t2 * tU3/(tU3-tU2) * ( Exp(-t[0]/tU3) - Exp(-t[0]/tU2) ) + 
+//		u10 * tU1/t1 * tU2/t2 * tU3/ThetaU * ( tU1 * (tU3-tU2) * Exp(-t[0]/tU1) - tU2 * (tU3-tU1) * Exp(-t[0]/tU2) + tU3 * (tU2-tU1) * Exp(-t[0]/tU3) );
+	if (t[0] == 0.0) printf("t = 0, Y3 = %f\n", y3);
 // Background period
 	if (0 <= t[0] && t[0] < tBac) {
 		f = y3;
@@ -1066,6 +1068,7 @@ Double_t BFitNamespace::Y3 (Double_t *t, Double_t *a) {
 //	printf("t=%f,Y3=%f\n",t[0],f);
 //	printf("y30 = %8f, u20 = %8f, u10 = %8f\n", y30, u20, u10);
 //	printf("Expect 1.0: %f\n",Y3InitialValue(t,a,t[0],1.0));
+	if (t[0] == 0.0) printf("t = 0, f (Y3) = %f\n", f);
 	return f;
 }
 /*

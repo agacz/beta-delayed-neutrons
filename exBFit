@@ -1,0 +1,31 @@
+#!/bin/bash
+
+bash transposeMetadata # make sure the metadata files are up to date
+
+./BFit BMC_0009 BMC_0009
+#./BFit BMC_0008 BMC_0008
+#./BFit BMC_0007 BMC_0007
+#./BFit BMC_0006 BMC_0006
+#./BFit BMC_0005 BMC_0005
+#./BFit BMC_0004 BMC_0004
+#./BFit BMC_0003 BMC_0003
+#./BFit BMC_0002 BMC_0002
+#./BFit BMC_0001 BMC_0001
+#./BFit BFitMC1 MonteCarlo1
+#./BFit BFitMC MonteCarlo1
+#./BFit 137i07 137i07
+#./BFit 134sb01 134sb01
+#./BFit 134sb02 134sb02
+#./BFit 134sb0103 134sb0103
+#./BFit 134sb01 134sb01Br
+#./BFit 134sb02 134sb02Br
+#./BFit 134sb03 134sb03Br
+#./BFit 134sb0103 134sb0103Br
+#./BFit 134sb01 134sb01CE
+#./BFit 134sb02 134sb02CE
+#./BFit 134sb03 134sb03CE
+#./BFit 134sb0103 134sb0103CE
+#./BFit 134sb02 134sb02BG
+#./BFit 134sb02 134sb02BG_2MeV
+#./BFit 134sb0103 134sb0103BG
+#./BFit 134sb0103 134sb0103BG_2MeV
