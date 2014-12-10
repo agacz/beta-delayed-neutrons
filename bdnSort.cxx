@@ -136,7 +136,14 @@
 //	  2) "Integral" -- After the event loop, integrate the h_tof_LT/LR/BT/BR spectra over the relevant ranges.
 //	The histos and the counters are incremented under the same cuts, so their exact agreement is a confirmation that things are working correctly.
 //  Sort code now reports net recoils which are intended to be correct/final!
-//
+// 2014-06-17
+//	Adding h_CE_vs_cycle_time for a new TOF range (8-1000ns) to measure the conversion electrons in 134sb cases.
+//	This includes updating the histos header and source.
+// 2014-09-09
+//	Adding h_bg_vs_cycle_time for beta-gammas.
+//	Adding h_dE-E_vs_cycle_time for deltaE-E's.
+// 2014-10-27
+//	Fixing bdn.tof_LT, etc. Had put them under beta-recoil cuts between 0515 and 0527. Now moving them back out, above bdn_Tree->Fill().
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1121,6 +1128,10 @@ int main(int argc, char *argv[]) {
 				ha_R_mcpSum_corr->Fill(a_R_mcpSum_corr);
 				bdn.R_mcpX		= (a_R_mcpC_corr + a_R_mcpD_corr - a_R_mcpA_corr - a_R_mcpB_corr)/a_R_mcpSum_corr;
 				bdn.R_mcpY		= (a_R_mcpA_corr + a_R_mcpD_corr - a_R_mcpB_corr - a_R_mcpC_corr)/a_R_mcpSum_corr;
+				bdn.tof_LT		= t_T_mcp - bdn.t_L_dE - LT_zeroTime[0];
+				bdn.tof_LR		= t_R_mcp - bdn.t_L_dE - LR_zeroTime[0];
+				bdn.tof_BT		= t_T_mcp - bdn.t_B_dE - BT_zeroTime[0];
+				bdn.tof_BR		= t_R_mcp - bdn.t_B_dE - BR_zeroTime[0];
 				bdn.event_good	=  event_good;
 				bdn.event 		=  n_trig;
 				bdn.run 		=  n_run;
@@ -1252,13 +1263,21 @@ int main(int argc, char *argv[]) {
 					ht_B_dEdiff	->Fill(t_B_dEa-t_B_dEb);
 					ht_B_dE		->Fill(bdn.t_B_dE);
 					ht_B_dEmin	->Fill(TMath::Min(t_B_dEa,t_B_dEb));
-					if (t_B_E > -100) ht_B_dE_E->Fill(t_B_E-bdn.t_B_dE);
+					if (t_B_E > -100) {
+						ht_B_dE_E->Fill(t_B_E-bdn.t_B_dE);
+						h_B_dEE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+						h_dEE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					}
 				}
 				if (t_L_dEa > -100 && t_L_dEb > -100) {
 					ht_L_dEdiff	->Fill(t_L_dEa-t_L_dEb);
 					ht_L_dE		->Fill(bdn.t_L_dE);
 					ht_L_dEmin	->Fill(TMath::Min(t_L_dEa,t_L_dEb));
-					if (t_L_E > -100) ht_L_dE_E->Fill(t_L_E-bdn.t_L_dE);
+					if (t_L_E > -100) {
+						ht_L_dE_E->Fill(t_L_E-bdn.t_L_dE);
+						h_L_dEE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+						h_dEE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					}
 				}
 				
 				bdn_Tree->Fill();
@@ -1277,7 +1296,7 @@ int main(int argc, char *argv[]) {
 // LT
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_L_dE && bdn.t_L_dE<t_dE_hi      && a_dE_lo<bdn.a_L_dEsum &&     t_mcp_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum) {
 					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) {
-						bdn.tof_LT	= t_T_mcp - bdn.t_L_dE - LT_zeroTime[0];
+// 2014-10-27						bdn.tof_LT	= t_T_mcp - bdn.t_L_dE - LT_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'T', bdn.tof_LT); // need times in us
 						z1			= stBDNCase.dTopGridDistance;
 						t2			= 0.001 * (bdn.tof_LT - 0.5 + randgen->Rndm()); // need times in us
@@ -1315,6 +1334,10 @@ int main(int argc, char *argv[]) {
 							   h_zero_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nZeroTOFCount[LT]		+= 1.0;
 							if (s_capt_state == 1) metadata.nZeroTOFBkgdCount[LT]	+= 1.0;
+						}
+						if ( 8.0 < bdn.tof_LT && bdn.tof_LT < 1000.0) { // Conversion electron TOF range for 134-Sb
+							 h_T_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+							   h_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
 						}
 						if ( tof_lowTOF_lo < bdn.tof_LT && bdn.tof_LT < tof_lowTOF_hi) {
 							h_LT_lowTOF_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
@@ -1365,7 +1388,7 @@ int main(int argc, char *argv[]) {
 // LR
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_L_dE && bdn.t_L_dE<t_dE_hi      && a_dE_lo<bdn.a_L_dEsum &&     t_mcp_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum) {
 					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) {
-						bdn.tof_LR	= t_R_mcp - bdn.t_L_dE - LR_zeroTime[0];
+// 2014-10-27						bdn.tof_LR	= t_R_mcp - bdn.t_L_dE - LR_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'R', bdn.tof_LR); // need times in us
 						z1			= stBDNCase.dRightGridDistance;
 						t2			= 0.001 * (bdn.tof_LR - 0.5 + randgen->Rndm()); // need times in us
@@ -1403,6 +1426,10 @@ int main(int argc, char *argv[]) {
 							   h_zero_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nZeroTOFCount[LR]		+= 1.0;
 							if (s_capt_state == 1) metadata.nZeroTOFBkgdCount[LR]	+= 1.0;
+						}
+						if ( 8.0 < bdn.tof_LR && bdn.tof_LR < 1000.0) { // Conversion electron TOF range for 134-Sb
+							 h_R_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+							   h_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
 						}
 						if ( tof_lowTOF_lo < bdn.tof_LR && bdn.tof_LR < tof_lowTOF_hi) {
 							h_LR_lowTOF_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
@@ -1453,7 +1480,7 @@ int main(int argc, char *argv[]) {
 // BTbb
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_B_dE && bdn.t_B_dE<t_dE_hi      && a_dE_lo<bdn.a_B_dEsum &&     t_mcp_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum) {
 					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) {
-						bdn.tof_BT	= t_T_mcp - bdn.t_B_dE - BT_zeroTime[0];
+// 2014-10-27						bdn.tof_BT	= t_T_mcp - bdn.t_B_dE - BT_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'T', bdn.tof_BT); // need times in us
 						z1			= stBDNCase.dTopGridDistance;
 						t2			= 0.001 * (bdn.tof_BT - 0.5 + randgen->Rndm()); // need times in us
@@ -1491,6 +1518,10 @@ int main(int argc, char *argv[]) {
 							   h_zero_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nZeroTOFCount[BT]		+= 1.0;
 							if (s_capt_state == 1) metadata.nZeroTOFBkgdCount[BT]	+= 1.0;
+						}
+						if ( 8.0 < bdn.tof_BT && bdn.tof_BT < 1000.0) { // Conversion electron TOF range for 134-Sb
+							 h_T_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+							   h_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
 						}
 						if ( tof_lowTOF_lo < bdn.tof_BT && bdn.tof_BT < tof_lowTOF_hi) {
 							h_BT_lowTOF_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
@@ -1543,7 +1574,7 @@ int main(int argc, char *argv[]) {
 					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) {
 //						if (s_capt_state == 0){      h_tof->Fill(bdn.tof_BR);      h_tof_BR->Fill(bdn.tof_BR); }
 //						if (s_capt_state == 1){ h_bkgd_tof->Fill(bdn.tof_BR); h_bkgd_tof_BR->Fill(bdn.tof_BR); }
-						bdn.tof_BR	= t_R_mcp - bdn.t_B_dE - BR_zeroTime[0];
+// 2014-10-27						bdn.tof_BR	= t_R_mcp - bdn.t_B_dE - BR_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'R', bdn.tof_BR); // need times in us
 						z1			= stBDNCase.dRightGridDistance;
 						t2			= 0.001 * (bdn.tof_BR - 0.5 + randgen->Rndm()); // need times in us
@@ -1582,6 +1613,10 @@ int main(int argc, char *argv[]) {
 							   h_zero_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nZeroTOFCount[BR]		+= 1.0;
 							if (s_capt_state == 1) metadata.nZeroTOFBkgdCount[BR]	+= 1.0;
+						}
+						if ( 8.0 < bdn.tof_BR && bdn.tof_BR < 1000.0) { // Conversion electron TOF range for 134-Sb
+							 h_R_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
+							   h_CE_vs_cycle_time_observed->Fill(s_ms_since_eject);
 						}
 						if ( tof_lowTOF_lo < bdn.tof_BR && bdn.tof_BR < tof_lowTOF_hi) {
 							h_BR_lowTOF_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
@@ -1693,6 +1728,12 @@ int main(int argc, char *argv[]) {
 				ha_sgnl_bg_LT	->Fill(a_T_ge); // ADC
 				he_sgnl_bg_LT	->Fill(e_T_ge); // keV
 				he_sgnl_bg		->Fill(e_T_ge); // keV
+				h_LT_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_T_ge > 2000.0) {
+					h_LT_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==0 && t_dE_lo<bdn.t_L_dE && a_dE_lo<bdn.a_L_dEsum && 0 < (t_R_ge-bdn.t_L_dE) && (t_R_ge-bdn.t_L_dE) < 1000) {
 				ha_bg_LR		->Fill(a_R_ge); // ADC
@@ -1701,6 +1742,12 @@ int main(int argc, char *argv[]) {
 				ha_sgnl_bg_LR	->Fill(a_R_ge); // ADC
 				he_sgnl_bg_LR	->Fill(e_R_ge); // keV
 				he_sgnl_bg		->Fill(e_R_ge); // keV
+				h_LR_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_R_ge > 2000.0) {
+					h_LR_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==0 && t_dE_lo<bdn.t_B_dE && a_dE_lo<bdn.a_B_dEsum && 0 < (t_T_ge-bdn.t_B_dE) && (t_T_ge-bdn.t_B_dE) < 1000) {
 				ha_bg_BT		->Fill(a_T_ge); // ADC
@@ -1709,6 +1756,12 @@ int main(int argc, char *argv[]) {
 				ha_sgnl_bg_BT	->Fill(a_T_ge); // ADC
 				he_sgnl_bg_BT	->Fill(e_T_ge); // keV
 				he_sgnl_bg		->Fill(e_T_ge); // keV
+				h_BT_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_T_ge > 2000.0) {
+					h_BT_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==0 && t_dE_lo<bdn.t_B_dE && a_dE_lo<bdn.a_B_dEsum && 0 < (t_R_ge-bdn.t_B_dE) && (t_R_ge-bdn.t_B_dE) < 1000) {
 				ha_bg_BR		->Fill(a_R_ge); // ADC
@@ -1717,6 +1770,12 @@ int main(int argc, char *argv[]) {
 				ha_sgnl_bg_BR	->Fill(a_R_ge); // ADC
 				he_sgnl_bg_BR	->Fill(e_R_ge); // keV
 				he_sgnl_bg		->Fill(e_R_ge); // keV
+				h_BR_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_R_ge > 2000.0) {
+					h_BR_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==1 && t_dE_lo<bdn.t_L_dE && a_dE_lo<bdn.a_L_dEsum && 0 < (t_T_ge-bdn.t_L_dE) && (t_T_ge-bdn.t_L_dE) < 1000) {
 				ha_bg_LT		->Fill(a_T_ge); // ADC
@@ -1725,6 +1784,12 @@ int main(int argc, char *argv[]) {
 				ha_bkgd_bg_LT	->Fill(a_T_ge); // ADC
 				he_bkgd_bg_LT	->Fill(e_T_ge); // keV
 				he_bkgd_bg		->Fill(e_T_ge); // keV
+				h_LT_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_T_ge > 2000.0) {
+					h_LT_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==1 && t_dE_lo<bdn.t_L_dE && a_dE_lo<bdn.a_L_dEsum && 0 < (t_R_ge-bdn.t_L_dE) && (t_R_ge-bdn.t_L_dE) < 1000) {
 				ha_bg_LR		->Fill(a_R_ge); // ADC
@@ -1733,6 +1798,12 @@ int main(int argc, char *argv[]) {
 				ha_bkgd_bg_LR	->Fill(a_R_ge); // ADC
 				he_bkgd_bg_LR	->Fill(e_R_ge); // keV
 				he_bkgd_bg		->Fill(e_R_ge); // keV
+				h_LR_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_R_ge > 2000.0) {
+					h_LR_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==1 && t_dE_lo<bdn.t_B_dE && a_dE_lo<bdn.a_B_dEsum && 0 < (t_T_ge-bdn.t_B_dE) && (t_T_ge-bdn.t_B_dE) < 1000) {
 				ha_bg_BT		->Fill(a_T_ge); // ADC
@@ -1741,6 +1812,12 @@ int main(int argc, char *argv[]) {
 				ha_bkgd_bg_BT	->Fill(a_T_ge); // ADC
 				he_bkgd_bg_BT	->Fill(e_T_ge); // keV
 				he_bkgd_bg		->Fill(e_T_ge); // keV
+				h_BT_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_T_ge > 2000.0) {
+					h_BT_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			if (event_good==1 && s_capt_state==1 && t_dE_lo<bdn.t_B_dE && a_dE_lo<bdn.a_B_dEsum && 0 < (t_R_ge-bdn.t_B_dE) && (t_R_ge-bdn.t_B_dE) < 1000) {
 				ha_bg_BR		->Fill(a_R_ge); // ADC
@@ -1749,6 +1826,12 @@ int main(int argc, char *argv[]) {
 				ha_bkgd_bg_BR	->Fill(a_R_ge); // ADC
 				he_bkgd_bg_BR	->Fill(e_R_ge); // keV
 				he_bkgd_bg		->Fill(e_R_ge); // keV
+				h_BR_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				h_bg_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				if (e_R_ge > 2000.0) {
+					h_BR_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+					h_bg_gt2MeV_vs_cycle_time_observed->Fill(s_ms_since_eject);
+				}
 			}
 			
 //// LT-TOF
