@@ -1049,12 +1049,12 @@ Double_t BFitNamespace::Y3 (Double_t *t, Double_t *a) {
 //	printf("y30 = %f\n",y30);
 // Background solution
 //	y3 = 0.0;
-	y3 = y30*Exp(-t[0]/tU3);
+//	y3 = y30*Exp(-t[0]/tU3);
 //	y3 = Y3InitialValue(t, a, 0.0, y30);
-//	y3 = 
-//		y30 * Exp(-t[0]/tU3) + 
-//		u20 * tU2/t2 * tU3/(tU3-tU2) * ( Exp(-t[0]/tU3) - Exp(-t[0]/tU2) ) + 
-//		u10 * tU1/t1 * tU2/t2 * tU3/ThetaU * ( tU1 * (tU3-tU2) * Exp(-t[0]/tU1) - tU2 * (tU3-tU1) * Exp(-t[0]/tU2) + tU3 * (tU2-tU1) * Exp(-t[0]/tU3) );
+	y3 = 
+		y30 * Exp(-t[0]/tU3) + 
+		u20 * tU2/t2 * tU3/(tU3-tU2) * ( Exp(-t[0]/tU3) - Exp(-t[0]/tU2) ) + 
+		u10 * tU1/t1 * tU2/t2 * tU3/ThetaU * ( tU1 * (tU3-tU2) * Exp(-t[0]/tU1) - tU2 * (tU3-tU1) * Exp(-t[0]/tU2) + tU3 * (tU2-tU1) * Exp(-t[0]/tU3) );
 	if (t[0] == 0.0) printf("t = 0, Y3 = %f\n", y3);
 // Background period
 	if (0 <= t[0] && t[0] < tBac) {
