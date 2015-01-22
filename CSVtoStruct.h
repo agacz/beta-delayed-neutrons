@@ -33,8 +33,8 @@
 #define ERROR   1
 //#define DEBUG
 #define STRING_SIZE     4096
-#define FILE_ROWS_BDN     14 // number of structs in stBDNCases
-#define FILE_ROWS_BFit    7 // number of structs in stBFitCases
+#define FILE_ROWS_BDN     26 // number of structs in stBDNCases
+#define FILE_ROWS_BFit    17 // number of structs in stBFitCases
 
 struct BDNCase_t
 {
@@ -135,6 +135,7 @@ struct BFitCase_t
 	char bMonteCarlo;
 	char bHasDDC;
 	char bHasVWXY;
+	char bComputeOtherIntegrals;
 };
 
 //Public function prototypes

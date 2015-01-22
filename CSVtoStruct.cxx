@@ -693,11 +693,15 @@ int ParseToStruct_BFit (char *pcsLine, BFitCase_t *pstStruct) // change per stru
 	// HasCrazyAcronym
 	pcsResult = strtok(NULL,",");
 	pstStruct->bHasVWXY = atoi(pcsResult);
+	
+	// computeOtherIntegrals
+	pcsResult = strtok(NULL,",");
+	pstStruct->bComputeOtherIntegrals = atoi(pcsResult);
 
 #ifdef DEBUG
-	printf("Options = %s\nDoFit = %i\nMonteCarlo = %i\nHasDDC = %i\nHasVWXY = %i\n", 
+	printf("Options = %s\nDoFit = %i\nMonteCarlo = %i\nHasDDC = %i\nHasVWXY = %i\nComputeOtherIntegrals = %i\n", 
 		pstStruct->pcsOptions, pstStruct->bDoFit, pstStruct->bMonteCarlo, 
-		pstStruct->bHasDDC, pstStruct->bHasVWXY);
+		pstStruct->bHasDDC, pstStruct->bHasVWXY, pstStruct->bComputeOtherIntegrals);
 #endif
 
 	return iReturn;
