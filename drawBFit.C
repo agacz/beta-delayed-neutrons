@@ -1,14 +1,19 @@
 {
 	TFile *tfile = new TFile("BFit.root");
 	
-	Int_t test = 0;
+	Int_t test	= 0;
+	Int_t MC	= 1;
+	Int_t data	= 1;
 	
 	if (test) {
 		cTest->Close();
 		cTest->Draw();
 	}
-	
-	else {
+	else if (data) {
+		c_BFit->Close();
+		c_BFit->Draw();
+	}
+	else if (MC) {
 //		c_BFit->Close();
 //		c_BFit->Draw();
 //		c_feeding->Close();

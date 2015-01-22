@@ -2,11 +2,13 @@
 
 bash transposeMetadata # make sure the metadata files are up to date
 
-./BFit BMC_0009 BMC_0009
+#./BFit BMC_0011 BMC_0011
+#./BFit BMC_0010 BMC_0010
+#./BFit BMC_0009 BMC_0009
 #./BFit BMC_0008 BMC_0008
 #./BFit BMC_0007 BMC_0007
 #./BFit BMC_0006 BMC_0006
-#./BFit BMC_0005 BMC_0005
+./BFit BMC_0005 BMC_0005
 #./BFit BMC_0004 BMC_0004
 #./BFit BMC_0003 BMC_0003
 #./BFit BMC_0002 BMC_0002

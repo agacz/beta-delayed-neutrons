@@ -88,14 +88,14 @@ void BMonteCarlo () {
 	
 // Filename for simulation
 	TRandom3 *randgen = new TRandom3(2);
-	TFile *rootfile = new TFile("BMC_0009.root","RECREATE");
+	TFile *rootfile = new TFile("BMC_0011.root","RECREATE");
 // Injection parameters
     const Double_t rDC		= 0.000; // in 1/ms
     const Double_t r1		= 0.000; // in 1/ms
     const Double_t r2		= 0.100; // in 1/ms
-	const Double_t r3		= 0.100; // in 1/ms
+	const Double_t r3		= 0.000; // in 1/ms
 	const Double_t p		= 1.000;
-	const Double_t rho		= 1.000;
+	const Double_t rho		= 0.000;
 // Cycle parameters
 	const Long64_t	T_cycle	= 246000;//000;
 	const Long64_t	T_bkgd	= 101000;//000;
