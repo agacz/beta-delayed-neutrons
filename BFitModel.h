@@ -9,7 +9,8 @@
 
 namespace BFitNamespace {
 	
-	enum ParIndex { dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, epsZ, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
+	enum ParIndex { nCyc, dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, epsZ, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
+	// a[nCyc]	= number of cycles of data summed in histogram
 	// a[dt]	= bin width in ms
 	// a[DC]	= DC detection rate in cycles/ms
 	// a[r1]	= Species 1 injection rate in cycles/ms
@@ -32,16 +33,14 @@ namespace BFitNamespace {
 	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (1/s)
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
 	
-// Sums of many decaying terms
+// Helper functions
 	Double_t SigmaT		(Double_t, Double_t, Int_t);
 	Double_t SigmaW		(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaZ		(Double_t, Double_t, Double_t, Int_t);
-	Double_t SigmaY2	(Double_t*, Double_t, Double_t, Double_t, Int_t);
-	Double_t myY2		(Double_t*, Double_t*, Int_t);
-//	Double_t myY3		(Double_t*, Double_t*, Double_t, Double_t, Double_t, Double_t, Double_t, Int_t);
-	Double_t myY3		(Double_t*, Double_t*, Int_t);
 	Double_t Y2InitialValue (Double_t*, Double_t*, Double_t, Double_t);
+	Double_t Y2Trapping		(Double_t*, Double_t*, Int_t);
 	Double_t Y3InitialValue (Double_t*, Double_t*, Double_t, Double_t);
+	Double_t Y3Trapping		(Double_t*, Double_t*, Int_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);

@@ -116,7 +116,7 @@ int BFit () {
 // Get histogram from ROOT file
 	TFile *f = new TFile(stBDNCase.pcsFilePath);
 	TH1D *h	= (TH1D*)f->Get(stBFitCase.pcsHistName);
-	Double_t dBinWidth		= stBFitCase.pdSeed[0];
+	Double_t dBinWidth		= stBFitCase.pdSeed[dt];
 	Double_t dNBins			= tCyc/dBinWidth;// # of bins covered by funtion  //h->GetNbinsX();
 	Double_t pointsPerBin	= 5;
 	Double_t nPoints		= pointsPerBin * dNBins;
@@ -171,6 +171,7 @@ int BFit () {
 	char pcsLifetime1ParName[100]; sprintf(pcsLifetime1ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies1Name);
 	char pcsLifetime2ParName[100]; sprintf(pcsLifetime2ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies2Name);
 	char pcsLifetime3ParName[100]; sprintf(pcsLifetime3ParName,"%s radioactive lifetime (1/e)", stBDNCase.pcsSpecies3Name);
+	fyAll->SetParName(nCyc,"# Cyc's");
 	fyAll->SetParName(DC,"DC rate");
 	fyAll->SetParName(r1,"Rate 1");
 	fyAll->SetParName(r2,"Rate 2");
@@ -315,38 +316,39 @@ int BFit () {
 	//	printf("\n");
 		
 	// Estimate # of betas detected and error
-		T1_integral = frT1->Integral( 0.0, tCyc);
-		T2_integral = frT2->Integral( 0.0, tCyc);
-		T3_integral = frT3->Integral( 0.0, tCyc);
-		U1_integral = frU1->Integral( 0.0, tCyc);
-		U2_integral = frU2->Integral( 0.0, tCyc);
-		U3_integral = frU3->Integral( 0.0, tCyc);
-		DC_integral = frDC->Integral( 0.0, tCyc);
-		All_integral = frAll->Integral( 0.0, tCyc);
+		T1_integral = par[nCyc]*frT1->Integral( 0.0, tCyc);
+		T2_integral = par[nCyc]*frT2->Integral( 0.0, tCyc);
+		T3_integral = par[nCyc]*frT3->Integral( 0.0, tCyc);
+		U1_integral = par[nCyc]*frU1->Integral( 0.0, tCyc);
+		U2_integral = par[nCyc]*frU2->Integral( 0.0, tCyc);
+		U3_integral = par[nCyc]*frU3->Integral( 0.0, tCyc);
+		DC_integral = par[nCyc]*frDC->Integral( 0.0, tCyc);
+		All_integral = par[nCyc]*frAll->Integral( 0.0, tCyc);
+		Integral_sum = DC_integral + T1_integral + T2_integral + T3_integral + U1_integral + U2_integral + U3_integral;
 		
 		timer = clock() - timer;
 		printf("\nIntegrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		
-		U1_integral_trap_empty = frU1->Integral( 0.0, tBac);
-		U2_integral_trap_empty = frU2->Integral( 0.0, tBac);
-		U3_integral_trap_empty = frU3->Integral( 0.0, tBac);
-		U1_integral_trap_full  = frU1->Integral( tBac, tCyc);
-		U2_integral_trap_full  = frU2->Integral( tBac, tCyc);
-		U3_integral_trap_full  = frU3->Integral( tBac, tCyc);
+		if (stBFitCase.bComputeOtherIntegrals) {
+			U1_integral_trap_empty = par[nCyc]*frU1->Integral( 0.0, tBac);
+			U2_integral_trap_empty = par[nCyc]*frU2->Integral( 0.0, tBac);
+			U3_integral_trap_empty = par[nCyc]*frU3->Integral( 0.0, tBac);
+			U1_integral_trap_full  = par[nCyc]*frU1->Integral( tBac, tCyc);
+			U2_integral_trap_full  = par[nCyc]*frU2->Integral( tBac, tCyc);
+			U3_integral_trap_full  = par[nCyc]*frU3->Integral( tBac, tCyc);
+			
+			timer = clock() - timer;
+			printf("Other integrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
+		}
 		
-		Integral_sum = DC_integral + T1_integral + T2_integral + T3_integral + U1_integral + U2_integral + U3_integral;
-		
-		timer = clock() - timer;
-		printf("Other integrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
-		
-		T1_integral_error = frT1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		T2_integral_error = frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		T3_integral_error = frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U1_integral_error = frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U2_integral_error = frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U3_integral_error = frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		DC_integral_error = frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T1_integral_error = par[nCyc]*frT1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T2_integral_error = par[nCyc]*frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T3_integral_error = par[nCyc]*frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U1_integral_error = par[nCyc]*frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U2_integral_error = par[nCyc]*frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U3_integral_error = par[nCyc]*frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		DC_integral_error = par[nCyc]*frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		All_integral_error = par[nCyc]*frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
 		
 		Integral_sum_error = Sqrt( Power(DC_integral_error,2.0) + Power(T1_integral_error,2.0) + Power(T2_integral_error,2.0) + Power(T3_integral_error,2.0) + Power(U1_integral_error,2.0) + Power(U2_integral_error,2.0) + Power(U3_integral_error,2.0) );
 		
@@ -366,18 +368,22 @@ int BFit () {
 		cout << separator << endl;
 		printf("Sum of above = %f +/- %f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
 		printf("All integral = %f +/- %f\n", All_integral, All_integral_error);
-		cout << separator << endl;
-		printf("U1 with trap emtpy = %f; trap full = %f\n", U1_integral_trap_empty, U1_integral_trap_full);
-		printf("U2 with trap emtpy = %f; trap full = %f\n", U2_integral_trap_empty, U2_integral_trap_full);
-		printf("U3 with trap emtpy = %f; trap full = %f\n", U3_integral_trap_empty, U3_integral_trap_full);
-//		printf("All untrapped with trap empty = %f (bin %f to bin %f)\n", h1->Integral(binZero, binCapt-1) - par[DC]*tBac, binZero, binCapt);
-//		printf("All data area in histogram = %f\n", h1->Integral(binZero, binCycle-1));
-//		printf("All data area in histogram = %f\n", h1->Integral());
+		if (stBFitCase.bComputeOtherIntegrals) {
+			cout << separator << endl;
+			printf("U1 with trap emtpy = %f; trap full = %f\n", U1_integral_trap_empty, U1_integral_trap_full);
+			printf("U2 with trap emtpy = %f; trap full = %f\n", U2_integral_trap_empty, U2_integral_trap_full);
+			printf("U3 with trap emtpy = %f; trap full = %f\n", U3_integral_trap_empty, U3_integral_trap_full);
+//			printf("All untrapped with trap empty = %f (bin %f to bin %f)\n", h1->Integral(binZero, binCapt-1) - par[DC]*tBac, binZero, binCapt);
+//			printf("All data area in histogram = %f\n", h1->Integral(binZero, binCycle-1));
+//			printf("All data area in histogram = %f\n", h1->Integral());
+		}
 		cout << separator << endl << endl;
 		
 	} // end if (stBFitCase.bDoFit)
 	
 // Draw
+	Double_t yMin, yMax, yRange;
+
 	fyAll->SetLineColor(kBlack);
 	fyDC->SetLineColor(kBlack);
 	foT1->SetLineColor(kGreen);
@@ -420,10 +426,10 @@ int BFit () {
 	
 	//Double_t xMin = h1->GetXaxis()->GetXmin();
 	//Double_t xMax = h1->GetXaxis()->GetXmax();
-	Double_t yMin = par[DC]*par[dt];
-	Double_t yMax = h1->GetMaximum();
+	yMin = par[DC]*par[dt];
+	yMax = h1->GetMaximum();
 //	printf("\nY Range is %f to %f\n\n",yMin,yMax);
-	Double_t yRange = yMax - yMin;
+	yRange = yMax - yMin;
 	yMin = yMin - 0.05*yRange;
 	yMax = yMax + 0.05*yRange;
 	//printf("Range = (%f,%f)\n", yMin, yMax);
