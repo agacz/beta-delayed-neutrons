@@ -62,6 +62,8 @@
 2014-11-05
 	New program name: BMonteCarlo.
 	Adding Z populations.
+2014-01-25
+	Found big mistake: Z pops were never added to aggregate histos h_DUi_[] and h_D_[]. This affects all BMC runs through 0011.
 */
 
 #include <iostream>
@@ -88,7 +90,7 @@ void BMonteCarlo () {
 	
 // Filename for simulation
 	TRandom3 *randgen = new TRandom3(2);
-	TFile *rootfile = new TFile("BMC_0011.root","RECREATE");
+	TFile *rootfile = new TFile("BMC_0015.root","RECREATE");
 // Injection parameters
     const Double_t rDC		= 0.000; // in 1/ms
     const Double_t r1		= 0.000; // in 1/ms
@@ -99,17 +101,17 @@ void BMonteCarlo () {
 // Cycle parameters
 	const Long64_t	T_cycle	= 246000;//000;
 	const Long64_t	T_bkgd	= 101000;//000;
-	const Long64_t	T_capt	= 5000;//00;
-	const Int_t		T_step	= 500;
+	const Long64_t	T_capt	= 6000;//00;
+	const Int_t		T_step	= 100;
 	const Int_t 	nCycles = 100;
 // Decay parameters
 	const Double_t ln2		= 0.69314718056;
 	const Double_t t1		= 2490.0/ln2;//3592.0;
     const Double_t t2		= 24500.0/ln2;//34812.0;
     const Double_t t3		= 3.818*60000.0/ln2;//330493.0;
-	const Double_t gT1		= 1.0/10000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gT2		= 1.0/20000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gT3		= 1.0/30000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT1		= 0*1.0/10000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT2		= 0*1.0/20000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT3		= 0*1.0/30000.0; // non-radioactive decay rate (1/ms)
 	const Double_t gU1		= 0*1.0/40000.0; // non-radioactive decay rate (1/ms)
 	const Double_t gU2		= 0*1.0/50000.0; // non-radioactive decay rate (1/ms)
 	const Double_t gU3		= 0*1.0/60000.0; // non-radioactive decay rate (1/ms)
@@ -536,10 +538,10 @@ void BMonteCarlo () {
 		h_X3_realtime->SetBinContent(t_bin,X3);
 		h_Y2_realtime->SetBinContent(t_bin,Y2);
 		h_Y3_realtime->SetBinContent(t_bin,Y3);
-		h_U1_realtime->SetBinContent(t_bin,V1+W1);
-		h_U2_realtime->SetBinContent(t_bin,V2+W2+X2+Y2);
-		h_U3_realtime->SetBinContent(t_bin,V3+W3+X3+Y3);
-		h_A_realtime->SetBinContent(t_bin, T1+T2+T3 + V1+V2+V3 + W1+W2+W3 + X2+X3 + Y2+Y3);
+		h_U1_realtime->SetBinContent(t_bin,V1+W1+Z1);
+		h_U2_realtime->SetBinContent(t_bin,V2+W2+Z2+X2+Y2);
+		h_U3_realtime->SetBinContent(t_bin,V3+W3+Z3+X3+Y3);
+		h_A_realtime->SetBinContent(t_bin, T1+T2+T3 + V1+V2+V3 + W1+W2+W3 + Z1+Z2+Z3 + X2+X3 + Y2+Y3);
 		
 		h_DT1_realtime->SetBinContent(t_bin,DT1);
 		h_DT2_realtime->SetBinContent(t_bin,DT2);
@@ -557,15 +559,15 @@ void BMonteCarlo () {
 		h_DX3_realtime->SetBinContent(t_bin,DX3);
 		h_DY2_realtime->SetBinContent(t_bin,DY2);
 		h_DY3_realtime->SetBinContent(t_bin,DY3);
-		h_DU1_realtime->SetBinContent(t_bin,DV1+DW1);
-		h_DU2_realtime->SetBinContent(t_bin,DV2+DW2+DX2+DY2);
-		h_DU3_realtime->SetBinContent(t_bin,DV3+DW3+DX3+DY3);
+		h_DU1_realtime->SetBinContent(t_bin,DV1+DW1+DZ1);
+		h_DU2_realtime->SetBinContent(t_bin,DV2+DW2+DZ2+DX2+DY2);
+		h_DU3_realtime->SetBinContent(t_bin,DV3+DW3+DZ3+DX3+DY3);
 		
 //		if ((T_cycle + t - T_bkgd)%T_cycle == T_cycle-1) printf("t=%d: T1=%d, DT1=%d, T2=%d, DT2=%d, T3=%d, DT3=%d\n",t,T1,DT1,T2,DT2,T3,DT3);
 //		if ((T_cycle + t - T_bkgd)%T_cycle == 0        ) printf("t=%d: T1=%d, DT1=%d, T2=%d, DT2=%d, T3=%d, DT3=%d\n",t,T1,DT1,T2,DT2,T3,DT3);
 		
-		h_D_realtime->SetBinContent(  t_bin,DDC + DT1+DT2+DT3 + DV1+DV2+DV3+ DW1+DW2+DW3 + DX2+DX3 + DY2+DY3);
-		h_D_cyctime	->AddBinContent(cyc_bin,DDC + DT1+DT2+DT3 + DV1+DV2+DV3+ DW1+DW2+DW3 + DX2+DX3 + DY2+DY3);
+		h_D_realtime->SetBinContent(  t_bin,DDC + DT1+DT2+DT3 + DV1+DV2+DV3 + DW1+DW2+DW3 + DZ1+DZ2+DZ3 + DX2+DX3 + DY2+DY3);
+		h_D_cyctime	->AddBinContent(cyc_bin,DDC + DT1+DT2+DT3 + DV1+DV2+DV3 + DW1+DW2+DW3 + DZ1+DZ2+DZ3 + DX2+DX3 + DY2+DY3);
 		h_DDC_cyctime->AddBinContent(cyc_bin,DDC);
 		h_DT1_cyctime->AddBinContent(cyc_bin,DT1);
 		h_DT2_cyctime->AddBinContent(cyc_bin,DT2);
@@ -585,9 +587,9 @@ void BMonteCarlo () {
 //		h_DY1_cyctime->AddBinContent(cyc_bin,DY1);
 		h_DY2_cyctime->AddBinContent(cyc_bin,DY2);
 		h_DY3_cyctime->AddBinContent(cyc_bin,DY3);
-		h_DU1_cyctime->AddBinContent(cyc_bin,DV1+DW1);
-		h_DU2_cyctime->AddBinContent(cyc_bin,DV2+DW2+DX2+DY2);
-		h_DU3_cyctime->AddBinContent(cyc_bin,DV3+DW3+DX3+DY3);
+		h_DU1_cyctime->AddBinContent(cyc_bin,DV1+DW1+DZ1);
+		h_DU2_cyctime->AddBinContent(cyc_bin,DV2+DW2+DZ2+DX2+DY2);
+		h_DU3_cyctime->AddBinContent(cyc_bin,DV3+DW3+DZ3+DX3+DY3);
 		
 		//if (i==26000) i=1000000000;
 	} // Big Loop
