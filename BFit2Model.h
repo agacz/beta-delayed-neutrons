@@ -5,8 +5,6 @@
 #include "Rtypes.h"
 #include "TString.h"
 
-//void bookGlobals();
-
 namespace BFitNamespace {
 	
 	enum ParIndex { nCyc, dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, epsZ, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
@@ -34,27 +32,10 @@ namespace BFitNamespace {
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
 	
 // Function used to detect when the fitter changes the parameters
-	bool CompareParArrays	(const Double_t*, const Double_t*, size_t n, Double_t eps);
+	bool CompareParArrays (const Double_t*, const Double_t*, size_t n, Double_t eps);
 	void ComputeParameterDependentVars (Double_t*);
-	void ComputeTimeDependentVars (Double_t*, Double_t*);
-/*	
-// Try to make a functor class that holds state:
-	class T2functor {
-		public:
-			Double_t operator() (Double_t *x, Double_t *p) {
-				ComputeParameterDependentVars(p);
-				ComputeTimeDependentVars(x,p);
-				return Ttot(2,a,x[0]);
-			}
-			void UpdateParameterDepedentVars (Double_t *x, Double_t *p) {
-				ComputeParameterDependentVars(x,p);
-			}
-			void UpdateTimeDepedentVars (Double_t *x, Double_t *p) {
-				ComputeTimeDependentVars(x,p);
-			}
-		private:
-}	
-*/			 
+//	void ComputeTimeDependentVars (Double_t*, Double_t*);
+//	void ComputePopulations (Double_t*, Double_t*);
 	
 // Ion populations by type -- Each takes species number as first argument
 	Double_t Ttot		(Int_t, Double_t*, Double_t);
@@ -75,8 +56,8 @@ namespace BFitNamespace {
 	Double_t SigmaT			(Double_t, Double_t, Int_t);
 	Double_t SigmaW			(Double_t, Double_t, Double_t, Int_t);
 	Double_t SigmaZ			(Double_t, Double_t, Double_t, Int_t);
-	Double_t Y2Background	(Double_t, Double_t);
-	Double_t Y3Background	(Double_t, Double_t, Double_t);
+	Double_t Y2Background	(Double_t, Double_t, Double_t);
+	Double_t Y3Background	(Double_t, Double_t, Double_t, Double_t);
 	Double_t Y2InitialValue	(Double_t, Double_t*, Double_t, Double_t);
 	Double_t Y3InitialValue	(Double_t, Double_t*, Double_t, Double_t);
 	
@@ -155,11 +136,6 @@ namespace BFitNamespace {
 	Double_t oU3 (Double_t*, Double_t*);
 	
 }
-
-// Global variables to aid evaluation of functions
-//void bookGlobals();
-//Double_t	Y20 = 0.0;
-//Double_t cT1, cU1, cU2;
 
 // Variables to hold integrals of functions
 static Double_t T1_integral = 0.0;

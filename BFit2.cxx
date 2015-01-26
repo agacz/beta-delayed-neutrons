@@ -40,6 +40,8 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////
 // Global variables
 /////////////////////////////////////////////////////////////////////////////
+char parNames[30][5] = {"nCyc", "dt", "DC", "r1", "r2", "r3", "p", "rho", "epsT", "epsU", "epsV", "epsW", "epsX", "epsY", "epsZ", "gT1", "gT2", "gT3", "gU1", "gU2", "gU3"};
+
 // Structs
 BDNCase_t	stBDNCases[FILE_ROWS_BDN];
 BFitCase_t	stBFitCases[FILE_ROWS_BFit];
@@ -70,10 +72,10 @@ Double_t	ampY3fromV2, ampY3fromW2, ampY3fromZ2, ampY3fromX2, ampY3fromY2_ST1, am
 Double_t	V10, V20, V30, W10, W20, W30, Z10, Z20, Z30, X20, X30, Y20, Y30, U10, U20, U30; // initial value (t=0) for each pop
 // These change for every function call and are set in yAll()
 Int_t		nCap; // current injection number
-Double_t	tvar; // assumes value of t[0]
+//Double_t	tvar; // assumes value of t[0]
 Double_t	eU10, eU20, eU30; // decay from t=0 for background parts: exp(-t/tT1), ...
 Double_t	eT1nCap, eT2nCap, eT3nCap, eU1nCap, eU2nCap, eU3nCap; // decay from last injection for capture parts: exp(-(t-tB-(nCap-1)*tA)/tT1), ...
-//Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W2val, W3val, Z1val, Z2val, Z3val, X2val, X3val, Y2val, Y3val; // value of each pop
+Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W2val, W3val, Z1val, Z2val, Z3val, X2val, X3val, Y2val, Y3val; // value of each pop
 /////////////////////////////////////////////////////////////////////////////
 
 // Functions
@@ -105,7 +107,7 @@ int main (int argc, char *argv[]) {
 }
 
 int BFit () {
-
+	
 // Timer for debugging code
 	clock_t timer, timerStart, timerStop;
 	timerStart = clock();
@@ -119,7 +121,7 @@ int BFit () {
 	BDNCase_t  stBDNCase = stBDNCases[iBDNCaseIndex];
 	BFitCase_t stBFitCase = stBFitCases[iBFitCaseIndex];
 	//printf("Bdn Case index = %d, BFit case index = %d\n", iBDNCaseIndex, iBFitCaseIndex);
-
+	
 // Assign global variables
 	nPars	= stBFitCase.iNPars;
 	tCap	= 1000.0 * stBDNCase.dCaptureTime;	// Time between BPT captures (ms)
@@ -128,9 +130,6 @@ int BFit () {
 	t1		= 1000.0 * stBDNCase.dLifetime1[0]; // radioactive lifetime (1/e) in ms
 	t2		= 1000.0 * stBDNCase.dLifetime2[0]; // radioactive lifetime (1/e) in ms
 	t3		= 1000.0 * stBDNCase.dLifetime3[0]; // radioactive lifetime (1/e) in ms
-//	tZeroArg	= {0.0};
-//	tCycArg		= {tCyc};
-	nCapMax		= Ceil((tCyc-tBac)/tCap);
 	iota	= 0.000000000001;
 	
 // Print message
@@ -243,11 +242,14 @@ int BFit () {
 // Initialize global lastPar to values that guarantee computation of parameter-dependent variables in first eval of yAll
 	lastPar = new Double_t [nPars];
 	memcpy(lastPar,par,nPars*sizeof(Double_t));
-	printf("\n\n[lastPar = %f, %f, %f, ...]\n\n",lastPar[0],lastPar[1],lastPar[2]);
-	for (index = 0; index < nPars; index++) lastPar[index] = -1.0;
+//	printf("\n\n[lastPar = %f, %f, %f, ...]\n\n",lastPar[0],lastPar[1],lastPar[2]);
+//	for (index = 0; index < nPars; index++) lastPar[index] = -1.0;
+// Initialize parameter-dependent variables
+	BFitNamespace::ComputeParameterDependentVars(par);
 // Place initial par values into fitting function
 	fyAll->SetParameters(par);
 	fyAll->SetParErrors(err);
+	//if (stBFitCase.pbToggle[rho]) fyAll->SetParLimits(rho,0,1);
 // Print seed values that are assigned to the fit function
 	cout << "PARAMETER SEED VALUES" << endl << separator << endl;
 	cout << setw(14) << "Par name" << setw(10) << "Varying?" << "\t" << "Par init val and step" << endl << separator << endl;
@@ -306,7 +308,9 @@ int BFit () {
 			par[index] = fyAll->GetParameter(index);
 			err[index] = fyAll->GetParError(index);
 		}
+	// par is now up to date...
 	// Set other functions to parameter values from fit
+		BFitNamespace::ComputeParameterDependentVars(par);
 		fyDC	-> SetParameters(par);
 		fyT1	-> SetParameters(par);
 		fyT2	-> SetParameters(par);
@@ -548,17 +552,17 @@ int BFit () {
 		
 		h2->SetLineColor(kBlack);
 		if (stBFitCase.bHasDDC) h_DDC->SetLineColor(kBlack);
-		h_DT1->SetLineColor(kGreen);
-		h_DU1->SetLineColor(kGreen);
-		h_DT2->SetLineColor(kBlue);
-		h_DU2->SetLineColor(kBlue);
-		h_DT3->SetLineColor(kRed);
-		h_DU3->SetLineColor(kRed);
+//		h_DT1->SetLineColor(kGreen);
+//		h_DU1->SetLineColor(kGreen);
+//		h_DT2->SetLineColor(kBlue);
+//		h_DU2->SetLineColor(kBlue);
+//		h_DT3->SetLineColor(kRed);
+//		h_DU3->SetLineColor(kRed);
 		
 		if (stBFitCase.bHasDDC) h_DDC->SetLineStyle(7);
-		h_DU1->SetLineStyle(7);
-		h_DU2->SetLineStyle(7);
-		h_DU3->SetLineStyle(7);
+//		h_DU1->SetLineStyle(7);
+//		h_DU2->SetLineStyle(7);
+//		h_DU3->SetLineStyle(7);
 		
 		if (stBFitCase.bHasDDC) h_DDC->Rebin(dRebinFactor);
 		h_DT1->Rebin(dRebinFactor);
@@ -575,9 +579,9 @@ int BFit () {
 		fyU2->SetLineColor(kBlue);
 		fyU3->SetLineColor(kRed);
 		
-		fyU1->SetLineStyle(7);
-		fyU2->SetLineStyle(7);
-		fyU3->SetLineStyle(7);
+//		fyU1->SetLineStyle(7);
+//		fyU2->SetLineStyle(7);
+//		fyU3->SetLineStyle(7);
 		
 		fyT1->SetNpx(nPoints);
 		fyT2->SetNpx(nPoints);
@@ -589,33 +593,32 @@ int BFit () {
 		h2->GetYaxis()->SetRangeUser(0,yMax);
 		h2->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
 		
-		TCanvas *c_decays_cyctime = new TCanvas("c_decays_cyctime","Decays versus cycle time",945,600);
-		h2->Draw();
-		fyAll->Draw("SAME");
-		if (stBFitCase.bHasDDC) fyDC->Draw("SAME");
-		fyT1->Draw("SAME");
-		fyT2->Draw("SAME");
-		fyT3->Draw("SAME");
-		fyU1->Draw("SAME");
-		fyU2->Draw("SAME");
-		fyU3->Draw("SAME");
-		if (stBFitCase.bHasDDC) h_DDC->Draw("SAME");
-		h_DT1->Draw("SAME");
-		h_DT2->Draw("SAME");
-		h_DT3->Draw("SAME");
-		h_DU1->Draw("SAME");
-		h_DU2->Draw("SAME");
-		h_DU3->Draw("SAME");
-		
-		gPad->Update();
-		TPaveStats *stats_2 = (TPaveStats*)h2->FindObject("stats");
-		stats_2->SetX1NDC(.13);
-		stats_2->SetX2NDC(.32);
-		stats_2->SetY1NDC(.80);
-		stats_2->SetY2NDC(.88);
-		gPad->Update();
-		c_decays_cyctime->Modified();
-		outfile->WriteTObject(c_decays_cyctime);
+//		TCanvas *c_decays_cyctime = new TCanvas("c_decays_cyctime","Decays versus cycle time",945,600);
+//		h2->Draw();
+//		fyAll->Draw("SAME");
+//		if (stBFitCase.bHasDDC) fyDC->Draw("SAME");
+//		fyT1->Draw("SAME");
+//		fyT2->Draw("SAME");
+//		fyT3->Draw("SAME");
+//		fyU1->Draw("SAME");
+//		fyU2->Draw("SAME");
+//		fyU3->Draw("SAME");
+//		if (stBFitCase.bHasDDC) h_DDC->Draw("SAME");
+//		h_DT1->Draw("SAME");
+//		h_DT2->Draw("SAME");
+//		h_DT3->Draw("SAME");
+//		h_DU1->Draw("SAME");
+//		h_DU2->Draw("SAME");
+//		h_DU3->Draw("SAME");
+//		gPad->Update();
+//		TPaveStats *stats_2 = (TPaveStats*)h2->FindObject("stats");
+//		stats_2->SetX1NDC(.13);
+//		stats_2->SetX2NDC(.32);
+//		stats_2->SetY1NDC(.80);
+//		stats_2->SetY2NDC(.88);
+//		gPad->Update();
+//		c_decays_cyctime->Modified();
+//		outfile->WriteTObject(c_decays_cyctime);
 		
 		printf("T1 entries:    %10d\n",(Int_t)h_DT1->GetEntries());
 		printf("U1 entries:    %10d\n",(Int_t)h_DU1->GetEntries());
@@ -784,62 +787,95 @@ int BFit () {
 			outfile->WriteTObject(c_feeding);
 			
 			TCanvas *c_Ti = new TCanvas("c_Ti","Decays from T pops versus cycle time",945,600);
-//			h1->Draw();
-//			fyT2->Draw();
-			fyT2->Draw();
+			h_DT2->Draw();
+			h_DT1->Draw("SAME");
+			h_DT3->Draw("SAME");
+			fyT2->Draw("SAME");
 			fyT3->Draw("SAME");
 			fyT1->Draw("SAME");
-			h_DT1->Draw("SAME");
-			h_DT2->Draw("SAME");
-			h_DT3->Draw("SAME");
+			yMax = Max(Max(h_DT1->GetMaximum(),h_DT2->GetMaximum()),h_DT3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DT2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Ti);
 			
 			TCanvas *c_Vi = new TCanvas("c_Vi","Decays from V pops versus cycle time",945,600);
-//			h1->Draw();
-//			fyV2->Draw();
-			fyV2->Draw();
+			h_DV2->Draw();
+			h_DV1->Draw("SAME");
+			h_DV3->Draw("SAME");
+			fyV2->Draw("SAME");
 			fyV3->Draw("SAME");
 			fyV1->Draw("SAME");
-			h_DV1->Draw("SAME");
-			h_DV2->Draw("SAME");
-			h_DV3->Draw("SAME");
+			yMax = Max(Max(h_DV1->GetMaximum(),h_DV2->GetMaximum()),h_DV3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DV2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Vi);
 			
 			TCanvas *c_Wi = new TCanvas("c_Wi","Decays from W pops versus cycle time",945,600);
-//			h1->Draw();
-			fyW2->Draw();
+			h_DW2->Draw();
+			h_DW1->Draw("SAME");
+			h_DW3->Draw("SAME");
+			fyW2->Draw("SAME");
 			fyW3->Draw("SAME");
 			fyW1->Draw("SAME");
-			h_DW1->Draw("SAME");
-			h_DW2->Draw("SAME");
-			h_DW3->Draw("SAME");
+			yMax = Max(Max(h_DW1->GetMaximum(),h_DW2->GetMaximum()),h_DW3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DW2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Wi);
 			
 			TCanvas *c_Zi = new TCanvas("c_Zi","Decays from Z pops versus cycle time",945,600);
-//			h1->Draw();
-			fyZ2->Draw();
+			h_DZ2->Draw();
+			h_DZ1->Draw("SAME");
+			h_DZ3->Draw("SAME");
+			fyZ2->Draw("SAME");
 			fyZ3->Draw("SAME");
 			fyZ1->Draw("SAME");
-			h_DZ1->Draw("SAME");
-			h_DZ2->Draw("SAME");
-			h_DZ3->Draw("SAME");
+			yMax = Max(Max(h_DZ1->GetMaximum(),h_DZ2->GetMaximum()),h_DZ3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DZ2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Zi);
 			
 			TCanvas *c_Xi = new TCanvas("c_Xi","Decays from X pops versus cycle time",945,600);
-//			h1->Draw();
-			fyX3->Draw();
-			fyX2->Draw("SAME");
-			h_DX2->Draw("SAME");
+			h_DX2->Draw();
 			h_DX3->Draw("SAME");
+			fyX3->Draw("SAME");
+			fyX2->Draw("SAME");
+			yMax = Max(h_DX2->GetMaximum(),h_DX3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DX2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Xi);
 			
 			TCanvas *c_Yi = new TCanvas("c_Yi","Decays from Y pops versus cycle time",945,600);
-//			h1->Draw();
-			fyY3->Draw();
-			fyY2->Draw("SAME");
-			h_DY2->Draw("SAME");
+			h_DY2->Draw();
 			h_DY3->Draw("SAME");
+			fyY3->Draw("SAME");
+			fyY2->Draw("SAME");
+			yMax = Max(h_DY2->GetMaximum(),h_DY3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DY2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Yi);
+			
+			TCanvas *c_Ui = new TCanvas("c_Ui","Decays from U pops versus cycle time",945,600);
+			h_DU2->Draw();
+			h_DU1->Draw("SAME");
+			h_DU3->Draw("SAME");
+			fyU2->Draw("SAME");
+			fyU3->Draw("SAME");
+			fyU1->Draw("SAME");
+			yMax = Max(Max(h_DU1->GetMaximum(),h_DU2->GetMaximum()),h_DU3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DU2->GetYaxis()->SetRangeUser(yMin,yMax);
+			outfile->WriteTObject(c_Ui);
+			
+			
+			Double_t t1 = 20000;
+			printf("yU(3,a,%f) = %f\n",t1,yU(3,par,t1));
 			
 		} // end if (has_VWXY == 1)
 		
