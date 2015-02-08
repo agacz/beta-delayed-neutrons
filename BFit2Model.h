@@ -61,7 +61,17 @@ namespace BFitNamespace {
 	Double_t Y2InitialValue	(Double_t, Double_t*, Double_t, Double_t);
 	Double_t Y3InitialValue	(Double_t, Double_t*, Double_t, Double_t);
 	
-	
+	Double_t H_V1_Y2		(Double_t*, Double_t, Double_t);
+	Double_t H_W1_Y2		(Double_t*, Double_t, Double_t);
+	Double_t H_Z1_Y2_Zpart	(Double_t*, Double_t, Double_t);
+	Double_t H_Z1_Y2_Tpart	(Double_t*, Double_t, Double_t);
+	Double_t H_V2_Y3		(Double_t*, Double_t, Double_t);
+	Double_t H_W2_Y3		(Double_t*, Double_t, Double_t);
+	Double_t H_Z2_Y3_Zpart	(Double_t*, Double_t, Double_t);
+	Double_t H_Z2_Y3_Tpart	(Double_t*, Double_t, Double_t);
+	Double_t H_X2_Y3_Xpart	(Double_t*, Double_t, Double_t);
+	Double_t H_X2_Y3_Tpart	(Double_t*, Double_t, Double_t);
+	Double_t H_Y2_Y3		(Double_t*, Double_t, Double_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 /*	Double_t T1 (Double_t*, Double_t*);

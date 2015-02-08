@@ -62,17 +62,30 @@ Double_t	tT1, tT2, tT3, tU1, tU2, tU3; // modified lifetimes
 Double_t	eU1tCyc, eU2tCyc, eU3tCyc; // background decay at end of cycle: exp(-tCyc/tU1), ...
 Double_t	cT1, cU1, cU2, cZT2, cZU2, cZU3, cXT1, cXU2, cXU3, cYU1, cYU2, cYU3, ThetaU, ThetaY; // various products of lifetimes
 Double_t	ST1_1cap, SW11_1cap, SZ11_1cap, ST2_1cap, SW22_1cap, SZ12_1cap, SZ22_1cap; // specific values of the SigmaT, SigmaW, and SigmaZ functions
+Double_t	*ST1val, *ST2val, *ST3val;
+Double_t	*SV1val, *SV2val, *SV3val;
+Double_t	*SW1val, *SW2val, *SW3val;
+Double_t	*SZ1val, *SZ2val, *SZ3val;
+Double_t			 *SX2val, *SX3val;
+Double_t	*timeOfCapt; 
+Double_t	Gamma_T1_U2, Gamma_T2_U3;
+Double_t	Gamma_U1_U2, Gamma_U2_U3;
+Double_t	*I_V1_Y2, *I_V2_Y3;
+Double_t	*I_W1_Y2, *I_W2_Y3;
+Double_t	*I_Z1_Y2, *I_Z2_Y3;
+Double_t	*I_X1_Y2, *I_X2_Y3;
+Double_t			  *I_Y2_Y3;
+Double_t	*Y2InitialValues, *Y3InitialValues;
 Double_t	ampT1, ampT2, ampT3; // amplitudes of the T pops
 Double_t	ampV1, ampV2, ampV3; // amplitudes of the V pops
 Double_t	ampW1, ampW2, ampW3; // amplitudes of the W pops
 Double_t	ampZ1, ampZ2, ampZ3; // amplitudes of the Z pops
-Double_t	ampX2, ampX3;  // amplitudes of the X pops
-Double_t	ampY2ptA, ampY2ptB; // amplitudes for Y2
+Double_t		   ampX2, ampX3;  // amplitudes of the X pops
+Double_t		ampY2ptA, ampY2ptB; // amplitudes for Y2
 Double_t	ampY3fromV2, ampY3fromW2, ampY3fromZ2, ampY3fromX2, ampY3fromY2_ST1, ampY3fromY2_SW11, ampY3fromY2_SZ11; // amplitudes for Y3
 Double_t	V10, V20, V30, W10, W20, W30, Z10, Z20, Z30, X20, X30, Y20, Y30, U10, U20, U30; // initial value (t=0) for each pop
 // These change for every function call and are set in yAll()
 Int_t		nCap; // current injection number
-//Double_t	tvar; // assumes value of t[0]
 Double_t	eU10, eU20, eU30; // decay from t=0 for background parts: exp(-t/tT1), ...
 Double_t	eT1nCap, eT2nCap, eT3nCap, eU1nCap, eU2nCap, eU3nCap; // decay from last injection for capture parts: exp(-(t-tB-(nCap-1)*tA)/tT1), ...
 Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W2val, W3val, Z1val, Z2val, Z3val, X2val, X3val, Y2val, Y3val; // value of each pop
@@ -80,7 +93,7 @@ Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W
 
 // Functions
 void HistPrep (TH1*, Int_t);
-void FuncPrep (TF1*, Double_t*, Int_t, Int_t);
+void FuncPrep (TF1*, Double_t*, Int_t, Int_t, Int_t);
 int BFit ();
 
 // MAIN FUNCTION
@@ -123,6 +136,7 @@ int BFit () {
 	//printf("Bdn Case index = %d, BFit case index = %d\n", iBDNCaseIndex, iBFitCaseIndex);
 	
 // Assign global variables
+	Int_t k;
 	nPars	= stBFitCase.iNPars;
 	tCap	= 1000.0 * stBDNCase.dCaptureTime;	// Time between BPT captures (ms)
 	tBac	= 1000.0 * stBDNCase.dBackgroundTime; // Time spent in background measurment, per cycle (ms)
@@ -131,6 +145,54 @@ int BFit () {
 	t2		= 1000.0 * stBDNCase.dLifetime2[0]; // radioactive lifetime (1/e) in ms
 	t3		= 1000.0 * stBDNCase.dLifetime3[0]; // radioactive lifetime (1/e) in ms
 	iota	= 0.000000000001;
+	nCapMax	= Ceil((tCyc-tBac)/tCap);
+	//printf("nCapMax=%d\n",nCapMax);
+// Array to hold injection times
+	timeOfCapt	= new Double_t [nCapMax+1];
+	for (k=0; k<nCapMax+1; k++)
+		timeOfCapt[k] = tBac + k*tCap;
+// Arrays to hold the sigma values in each [index] tooth:
+// Zero index not used (+1 element), for notational consistency
+	ST1val	= new Double_t [nCapMax+1];
+	ST2val	= new Double_t [nCapMax+1];
+	ST3val	= new Double_t [nCapMax+1];
+	SV1val	= new Double_t [nCapMax+1];
+	SV2val	= new Double_t [nCapMax+1];
+	SV3val	= new Double_t [nCapMax+1];
+	SW1val	= new Double_t [nCapMax+1];
+	SW2val	= new Double_t [nCapMax+1];
+	SW3val	= new Double_t [nCapMax+1];
+	SZ1val	= new Double_t [nCapMax+1];
+	SZ2val	= new Double_t [nCapMax+1];
+	SZ3val	= new Double_t [nCapMax+1];
+	SX2val	= new Double_t [nCapMax+1];
+	SX3val	= new Double_t [nCapMax+1];
+	ST1val[0] = ST2val[0] = ST3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+	SV1val[0] = SV2val[0] = SV3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+	SW1val[0] = SW2val[0] = SW3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+	SZ1val[0] = SZ2val[0] = SZ3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+				SX2val[0] = SX3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+// Arrays to hold partial integrals of functions through [index] teeth:
+// Zero index used only as an initializer (+1 element),
+// but don't need an element for the last tooth (-1 element)
+// These are integrals of the feeding terms into the Y2 and Y3 populations
+	I_V1_Y2	= new Double_t [nCapMax];
+	I_W1_Y2	= new Double_t [nCapMax];
+	I_Z1_Y2	= new Double_t [nCapMax];
+	I_V2_Y3	= new Double_t [nCapMax];
+	I_W2_Y3	= new Double_t [nCapMax];
+	I_Z2_Y3	= new Double_t [nCapMax];
+	I_X2_Y3	= new Double_t [nCapMax];
+	I_Y2_Y3	= new Double_t [nCapMax];
+	I_V1_Y2[0] = I_V2_Y3[0] = 0.0; // zero index used as init value of zero
+	I_W1_Y2[0] = I_W2_Y3[0] = 0.0; // zero index used as init value of zero
+	I_Z1_Y2[0] = I_Z2_Y3[0] = 0.0; // zero index used as init value of zero
+				 I_X2_Y3[0] = 0.0; // zero index used as init value of zero
+				 I_Y2_Y3[0] = 0.0; // zero index used as init value of zero
+// Arrays to hold initial values of Y pops... I think these will be deprecated
+	Y2InitialValues	= new Double_t [nCapMax];
+	Y3InitialValues	= new Double_t [nCapMax];
+
 	
 // Print message
 	TString separator = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
@@ -240,7 +302,7 @@ int BFit () {
 	err = stBFitCase.pdStep;
 	Int_t index;
 // Initialize global lastPar to values that guarantee computation of parameter-dependent variables in first eval of yAll
-	lastPar = new Double_t [nPars];
+	lastPar	= new Double_t [nPars];
 	memcpy(lastPar,par,nPars*sizeof(Double_t));
 //	printf("\n\n[lastPar = %f, %f, %f, ...]\n\n",lastPar[0],lastPar[1],lastPar[2]);
 //	for (index = 0; index < nPars; index++) lastPar[index] = -1.0;
@@ -471,12 +533,12 @@ int BFit () {
 	
 	//Double_t xMin = h1->GetXaxis()->GetXmin();
 	//Double_t xMax = h1->GetXaxis()->GetXmax();
-	yMin = par[DC]*par[dt];
+	yMin = par[nCyc]*par[DC]*par[dt];
 	yMax = h1->GetMaximum();
 //	printf("\nY Range is %f to %f\n\n",yMin,yMax);
 	yRange = yMax - yMin;
 	yMin = yMin - 0.05*yRange;
-	yMax = yMax + 0.05*yRange;
+	yMax = yMax + 0.10*yRange;
 	//printf("Range = (%f,%f)\n", yMin, yMax);
 	h1->GetYaxis()->SetRangeUser(yMin,yMax);
 //	h2->GetYaxis()->SetRangeUser(yMin,yMax);
@@ -708,19 +770,19 @@ int BFit () {
 			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, tCyc, nPars);
 			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, tCyc, nPars);
 			
-			FuncPrep(fyV1,par,nPoints,kGreen);
-			FuncPrep(fyV2,par,nPoints,kBlue);
-			FuncPrep(fyV3,par,nPoints,kRed);
-			FuncPrep(fyW1,par,nPoints,kGreen);
-			FuncPrep(fyW2,par,nPoints,kBlue);
-			FuncPrep(fyW3,par,nPoints,kRed);
-			FuncPrep(fyZ1,par,nPoints,kGreen);
-			FuncPrep(fyZ2,par,nPoints,kBlue);
-			FuncPrep(fyZ3,par,nPoints,kRed);
-			FuncPrep(fyX2,par,nPoints,kBlue);
-			FuncPrep(fyX3,par,nPoints,kRed);
-			FuncPrep(fyY2,par,nPoints,kBlue);
-			FuncPrep(fyY3,par,nPoints,kRed);
+			FuncPrep(fyV1,par,nPoints,kGreen,9);
+			FuncPrep(fyV2,par,nPoints,kBlue,9);
+			FuncPrep(fyV3,par,nPoints,kRed,9);
+			FuncPrep(fyW1,par,nPoints,kGreen,2);
+			FuncPrep(fyW2,par,nPoints,kBlue,2);
+			FuncPrep(fyW3,par,nPoints,kRed,2);
+			FuncPrep(fyZ1,par,nPoints,kGreen,8);
+			FuncPrep(fyZ2,par,nPoints,kBlue,8);
+			FuncPrep(fyZ3,par,nPoints,kRed,8);
+			FuncPrep(fyX2,par,nPoints,kBlue,5);
+			FuncPrep(fyX3,par,nPoints,kRed,5);
+			FuncPrep(fyY2,par,nPoints,kBlue,1);
+			FuncPrep(fyY3,par,nPoints,kRed,1);
 /*			fyV1->SetParameters(par);
 			fyV2->SetParameters(par);
 			fyV3->SetParameters(par);
@@ -873,9 +935,81 @@ int BFit () {
 			h_DU2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Ui);
 			
+//			TF1 *fyT1copy;//	= new TF1("fyT1F", yT1, 0.0, tCyc, nPars);
+//			fyT1->Copy(fyTF1copy)
+//			FuncPrep(fyT1copy,par,nPoints,kBlack);
 			
-			Double_t t1 = 20000;
-			printf("yU(3,a,%f) = %f\n",t1,yU(3,par,t1));
+			
+			TCanvas *c_T1V1W1Z1X2 = new TCanvas("c_T1V1W1Z1X2","Feeding from T1",945,600);
+			h_DT1->Draw();
+			h_DV1->Draw("SAME");
+			h_DW1->Draw("SAME");
+			h_DZ1->Draw("SAME");
+			h_DX2->Draw("SAME");
+//			fyT1->SetLineAttributes(kBlack,2,1);
+			fyT1->Draw("SAME");
+			yMax = 0.0;
+			yMax = Max(yMax,h_DT1->GetMaximum());
+			yMax = Max(yMax,h_DW1->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DT1->GetYaxis()->SetRangeUser(yMin,yMax);
+			outfile->WriteTObject(c_T1V1W1Z1X2);
+			
+			TCanvas *c_T2V2W2Z2X3Y3 = new TCanvas("c_T2V2W2Z2X3Y3","Feeding from T2",945,600);
+			h_DT2->Draw();
+			h_DV2->Draw("SAME");
+			h_DW2->Draw("SAME");
+			h_DZ2->Draw("SAME");
+			h_DX3->Draw("SAME");
+			h_DY3->Draw("SAME");
+			fyT2->Draw("SAME");
+			fyV2->Draw("SAME");
+			fyW2->Draw("SAME");
+			fyZ2->Draw("SAME");
+			fyX3->Draw("SAME");
+			fyY3->Draw("SAME");
+			yMax = 0.0;
+			yMax = Max(yMax,h_DT2->GetMaximum());
+			yMax = Max(yMax,h_DV2->GetMaximum());
+			yMax = Max(yMax,h_DW2->GetMaximum());
+			yMax = Max(yMax,h_DZ2->GetMaximum());
+			yMax = Max(yMax,h_DX3->GetMaximum());
+			yMax = Max(yMax,h_DY3->GetMaximum());
+			yMax = Max(yMax,fyT2->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyV2->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyW2->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyZ2->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyX3->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyY3->GetMaximum(tBac,tCyc,10.0,20));
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DT2->GetYaxis()->SetRangeUser(yMin,yMax);
+			outfile->WriteTObject(c_T2V2W2Z2X3Y3);
+			
+			TCanvas *c_T3V3W3Z3 = new TCanvas("c_T3V3W3Z3","Feeding from T3",945,600);
+			h_DT3->Draw();
+			h_DV3->Draw("SAME");
+			h_DW3->Draw("SAME");
+			h_DZ3->Draw("SAME");
+			fyT3->Draw("SAME");
+			fyV3->Draw("SAME");
+			fyW3->Draw("SAME");
+			fyZ3->Draw("SAME");
+			yMax = 0.0;
+			yMax = Max(yMax,h_DT3->GetMaximum());
+			yMax = Max(yMax,h_DV3->GetMaximum());
+			yMax = Max(yMax,h_DW3->GetMaximum());
+			yMax = Max(yMax,h_DZ3->GetMaximum());
+			yMin = -0.05 * yMax;
+			yMax =  1.05 * yMax;
+			h_DT3->GetYaxis()->SetRangeUser(yMin,yMax);
+			outfile->WriteTObject(c_T3V3W3Z3);
+			
+			Double_t tval1 = 101000;
+			Double_t tvaln[1] = {tval1};
+			printf("f(%f) = %f\n", tval1, yY(2,par,tval1));
+			//printf("f(%f) = %f\n", tval1, yAll(tvaln,par));
 			
 		} // end if (has_VWXY == 1)
 		
@@ -888,7 +1022,8 @@ int BFit () {
 	outfile->Close();
 	
 	timerStop = clock();
-	cout << "BFit done. Timer = " << (Float_t)timerStop/CLOCKS_PER_SEC << " sec." << endl;
+	cout << endl;
+	cout << "BFit2 done. Timer = " << (Float_t)timerStop/CLOCKS_PER_SEC << " sec." << endl;
 	cout << "Elapsed time = " << (Float_t)(timerStop-timerStart)/CLOCKS_PER_SEC << " sec." << endl << endl;
 	
 	delete [] lastPar;
@@ -900,10 +1035,11 @@ void HistPrep (TH1 *h, Int_t rebin) {
 	h->SetLineColor(kBlack);
 }
 
-void FuncPrep (TF1 *f, Double_t *pars, Int_t nPoints, Int_t color) {
+void FuncPrep (TF1 *f, Double_t *pars, Int_t nPoints, Int_t color, Int_t style) {
 	f->SetParameters(pars);
 	f->SetNpx(nPoints);
 	f->SetLineColor(color);
+	f->SetLineStyle(style);
 }
 
 //int find_struct_index (void *p, char* pcsSearchString, int numStructs, int struct_size ) {
