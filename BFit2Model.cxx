@@ -67,6 +67,8 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	extern bool b134sbFlag;
 // Global variables that depend only on the parameters
 	extern Double_t tT1, tT2, tT3, tU1, tU2, tU3;
+	extern Double_t aT1, aT2, aT3, aU1, aU2, aU3;
+	extern Double_t tT1U2, tT1U3, tU1U2, tU1U3, tT2U3, tU2U3;
 	extern Double_t cT1, cU1, cU2, cZT2, cZU2, cZU3, cXT1, cXU2, cXU3, cYU1, cYU2, cYU3, ThetaU, ThetaY;
 	extern Double_t ST1_1cap, SW11_1cap, SZ11_1cap, ST2_1cap, SW22_1cap, SZ12_1cap, SZ22_1cap;
 //	extern Double_t ST1val, SW11val, SZ11val, ST2val, SW22val, SZ12val, SZ22val;
@@ -76,7 +78,9 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	extern Double_t	*SW1val, *SW2val, *SW3val;
 	extern Double_t	*SZ1val, *SZ2val, *SZ3val;
 	extern Double_t			 *SX2val, *SX3val;
-	extern Double_t	*timeOfCapt; 
+	extern Double_t	*sY2V, *sY2W, *sY2Z, *SY2val;
+	extern Double_t	*sY3V, *sY3W, *sY3Z, *sY3X, *sY3YV, *sY3YW, *sY3YZ, *SY3val;
+	extern Double_t	*timeOfCapt;
 	extern Double_t	Gamma_T1_U2, Gamma_T2_U3;
 	extern Double_t	Gamma_U1_U2, Gamma_U2_U3;
 	extern Double_t	*I_V1_Y2, *I_V2_Y3;
@@ -96,6 +100,7 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 //	extern Int_t nPars, nParChanges, nCap, nCapMax;
 	extern Double_t *lastPar;//, *tCycArg;
 	static Int_t index, tooth, k;
+	static Double_t H_T1_U2, H_U1_U2, H_T2_U3, H_U2_U3;
 	
 // Update parameter-dependent variables
 	
@@ -130,6 +135,18 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	cYU3	= tU3*(tU2-tU1);
 	ThetaU	= (tU3-tU2)*(tU3-tU1)*(tU2-tU1);
 //	ThetaY	= (tU3-tT1)*(tU2-tT1)*(tU1-tT1);
+	aT1 = Exp(-tCap/tT1);
+	aT2 = Exp(-tCap/tT2);
+	aT3 = Exp(-tCap/tT3);
+	aU1 = Exp(-tCap/tU1);
+	aU2 = Exp(-tCap/tU2);
+	aU3 = Exp(-tCap/tU3);
+	tT1U2	= tT1*tU2/(tU2-tT1);
+	tT1U3	= tT1*tU3/(tU3-tT1);
+	tU1U2	= tU1*tU2/(tU2-tU1);
+	tU1U3	= tU1*tU3/(tU3-tU1);
+	tT2U3	= tT2*tU3/(tU3-tT2);
+	tU2U3	= tU2*tU3/(tU3-tU2);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 	ST1_1cap	= 0.0;//SigmaT(a[rho],tT1,1);
 	ST2_1cap	= 0.0;//SigmaT(a[rho],tT2,1);
@@ -174,61 +191,96 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	eU2tCyc	= Exp(-tCyc/tU2);
 	eU3tCyc	= Exp(-tCyc/tU3);
 ///////////////////////////////////////////////////////////////////////////////////////////////
-//	printf("nCapMax=%d\n",nCapMax);
-//	Y3InitialValues[0] = 0.0;
-//	Double_t y3k = 0.0;
-//	I_T1_X2[0]	= 0.0;
-//	G_T1_X2 = (1/t1 - 1/tU2);
+	// Arrays holding all the partial sum terms ($\sigma(n)$ in my thesis)
 	// zero index of these set to zero in BFit()
 	for (k=1; k<=nCapMax; k++) {
-		ST1val[k] = SigmaT(a[rho],tT1,k);
-		ST2val[k] = SigmaT(a[rho],tT2,k);
-		ST3val[k] = SigmaT(a[rho],tT3,k);
-		SV1val[k] = SigmaT(1.0000,tU1,k);
-		SV2val[k] = SigmaT(1.0000,tU2,k);
-		SV3val[k] = SigmaT(1.0000,tU3,k);
-		SW1val[k] = SigmaW(a[rho],tT1,tU1,k);
-		SW2val[k] = SigmaW(a[rho],tT2,tU2,k);
-		SW3val[k] = SigmaW(a[rho],tT3,tU3,k);
-		SZ1val[k] = SigmaZ(a[rho],tT1,tU1,k);
-		SZ2val[k] = SigmaZ(a[rho],tT2,tU2,k);
-		SZ3val[k] = SigmaZ(a[rho],tT3,tU3,k);
-		SX2val[k] = SigmaZ(a[rho],tT1,tU2,k);
-		SX3val[k] = SigmaZ(a[rho],tT2,tU3,k);
-//		printf("SW2[%d]=%f\n",k-1,SW2val[k-1]);
-//		if (k>=2) Y3InitialValues[k-1] = Y3InitialValue(tBac+(k-1)*tCap, a, tBac+(k-2)*tCap, Y3InitialValues[k-2]);
-//		printf("Y3IV[%d]=%f\n",k-1,Y3InitialValues[k-1]);
+		ST1val[k] = sigmaI(a[rho],aT1,k);//SigmaT(a[rho],tT1,k);
+		ST2val[k] = sigmaI(a[rho],aT2,k);//SigmaT(a[rho],tT2,k);
+		ST3val[k] = sigmaI(a[rho],aT3,k);//SigmaT(a[rho],tT3,k);
+		SV1val[k] = sigmaI(1.0000,aU1,k);//SigmaT(1.0000,tU1,k);
+		SV2val[k] = sigmaI(1.0000,aU2,k);//SigmaT(1.0000,tU2,k);
+		SV3val[k] = sigmaI(1.0000,aU3,k);//SigmaT(1.0000,tU3,k);
+		SW1val[k] = aT1 * sigmaII(a[rho],aT1,aU1,k);//SigmaW(a[rho],tT1,tU1,k);
+		SW2val[k] = aT2 * sigmaII(a[rho],aT2,aU2,k);//SigmaW(a[rho],tT2,tU2,k);
+		SW3val[k] = aT3 * sigmaII(a[rho],aT3,aU3,k);//SigmaW(a[rho],tT3,tU3,k);
+		SZ1val[k] = (aU1-aT1) * sigmaII(a[rho],aT1,aU1,k) + ST1val[k];//SigmaZ(a[rho],tT1,tU1,k);
+		SZ2val[k] = (aU2-aT2) * sigmaII(a[rho],aT2,aU2,k) + ST2val[k];//SigmaZ(a[rho],tT2,tU2,k);
+		SZ3val[k] = (aU3-aT3) * sigmaII(a[rho],aT3,aU3,k) + ST3val[k];//SigmaZ(a[rho],tT3,tU3,k);
+		SX2val[k] = (aU2-aT1) * sigmaII(a[rho],aT1,aU2,k) + ST1val[k];//SigmaZ(a[rho],tT1,tU2,k);
+		SX3val[k] = (aU3-aT2) * sigmaII(a[rho],aT2,aU3,k) + ST2val[k];//SigmaZ(a[rho],tT2,tU3,k);
+		// Components of Y2 initial value:
+		sY2v1[k]  = tU1U2/t1 * (aU2-aU1) * sigmaII(1,aU1,aU2,k);
+		sY2w1[k]  = tU1U2/t1 * (aU2-aU1) * aT1 * sigmaIII(a[rho],aT1,aU1,aU2,k);
+		sY2z1[k]  = tU1U2/t1 * (aU2-aU1) * ( sigmaII(a[rho],aT1,aU2,k) + (aU1-aT1) * sigmaIII(a[rho],aT1,aU1,aU2,k) ) - tT1U2/t1 * (aU2-aT1) * sigmaII(a[rho],aT1,aU2,k);
+		SY2val[k] = ampV1*sY2v1[k] + ampW1*sY2w1[k] + ampZ1*sY2z1[k];
+		// Components of Y3 initial value:
+		sY3v2[k]  = tU2U3/t2 * (aU3-aU2) * sigmaII(1,aU2,aU3,k);
+		sY3w2[k]  = tU2U3/t2 * (aU3-aU2) * aT2 * sigmaIII(a[rho],aT2,aU2,aU3,k);
+		sY3z2[k]  = tU2U3/t2 * (aU3-aU2) * ( sigmaII(a[rho],aT2,aU3,k) + (aU2-aT2) * sigmaIII(a[rho],aT2,aU2,aU3,k) ) - tT2U3/t2 * (aU3-aT2) * sigmaII(a[rho],aT2,aU3,k);
+		sY3x2[k]  = tU2U3/t2 * (aU3-aU2) * ( sigmaII(a[rho],aT1,aU3,k) + (aU2-aT1) * sigmaIII(a[rho],aT1,aU2,aU3,k) ) - tT1U3/t2 * (aU3-aT1) * sigmaII(a[rho],aT1,aU3,k);
+		sY3v1[k]  = tU1U2/t1 * ( tU2U3/t2 * (aU3-aU2) * ( sigmaII(1,aU1,aU3,k) + (aU2-aU1)*sigmaIII(1,aU1,aU2,aU3,k) ) - tU1U3/t2 * (aU3-aU1) * sigmaII(1,aU1,aU3,k) );
+		//sY3v1[k]  = tU1U2/t1 * tU2U3/t2 * (aU3-aU2) * (aU2-aU1) * sigmaIII(1,aU1,aU2,aU3,k);
+		//sY3v1[k] += tU1U2/t1 * tU2U3/t2 * (aU3-aU2) * sigmaII(1,aU1,aU3,k);
+		//sY3v1[k] -= tU1U2/t1 * tU1U3/t2 * (aU3-aU1) * sigmaII(1,aU1,aU3,k);
+		//sY3w1[k]  = tU1U2/t1 * ( tU2U3/t2 * (aU3-aU2) * ( sigmaIII(a[rho],aT1,aU1,aU3,k) + (aU2-aU1)*sigmaIV(a[rho],aT1,aU1,aU2,aU3,k) ) - tU1U3/t2 * (aU3-aU1) * sigmaIII(a[rho],aT1,aU1,aU3,k) ) * aT1;
+		sY3w1[k]  = (aT1*tU1U2/t1/t2) * ( (aU3-aU2)*tU2U3*( sigmaIII(a[rho],aT1,aU1,aU3,k) + (aU2-aU1)*sigmaIV(a[rho],aT1,aU1,aU2,aU3,k) ) - (aU3-aU1)*tU1U3*sigmaIII(a[rho],aT1,aU1,aU3,k) );
+		SY3val[k] = ampV2*sY3v2[k] + ampW2*sY3w2[k] + ampZ2*sY3z2[k] + ampX2*sY3x2[k] + ampV1*sY3v1[k] + ampW1*sY3w1[k];
+		
+		//Double_t aa = tU2U3/t2;
+		//Double_t bb = tU2U3/t2 * tU1U2/t1;
+		//Double_t cc = tU1U3/t2 * tU1U2/t1;
+		//Double_t sY3w1 = tU1U2/t1 * (aU2-aU1) * sigmaIV(a[rho],aT1,aU1,aU2,aU3,k);
+		//sY3w1[k]  = aa * (aU3-aU2) * aT1 * sY3w1;
+		//sY3w1[k] += bb * (aU3-aU2) * aT1 * sigmaIII(a[rho],aT1,aU1,aU3,k);
+		//sY3w1[k] -= cc * (aU3-aU1) * aT1 * sigmaIII(a[rho],aT1,aU1,aU3,k);
+		
+	//	sY3w1[k]  = tU1U2/t1 * aT1 * (aU3-aU2) * tU2U3/t2 * (aU2-aU1) * sIV;//sigmaIV(a[rho],aT1,aU1,aU2,aU3,k);
+	//	sY3w1[k] += tU1U2/t1 * aT1 * (aU3-aU2) * tU2U3/t2 * sIII;//sigmaIII(a[rho],aT1,aU1,aU3,k);
+	//	sY3w1[k] -= tU1U2/t1 * aT1 * (aU3-aU1) * tU1U3/t2 * sIII;//sigmaIII(a[rho],aT1,aU1,aU3,k);
+		//sY3w1[k]  = aT1 * tU1U2/t1 * tU2U3/t2 * (aU3-aU2) * ( sigmaIII(a[rho],aT1,aU1,aU3,k) + (aU2-aU1)*sigmaIV(a[rho],aT1,aU1,aU2,aU3,k) );
+		//sY3w1[k] -=	aT1 * tU1U2/t1 * tU1U3/t2 * (aU3-aU1) *   sigmaIII(a[rho],aT1,aU1,aU3,k);
+		
+		Double_t sIII = sigmaIII(a[rho],aT1,aU1,aU3,k);
+		Double_t sIV  = sigmaIV (a[rho],aT1,aU1,aU2,aU3,k);
+		printf("n=%d, sIII=%f, sIV=%f, sY3YW=%f, SY3=%f\n", k, sIII, sIV, sY3w1[k], SY3val[k]);
+		
+	//	I_V2_Y3[k] = I_V2_Y3[k-1] + SV2val[k] * H_V2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
+	//	I_W2_Y3[k] = I_W2_Y3[k-1] + SW2val[k] * H_W2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
+	//	I_Z2_Y3[k] = I_Z2_Y3[k-1] + ( SZ2val[k] * H_Z2_Y3_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_Z2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+	//	I_X2_Y3[k] = I_X2_Y3[k-1] + ( SX2val[k] * H_X2_Y3_Xpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+		
+	//	I_Y2_Y3[k] = I_Y2_Y3[k-1] + ampV1/t2 * ( ( sY2v1[k] + tU1U2/t1*SV1val[k] ) * H_V2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]) - tU1U2/t1*SV1val[k] * H_U1_U3(a,timeOfCapt[k-1],timeOfCapt[k]) );	
+	//	SY3val[k]+= I_Y2_Y3[k];
+		
+	//	SY3val[k]+= ampV1 * tU1U2/t1 * ( tU2U3/t2 * (aU3-aU2) * ( sigmaII(1,aU1,aU3,k) + (aU2-aU1)*sigmaIII(1,aU1,aU2,aU3,k) ) - tU1U3/t2 * (aU3-aU1) * sigmaII(1,aU1,aU3,k) );
+	//	SY3val[k]+= ampW1 * tU1U2/t1 * ( tU2U3/t2 * (aU3-aU2) * ( sigmaII(1,aU1,aU3,k) + (aU2-aU1)*aT1*sigmaIV(1,aT1,aU1,aU2,aU3,k) ) - tU1U3/t2 * (aU3-aU1) * aT1*sigmaIII(1,aT1,aU1,aU3,k) );
+		
+	//	SY3val[k] = tU2U3/t2 * (aU3-aU2) * ( ampV2*sigmaII(1,aU2,aU3,k) + ampW2*aT2*sigmaIII(a[rho],aT2,aU2,aU3,k) + ampZ2*(sigmaII(a[rho],aT2,aU3,k)+(aU2-aT2)*sigmaIII(a[rho],aT2,aU2,aU3,k)) )
+	//		- tT2U3/t2 * (aU3-aT2) * ampZ2 * sigmaII(a[rho],aT2,aU3,k)
+	//		+ ampV1*tU1U2/t1 * ( tU2U3/t2 * ( sigmaII(1,aU1,aU3,k) + (aU2-aU1)*sigmaIII(1,aU1,aU2,aU3,k) ) - tU1U3/t2 * sigmaII(1,aU1,aU3,k) );
+	//		//+ tU1U2/t1 * ( (aU3-aU2)*tU2U3/t2 - (aU3-aU1)*tU1U3/t2 ) * ampV1 * sigmaII(1,aU1,aU3,k)
+	//		//+ tU1U2/t1 * aU2 * (aU2-aU1) * ampV1 * sigmaIII(1,aU1,aU2,aU3,k);
 	}
-//	for (k=2; k<=nCapMax; k++) {
-//		Y3InitialValues[k-1] = Y3InitialValue(tBac+(k-1)*tCap, a, tBac+(k-2)*tCap, Y3InitialValues[k-2]);
-//		Y3InitialValues[k-1] = Y3InitialValue(tBac+(k-1)*tCap, a, tBac+(k-2)*tCap, y3k);
-//		y3k = Y3InitialValues[k-1];
-//		printf("Y3IV[%d]=%f\n",k-1,Y3InitialValues[k-1]);
-//		I_T1_X2[k-1] = I_T1_X2[k-2] + SigmaT(a[rho],tT1,k)*(Exp(-G_T1_X2*(k-1)*tCap)-Exp(-G_T1_X2*k*tCap));
-//		I_W2_Y3[k-1] = I_W2_Y3[k-2] + (AW2/t2) * SigmaW(a[rho]],tT2,tU2,k) * ( timeOfCapt[k] - timeOfCapt[k-1] + (1/Gam_W2_Y3)*(Exp(-Gam_W2_Y3*(k-1)*tCap)-Exp(-Gam_W2_Y3*k*tCap)) );
-//		printf("I_T1_X2[%d]=%f\n",k-1,I_T1_X2[k-1]);
-//	}
 	
-	// I[k] is contribution from k *previous* teeth, I[0] = 0
-//	I_V2_Y3[0] = 0.0; // zero index used as init value of zero
-//	I_W2_Y3[0] = 0.0; // zero index used as init value of zero
-//	I_Z2_Y3[0] = 0.0; // zero index used as init value of zero
-	for (k=1; k<nCapMax; k++) { // k = 1, 2, 3 ... = tooth number
-	// Feeding V --> Y ////////////////////////////////////////////////////////
-		I_V1_Y2[k] = I_V1_Y2[k-1] + SigmaT(1,tT1,k) * H_V1_Y2(a,timeOfCapt[k-1],timeOfCapt[k]);
-		I_V2_Y3[k] = I_V2_Y3[k-1] + SV2val[k] * H_V2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
-	// Feeding W --> Y ////////////////////////////////////////////////////////
-		I_W1_Y2[k] = I_W1_Y2[k-1] + SW1val[k] * H_W1_Y2(a,timeOfCapt[k-1],timeOfCapt[k]);
-		I_W2_Y3[k] = I_W2_Y3[k-1] + SW2val[k] * H_W2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
-	// Feeding Z --> Y ////////////////////////////////////////////////////////
-		I_Z1_Y2[k] = I_Z1_Y2[k-1] + ( SZ1val[k] * H_Z1_Y2_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) + ST1val[k] * H_Z1_Y2_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
-		I_Z2_Y3[k] = I_Z2_Y3[k-1] + ( SZ2val[k] * H_Z2_Y3_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_Z2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
-	// Feeding X --> Y ////////////////////////////////////////////////////////
-		I_X2_Y3[k] = I_X2_Y3[k-1] + ( SX2val[k] * H_X2_Y3_Xpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
-	// Feeding Y --> Y ////////////////////////////////////////////////////////
-		//I_Y2_Y3[k] = I_Y2_Y3[k-1] + ( SV2val[k] * H_Y2_Y3_Vpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
-		printf("k=%d, SV=%f, SW=%f, SZ=%f, IV=%f, IW=%f, IZ=%f\n", k, SV2val[k], SW2val[k], SZ2val[k], I_V2_Y3[k], I_W2_Y3[k], I_Z2_Y3[k]);
-	}
+//	// I[k] is contribution from k *previous* teeth, I[0] = 0
+//	for (k=1; k<nCapMax; k++) { // k = 1, 2, 3 ... = tooth number
+//	// Feeding V --> Y ////////////////////////////////////////////////////////
+//		//I_V1_Y2[k] = I_V1_Y2[k-1] + SV1val[k] * H_V1_Y2(a,timeOfCapt[k-1],timeOfCapt[k]);
+//		I_V2_Y3[k] = I_V2_Y3[k-1] + SV2val[k] * H_V2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
+//	// Feeding W --> Y ////////////////////////////////////////////////////////
+//		//I_W1_Y2[k] = I_W1_Y2[k-1] + SW1val[k] * H_W1_Y2(a,timeOfCapt[k-1],timeOfCapt[k]);
+//		I_W2_Y3[k] = I_W2_Y3[k-1] + SW2val[k] * H_W2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
+//	// Feeding Z --> Y ////////////////////////////////////////////////////////
+//		//I_Z1_Y2[k] = I_Z1_Y2[k-1] + ( SZ1val[k] * H_Z1_Y2_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST1val[k] * H_Z1_Y2_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//		I_Z2_Y3[k] = I_Z2_Y3[k-1] + ( SZ2val[k] * H_Z2_Y3_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_Z2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//		//I_Z2_Y3[k] = I_Z2_Y3[k-1] + ( SZ2val[k] * H_Z2_Y3_Zpart(a,timeOfCapt[k-1],timeOfCapt[k]) + ST2val[k] * H_Z2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//	// Feeding X --> Y ////////////////////////////////////////////////////////
+//		//I_X2_Y3[k] = I_X2_Y3[k-1] + ( SX2val[k] * H_X2_Y3_Xpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//		I_X2_Y3[k] = I_X2_Y3[k-1] + ( SX2val[k] * H_X2_Y3_Xpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//	// Feeding Y --> Y ////////////////////////////////////////////////////////
+//		I_Y2_Y3[k] = I_Y2_Y3[k-1] + 0.0;//( SV2val[k] * H_Y2_Y3_Vpart(a,timeOfCapt[k-1],timeOfCapt[k]) - ST2val[k] * H_X2_Y3_Tpart(a,timeOfCapt[k-1],timeOfCapt[k]) );
+//		printf("k=%d, SV=%f, SW=%f, SZ=%f, IV=%f, IW=%f, IZ=%f\n", k, SV2val[k], SW2val[k], SZ2val[k], I_V2_Y3[k], I_W2_Y3[k], I_Z2_Y3[k]);
+//	}
 	
 //	printf("Y3[tB+1tA,par,tB+0tA,0]=%f\n",Y3InitialValue(tBac+tCap,a,tBac,0.0));
 //	printf("Y3[tB+2tA,par,tB+1tA,0]=%f\n",Y3InitialValue(tBac+2*tCap,a,tBac+1*tCap,0.0));
@@ -260,6 +312,124 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	//U30 = ( V30 + W30 + Z30 + X30 + Y30 );
 	printf("Parameter-dependent values computed.\n");
 	//printf("ST1_1cap=%f, ST2_1cap=%f, SW11_1cap=%f, SW22_1cap=%f, SZ11_1cap=%f, SZ12_1cap=%f, SZ22_1cap=%f\n", ST1_1cap, ST2_1cap, SW11_1cap, SW22_1cap, SZ11_1cap, SZ12_1cap, SZ22_1cap);
+}
+
+Double_t BFitNamespace::sigmaI (Double_t r, Double_t a, Int_t n) {
+	using namespace TMath;
+	extern Double_t tCap;
+	return (1-Power(r*a,n))/(1-r*a);
+}
+Double_t BFitNamespace::sigmaII (Double_t r, Double_t a1, Double_t a2, Int_t n) {
+	using namespace TMath;
+	extern Double_t iota, tCap;
+//	static Double_t f1;
+//	f1	= r*a1;
+	return 1/(1-r*a1) * ( (1-Power(a2,n-1))/(1-a2) - (r*a1*Power(a2,n-1)-Power(r*a1,n)+iota)/(a2-r*a1+iota) );
+}
+Double_t BFitNamespace::sigmaIII (Double_t r, Double_t aT1, Double_t aU1, Double_t aU2, Int_t n) {
+	using namespace TMath;
+	extern Double_t iota, tCap;
+//	static Double_t f1, f2, f3;
+//	f1	= r*bT1;
+//	f2	= bU1/bU2;
+//	f3	= r*bT1/bU2;
+//	return Power(bU2,n-1)/(1-f1) * ( 1/(1-bU1) * ( (Power(bU2,1-n)-1)/(1-bU2) - 1/bU1 * (f2-Power(f2,n))/(1-f2) ) - (1+iota)/(bU1-f1+iota) * ( f1/bU1 * (f2-Power(f2,n))/(1-f2) - (f3-Power(f3,n))/(1-f3) ) );
+	return 1/(1-r*aT1) * ( 1/(1-aU1) * ( (1-Power(aU2,n-1))/(1-aU2) - (Power(aU2,n-1)-Power(aU1,n-1))/(aU2-aU1) ) - (r*aT1+iota)/(aU1-r*aT1+iota) * ( (Power(aU2,n-1)-Power(aU1,n-1))/(aU2-aU1) - (Power(aU2,n-1)-Power(r*aT1,n-1))/(aU2-r*aT1) ) );
+}
+Double_t BFitNamespace::sigmaIV (Double_t r, Double_t aT1, Double_t aU1, Double_t aU2, Double_t aU3, Int_t n) {
+	using namespace TMath;
+	extern Double_t iota, tCap;
+	extern Int_t nCapMax;
+//	static Double_t f1, f2, f3, f;
+//	f1	= r*bT1;
+//	f2	= bU1/bU2;
+//	f3	= r*bT1/bU2;
+//	printf("aT1=%f, aU1=%f, aU2=%f, aU3=%f, f1=%f, f2=%f, f3=%f\n", bT1, bU1, bU2, bU3, f1, f2, f3);
+//	f = 0.0;
+//	f += 1/(1-bU1) * ( 1/(1-bU2) * ( bU2 * (Power(bU2*bU3,1-n)-1)/(1-bU2*bU3) - (Power(bU3,1-n)-1)/(1-bU3) ) - 1/bU1/(1-bU1/bU2) * ( bU1/bU2 * (Power(bU3,1-n)-1)/(1-bU3) - (bU1/bU2/bU3-Power(bU1/bU2/bU3,n))/(1-bU1/bU2/bU3) ) );
+//	f -= (1+iota)/(bU1-r*bT1+iota) * ( r*bT1/bU1/(1-bU1/bU2) * ( (Power(bU3,1-n)-1)/(1-bU3) - (bU1/bU2/bU3-Power(bU1/bU2/bU3,n))/(1-bU1/bU2/bU3) ) - 1/(1-r*bT1/bU2) * ( r*bT1/bU2 * (Power(bU3,1-n)-1)/(1-bU3) - (r*bT1/bU2/bU3-Power(r*bT1/bU2/bU3,n))/(1-r*bT1/bU2/bU3) ) );
+//	f *= Power(bU2*bU3,n-1)/(1-r*bT1);
+
+//	f = 0.0;
+//	f += 1/(1-aU1) * ( 1/(1-aU2) * ( (1-Power(aU3,n-1))/(1-aU3) - (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) ) - 1/(aU2-aU1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(aU1,n-1))/(aU3-aU1) ) );
+//	f -= (r*aT1+iota)/(aU1-r*aT1+iota) * ( 1/(aU2-aU1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(aU1,n-1))/(aU3-aU1) ) ) - 1/(aU2-r*aT1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(r*aT1,n-1))/(aU3-r*aT1) )
+//	f *= 1/(1-r*aT1);
+	
+//	Double_t f = 0.0;
+//	for (Int_t k=1; k<n; k++ ) f += sigmaIII(r,aT1,aU1,aU2,k) * Power(aU3,n-1-k);
+//	return f;
+	
+	return 1/(1-r*aT1) * ( 1/(1-aU1) * ( 1/(1-aU2) * ( (1-Power(aU3,n-1))/(1-aU3) - (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) ) - 1/(aU2-aU1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(aU1,n-1))/(aU3-aU1) ) ) - (r*aT1+iota)/(aU1-r*aT1+iota) * ( ( 1/(aU2-aU1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(aU1,n-1))/(aU3-aU1) ) ) - 1/(aU2-r*aT1) * ( (Power(aU3,n-1)-Power(aU2,n-1))/(aU3-aU2) - (Power(aU3,n-1)-Power(r*aT1,n-1))/(aU3-r*aT1) ) ) );
+}
+
+Double_t BFitNamespace::Ycap (Int_t i, Double_t *a, Double_t tvar) {
+	using namespace BFitNamespace;
+	using namespace TMath;
+	extern Double_t tCap, tBac, t1, t2, tT1, tT2, tU1, tU2, tU3, aT1, aU1, aU2, aU3, tU1U2, tT1U2, tU2U3, tT2U3, tU1U3;
+	extern Double_t ampV1, ampW1, ampZ1, ampV2, ampW2, ampZ2, ampX2, ampY2;
+	extern Double_t *timeOfCapt, *ST1val, *SV1val, *SW1val, *SZ1val, *ST2val, *SV2val, *SW2val, *SZ2val, *SX2val, *SY2val, *SY3val, *sY2V, *sY2W, *sY2Z, *sY3YW;
+	extern Double_t *I_V1_Y2, *I_W1_Y2, *I_Z1_Y2;
+	extern Double_t *I_V2_Y3, *I_W2_Y3, *I_Z2_Y3, *I_X2_Y3, *I_Y2_Y3;
+//	extern Double_t ampW2, ampY3fromW2, Gamma_U2_U3, *Y3InitialValues;
+	static Double_t tk, V, W, Z, X, Y, f;
+	static Int_t n, k;
+	V = W = Z = X = Y = f = 0.0;
+	n = Ceil((tvar-tBac)/tCap);
+	//if (tvar==tBac) n=1;
+	tk = tvar-tBac-(n-1)*tCap;
+	if (i==2) {
+	//	V = ampV1 * ( I_V1_Y2[n-1] + SV1val[n] * H_V1_Y2(a,timeOfCapt[n-1],tvar) );
+	//	W = ampW1 * ( I_W1_Y2[n-1] + SW1val[n] * H_W1_Y2(a,timeOfCapt[n-1],tvar) );
+	//	Z = ampZ1 * ( I_Z1_Y2[n-1] + SZ1val[n] * H_Z1_Y2_Zpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_Z1_Y2_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	f = (V + W + Z) * Exp(-tvar/tU2) / t1;
+		f = SY2val[n] * Exp(-tk/tU2)
+			+ tU1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tU1) ) * ( ampV1*SV1val[n] + ampW1*SW1val[n] + ampZ1*SZ1val[n] )
+			- tT1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tT1) ) * ampZ1 * ST1val[n];
+//		printf("tk=%f, B1=%f, ampV1=%f, ampW1=%f, ampZ1=%f, SV1=%f, SW1=%f, SZ1=%f, SY2=%f, eU2=%f, eU1=%f, y2=%f\n",tk,B1,ampV1,ampW1,ampZ1,SV1val[n],SW1val[n],SZ1val[n],SZ1val[n],Exp(-tk/tU2),Exp(-tk/tU1),f);
+	}
+	if (i==3) {
+	//	V  = ampV2 * ( I_V2_Y3[n-1] + SV2val[n] * H_V2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	W  = ampW2 * ( I_W2_Y3[n-1] + SW2val[n] * H_W2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	Z  = ampZ2 * ( I_Z2_Y3[n-1] + SZ2val[n] * H_Z2_Y3_Zpart(a,timeOfCapt[n-1],tvar) - ST2val[n] * H_Z2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	X  = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3_Xpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_X2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	Y += ampV1 * ( I_V1_Y3[n-1] + SV1val[n] * H_X2_Y3_Xpart(a,timeOfCapt[n-1],tvar);
+////		X = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3(a,timeOfCapt[n-1],tvar) );
+////		Y = ampX2 * ( I_Y2_Y3[n-1] + SY2val[n] * H_Y2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	f = (V + W + Z + X + Y) * Exp(-tvar/tU3) / t2;
+		
+		
+		f = SY3val[n] * Exp(-tk/tU3)
+			+ tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( ampV2*SV2val[n] + ampW2*SW2val[n] + ampZ2*SZ2val[n] + ampX2*SX2val[n] )
+			- tT2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tT2) ) * (ampZ2+ampX2) * ST2val[n]
+			+ ampV1 * tU1U2/t1 * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( SV1val[n] + sY2v1[n]*t1/tU1U2 ) - tU1U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) * SV1val[n] )
+			+ (ampW1/t1)*tU1*tU2/(tU2-tU1) * ( 1/t2*tU2*tU3/(tU3-tU2)*(SW1val[n]+(aU2-aU1)*aT1*sigmaIII(a[rho],aT1,aU1,aU2,n))*(Exp(-tk/tU3)-Exp(-tk/tU2)) - 1/t2*tU1*tU3/(tU3-tU1)*SW1val[n]*(Exp(-tk/tU3)-Exp(-tk/tU2)) );
+			
+		//	+ ampW1 * tU1U2/t1 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * tU2U3/t2 * sY2w1[n]/(tU1U2/t1);//(aU2-aU1) * sigmaIII(a[rho],aT1,aU1,aU2,n)
+		//	+ ampW1 * tU1U2/t1 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * tU2U3/t2 * SW1val[n];//sigmaII(a[rho],aT1,aU1,n)
+		//	- ampW1 * tU1U2/t1 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) * tU1U3/t2 * SW1val[n];//sigmaII(a[rho],aT1,aU1,n);
+		
+		////	+ ampW1 * tU1U2/t1 * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( SW1val[n] + sY2w1[n]*t1/tU1U2 ) - tU1U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) * SW1val[n] );
+		//	+ ampW1 * tU2U3/t2 * ( sY2w1[n] + tU1U2/t1 * SW1val[n] ) * ( Exp(-tk/tU3) - Exp(-tk/tU2) )
+		//	- ampW1 * tU1U3/t2 *             tU1U2/t1 * SW1val[n]   * ( Exp(-tk/tU3) - Exp(-tk/tU1) );
+		//	+ ampV1 * tU1U2/t1 * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( sigmaI(1,aU1,n) + (aU2-aU1)*sigmaII(1,aU1,aU2,n) ) - tU1U3/t2 * (Exp(-tk/tU3)-Exp(-tk/tU1)) * SV1val[n](1,aU1,aU3,n) );
+		//	+ ampV1 * tU1U2/t1 * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( sigmaI(1,aU1,n) + (aU2-aU1)*sigmaII(1,aU1,aU2,n) ) - tU1U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) * sigmaI(1,aU1,n) ); 
+			//+ ampV1*tU1U2/t1/t2 * ( tU2U3 * ( ( sigmaI(1,aU1,k) + (aU2-aU1)*sigmaII(1,aU1,aU2,k) ) * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) - tU1U3 * sigmaII(1,aU1,aU3,k) );
+			//+ tU2U3/t2 * (ampV1*tU1U2/t1*(aU2-aU1)*sigmaIII(1,aU1,aU2,aU3,n)) * ( Exp(-tk/tU3) - Exp(-tk/tU2) )
+			//+ ampV1*tU1U2/t1 * (sigmaII(1,aU1,aU3,n)) * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) - tU1U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) );
+			
+	//	Double_t aa = tU2U3/t2;
+	//	Double_t bb = tU2U3/t2 * tU1U2/t1;
+	//	Double_t cc = tU1U3/t2 * tU1U2/t1;
+	//	Double_t sY3w1 = tU1U2/t1 * (aU2-aU1) * aT1 * sigmaIV(a[rho],aT1,aU1,aU2,aU3,n);
+	//	sY3w1[k]  = aa * (aU3-aU2) * aT1 * sY3w1;
+	//	sY3w1[k] += bb * (aU3-aU2) * aT1 * sigmaIII(a[rho],aT1,aU1,aU3,n);
+	//	sY3w1[k] -= cc * (aU3-aU1) * aT1 * sigmaIII(a[rho],aT1,aU1,aU3,n);
+	
+	//	f = 0.0;
+	//	f = SY3val[n] * Exp(-tk/tU3) + (ampW1/t1)*tU1*tU2/(tU2-tU1) * ( 1/t2*tU2*tU3/(tU3-tU2)*(SW1val[n]+(aU2-aU1)*aT1*sigmaIII(a[rho],aT1,aU1,aU2,n))*(Exp(-tk/tU3)-Exp(-tk/tU2)) - 1/t2*tU1*tU3/(tU3-tU1)*SW1val[n]*(Exp(-tk/tU3)-Exp(-tk/tU2)) );
+	}
+	
+	return f;
 }
 
 //////////////////////////////////////////////////////////////
@@ -318,6 +488,21 @@ Double_t BFitNamespace::H_X2_Y3_Tpart (Double_t *a, Double_t s1, Double_t s2) {
 	extern Double_t tBac, tU3, Gamma_T2_U3;
 	return (Exp(tBac/tU3)/Gamma_T2_U3)*(Exp(-Gamma_T2_U3*(s1-tBac))-Exp(-Gamma_T2_U3*(s2-tBac)));
 }
+Double_t BFitNamespace::H_U1_U3 (Double_t *a, Double_t s1, Double_t s2) {
+	using namespace TMath;
+	extern Double_t tBac, tU3, tU1U3;
+	return (tU1U3*Exp(tBac/tU3))*(Exp(-(s1-tBac)/tU1U3)-Exp(-(s2-tBac)/tU1U3));
+}
+//Double_t BFitNamespace::H_Y2_Y3_Tpart (Double_t *a, Double_t s1, Double_t s2) {
+//	using namespace TMath;
+//	extern Double_t tBac, tU3, Gamma_T2_U3;
+//	return -(Exp(tBac/tU3)/Gamma_T2_U3)*(Exp(-Gamma_T2_U3*(s1-tBac))-Exp(-Gamma_T2_U3*(s2-tBac)));
+//}
+//Double_t BFitNamespace::H_Y2_Y3_Upart (Double_t *a, Double_t s1, Double_t s2) {
+//	using namespace TMath;
+//	extern Double_t tBac, tU3, Gamma_U2_U3;
+//	return (Exp(tBac/tU3)/Gamma_U2_U3)*(Exp(-Gamma_U2_U3*(s1-tBac))-Exp(-Gamma_U2_U3*(s2-tBac)));
+//}
 //Double_t BFitNamespace::H_Z2_Y3 (Double_t *a, Double_t s1, Double_t s2) {
 //	using namespace TMath;
 //	extern Double_t tBac, tU3, Gamma_U2_U3;
@@ -601,96 +786,6 @@ Double_t BFitNamespace::yY (Int_t i, Double_t *a, Double_t tvar) {
 	return f;
 }
 
-Double_t BFitNamespace::SigmaT (Double_t r, Double_t tau, Int_t n) {
-	using namespace TMath;
-	extern Double_t tCap;
-	static Double_t a;
-	a = Exp(-tCap/tau);
-	return Power(a,-n+1)*(1-Power(r*a,n)) / (1-r*a);
-}
-Double_t BFitNamespace::SigmaW (Double_t r, Double_t tT, Double_t tU, Int_t n) {
-	using namespace TMath;
-	static Double_t a, b, c, f;
-	extern Double_t iota, tCap;
-	f = 0.0;
-	if (n>=2) {
-		a = Exp(-tCap/tT);
-		b = Exp(-tCap/tU);
-		c = r*a;
-//		f = (1.0+iota)/(r*(b-1.0)+iota) * ( Power(b,n)*(Power(r*a/b,n)-r*a/b+iota)/(r*a/b-1.0+iota) - (Power(r*a,n)-r*a+iota)/(r*a-1.0+iota) );
-//		f = a/(1-r*a) * ( (1-Power(b,n-1))/(1-b) - (Power(r*a,n)-r*a*Power(b,n-1))/(r*a-b) );
-//		f = a/(1-c) * ( (1-Power(b,n-1))/(1-b) - (Power(c,n)-c*Power(b,n-1)+iota)/(c-b+iota) );
-		f = a*Power(1/b,n-1)/(1-c) * ( (1-Power(b,n-1))/(1-b) - (Power(c,n)-c*Power(b,n-1)+iota)/(c-b+iota) );
-//		f = (1-Power(b,n-k)) / (1-b) * (r*a - Power(r*a,n)) / (1-a) * (1+iota) / (r+iota);
-//		f = Exp((n-1)*tCap/tU)/(r*(b-1.0)) * ( Power(b,n)*(Power(r*a/b,n)-r*a/b)/(r*a/b-1.0) - (Power(r*a,n)-r*a)/(r*a-1.0) );
-//		f = Exp((n-1)*tCap/tT) * (Exp(-tCap/tT)+iota) / (Exp(-tCap/tT)-Exp(-tCap/tT)+iota) / (Exp(-tCap/tT)-1) / (Exp(-tCap/tU)-1);
-//		printf("r=%f, tT=%f, tU=%f, SigmaW=%f\n",r,tT,tU,f);
-	}
-//	printf("a=%f, b=%f, c=%f, SW=%f\n",a,b,c,f);
-	return f;
-}
-Double_t BFitNamespace::SigmaZ (Double_t r, Double_t tT, Double_t tU, Int_t n) {
-	using namespace TMath;
-	static Double_t a, b, A, B, G, f;
-	extern Double_t iota, tCap;
-	f = 0.0;
-	a = Exp(-tCap/tT);
-	b = Exp(-tCap/tU);
-	A = 1/a/b;
-	B = r/b;
-	G = 1/tT - 1/tU;
-//	f = (b-a) * (a*Power(b/a,n-1)/(1-r*a)) * ( (A-Power(A,n))/(1-A) - (B-Power(B,n))/(1-B) ) ;
-//	f = (b-a) * Power(b,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - (Power(r*a/b,n)-r*a/b)/(r*a/b-1.0) );
-//	f = (b-a) * Power(b,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - ((Power(r*a/b,n)-r*a/b)+iota)/(r*a/b-1.0+iota) );
-//	f = Power(a,-n+1) * (b-a) * Power(b,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - ((Power(r*a/b,n)-r*a/b)+iota)/(r*a/b-1.0+iota) ) + SigmaT(r,tT,n)*Exp(-G*(n-1)*tCap);
-
-	f = (b-a)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - (Power(r*a/b,n)-r*a/b+iota)/(r*a/b-1.0+iota) ) + SigmaT(r,tT,n)*Exp(-G*(n-1)*tCap);
-//	f = (expU-expT) * Power(expU,n-1)/(1.0-rho*expT) * ( (Power(1/expU,n)-1/expU)/(1/expU-1.0) - (Power(rho*expT/expU,n)-rho*expT/expU)/(rho*expT/expU-1.0) );
-//	printf("I:%f, II:%f, III:%f, IV:%f\n", (b-a)/(1.0-rho*a), (Power(1/b,n)-1/b)/(1/b-1.0), (Power(rho*a/b,n)-rho*a/b+iota)/(rho*a/b-1.0+iota), SigmaT(r,tT,n)*Exp(-G*(n-1)*tCap));
-	return f;
-}
-/*
-Double_t BFitNamespace::SigmaZ (Double_t rho, Double_t tT, Double_t tU, Int_t n) {
-	using namespace TMath;
-	static Double_t expT, expU, f;
-	static Int_t k;
-	extern Double_t tCap;
-	f = 0.0;
-	expT = Exp(-tCap/tT);
-	expU = Exp(-tCap/tU);
-	f = (expU-expT) * Power(expU,n-1)/(1.0-rho*expT) * ( (Power(1/expU,n)-1/expU)/(1/expU-1.0) - (Power(rho*expT/expU,n)-rho*expT/expU)/(rho*expT/expU-1.0) );
-	printf("n=%d, I:%f, II:%f, III:%f, IV:%f\n", n, (expU-expT), Power(expU,n-1)/(1.0-rho*expT), (Power(expU,-n)-1/expU)/(1/expU-1.0), (Power(rho*expT/expU,n)-rho*expT/expU)/(rho*expT/expU-1.0));
-	return f;
-}
-*/
-/*
-Double_t BFitNamespace::SigmaZ (Double_t r, Double_t tT, Double_t tU, Int_t n) {
-	using namespace TMath;
-	static Double_t a, b, f, g;
-	extern Double_t iota, tCap;
-	f = 0.0;
-	a = Exp(-tCap/tT);
-	b = Exp(-tCap/tU);
-	g = Exp(-tCap*(1/tT-1/tU));
-	return (1/g-1)/(1/a-1) * ( (g/a-Power(g/a,n)+iota)/(1-g/a+iota) - (r*g-Power(r*g,n)+iota)/(1-r*g+iota) );
-}
-*//*
-Double_t BFitNamespace::SigmaZ (Double_t r, Double_t tT, Double_t tU, Int_t n) {
-	using namespace TMath;
-	static Double_t a, b, f;
-	extern Double_t iota, tCap;
-	f = 0.0;
-	if (n>=2) {
-		a = Exp(-tCap/tT);
-		b = Exp(-tCap/tU);
-//		f = (b-a) * Power(b,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - (Power(r*a/b,n)-r*a/b)/(r*a/b-1.0) );
-//		f = (b-a) * Power(b,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - ((Power(r*a/b,n)-r*a/b)+iota)/(r*a/b-1.0+iota) );
-		f = Power(a,-n+1) * (b-a) * Power(b/a,n-1)/(1.0-r*a) * ( (Power(1/b,n)-1/b)/(1/b-1.0) - ((Power(r*a/b,n)-r*a/b)+iota)/(r*a/b-1.0+iota) );
-	}
-	return f;
-}
-*/
-
 //////////////////////////////////////////////////////////////////////////
 // "o" functions
 // Offset functions to improve visualization: oT1 = yT1 + yDC
@@ -758,9 +853,9 @@ Double_t BFitNamespace::Ttot (Int_t i, Double_t *a, Double_t tvar) {
 	f = 0.0;
 	n = Ceil((tvar-tBac)/tCap);
 	if (tBac <= tvar && tvar <= tCyc) {
-		if (i==1) f = ampT1 * ST1val[n] * Exp(-(tvar-tBac)/tT1);//SigmaT(a[rho],tT1,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT1);
-		if (i==2) f = ampT2 * ST2val[n] * Exp(-(tvar-tBac)/tT2);//SigmaT(a[rho],tT2,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT2);
-		if (i==3) f = ampT3 * ST3val[n] * Exp(-(tvar-tBac)/tT3);//SigmaT(a[rho],tT3,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT3);
+		if (i==1) f = ampT1 * ST1val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tT1);//SigmaT(a[rho],tT1,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT1);
+		if (i==2) f = ampT2 * ST2val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tT2);//SigmaT(a[rho],tT2,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT2);
+		if (i==3) f = ampT3 * ST3val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tT3);//SigmaT(a[rho],tT3,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tT3);
 	}
 	return f;
 }
@@ -801,9 +896,9 @@ Double_t BFitNamespace::Vcap (Int_t i, Double_t *a, Double_t tvar) {
 	static Int_t n;
 	f = 0.0;
 	n = Ceil((tvar-tBac)/tCap);
-	if (i==1) f = ampV1 * SV1val[n] * Exp(-(tvar-tBac)/tU1);//SigmaT(1,tU1,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU1);
-	if (i==2) f = ampV2 * SV2val[n] * Exp(-(tvar-tBac)/tU2);//SigmaT(1,tU2,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU2);
-	if (i==3) f = ampV3 * SV3val[n] * Exp(-(tvar-tBac)/tU3);//SigmaT(1,tU3,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU3);
+	if (i==1) f = ampV1 * SV1val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU1);//SigmaT(1,tU1,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU1);
+	if (i==2) f = ampV2 * SV2val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU2);//SigmaT(1,tU2,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU2);
+	if (i==3) f = ampV3 * SV3val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU3);//SigmaT(1,tU3,n) * Exp(-(tvar-tBac-(n-1)*tCap)/tU3);
 	return f;
 }
 Double_t BFitNamespace::Vtot (Int_t i, Double_t *a, Double_t tvar) {
@@ -835,9 +930,9 @@ Double_t BFitNamespace::Wcap (Int_t i, Double_t *a, Double_t tvar) {
 //	if (i==1) f += ampW1 * SigmaW(a[rho],tT1,tU1,n) * Exp(-(tvar-tBac)/tU1);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU1);
 //	if (i==2) f += ampW2 * SigmaW(a[rho],tT2,tU2,n) * Exp(-(tvar-tBac)/tU2);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU2);
 //	if (i==3) f += ampW3 * SigmaW(a[rho],tT3,tU3,n) * Exp(-(tvar-tBac)/tU3);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU3);
-	if (i==1) f += ampW1 * SW1val[n] * Exp(-(tvar-tBac)/tU1);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU1);
-	if (i==2) f += ampW2 * SW2val[n] * Exp(-(tvar-tBac)/tU2);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU2);
-	if (i==3) f += ampW3 * SW3val[n] * Exp(-(tvar-tBac)/tU3);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU3);
+	if (i==1) f += ampW1 * SW1val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU1);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU1);
+	if (i==2) f += ampW2 * SW2val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU2);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU2);
+	if (i==3) f += ampW3 * SW3val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU3);//* Exp(-(tvar-tBac-(n-1)*tCap)/tU3);
 //	printf("Wcap: i=%d, tvar=%f, par=%f, f=%f\n", i, tvar, SigmaW[a[rho],tT3,tU3,n], f);
 	return f;
 }
@@ -871,9 +966,9 @@ Double_t BFitNamespace::Zcap (Int_t i, Double_t *a, Double_t tvar) {
 //	if (i==1) f += ampZ1 * ( (SigmaZ(a[rho],tT1,tU1,n)+SigmaT(a[rho],tT1,n))*Exp(-(tvar-tBac-(n-1)*tCap)/tU1) - SigmaT(a[rho],tT1,n)*Exp(-(tvar-tBac-(n-1)*tCap)/tT1) );
 //	if (i==2) f += ampZ2 * ( (SigmaZ(a[rho],tT2,tU2,n)+SigmaT(a[rho],tT2,n))*Exp(-(tvar-tBac-(n-1)*tCap)/tU2) - SigmaT(a[rho],tT2,n)*Exp(-(tvar-tBac-(n-1)*tCap)/tT2) );
 //	if (i==3) f += ampZ3 * ( (SigmaZ(a[rho],tT3,tU3,n)+SigmaT(a[rho],tT3,n))*Exp(-(tvar-tBac-(n-1)*tCap)/tU3) - SigmaT(a[rho],tT3,n)*Exp(-(tvar-tBac-(n-1)*tCap)/tT3) );
-	if (i==1) f += ampZ1 * ( SZ1val[n]*Exp(-(tvar-tBac)/tU1) - ST1val[n]*Exp(-(tvar-tBac)/tT1) );
-	if (i==2) f += ampZ2 * ( SZ2val[n]*Exp(-(tvar-tBac)/tU2) - ST2val[n]*Exp(-(tvar-tBac)/tT2) );
-	if (i==3) f += ampZ3 * ( SZ3val[n]*Exp(-(tvar-tBac)/tU3) - ST3val[n]*Exp(-(tvar-tBac)/tT3) );
+	if (i==1) f += ampZ1 * ( SZ1val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tU1) - ST1val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tT1) );
+	if (i==2) f += ampZ2 * ( SZ2val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tU2) - ST2val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tT2) );
+	if (i==3) f += ampZ3 * ( SZ3val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tU3) - ST3val[n]*Exp(-(tvar-tBac-(n-1)*tCap)/tT3) );
 	
 //	if (i=2) {
 //		g = 1/tT2 - 1/tU2;
@@ -908,8 +1003,8 @@ Double_t BFitNamespace::Xcap (Int_t i, Double_t *a, Double_t tvar) {
 	static Int_t n;
 	f = 0.0;
 	n = Ceil((tvar-tBac)/tCap);
-	if (i==2) f += ampX2 * ( SX2val[n] * Exp(-(tvar-tBac)/tU2) - ST1val[n] * Exp(-(tvar-tBac)/tT1) );
-	if (i==3) f += ampX3 * ( SX3val[n] * Exp(-(tvar-tBac)/tU3) - ST2val[n] * Exp(-(tvar-tBac)/tT2) );
+	if (i==2) f += ampX2 * ( SX2val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU2) - ST1val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tT1) );
+	if (i==3) f += ampX3 * ( SX3val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tU3) - ST2val[n] * Exp(-(tvar-tBac-(n-1)*tCap)/tT2) );
 	return f;
 }
 Double_t BFitNamespace::Xtot (Int_t i, Double_t *a, Double_t tvar) {
@@ -928,12 +1023,13 @@ Double_t BFitNamespace::Xtot (Int_t i, Double_t *a, Double_t tvar) {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Y populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
 Double_t BFitNamespace::Ycap (Int_t i, Double_t *a, Double_t tvar) {
 	using namespace BFitNamespace;
 	using namespace TMath;
-	extern Double_t tCap, tBac, t1, t2, tT2, tU2, tU3;
+	extern Double_t tCap, tBac, t1, t2, tT1, tT2, tU1, tU2, tU3, aT1, aU1, aU2, aU3, tU1U2, tT1U2, tU2U3, tT2U3, tU1U3;
 	extern Double_t ampV1, ampW1, ampZ1, ampV2, ampW2, ampZ2, ampX2, ampY2;
-	extern Double_t *timeOfCapt, *ST1val, *SV1val, *SW1val, *SZ1val, *ST2val, *SV2val, *SW2val, *SZ2val, *SX2val, *SY2val;
+	extern Double_t *timeOfCapt, *ST1val, *SV1val, *SW1val, *SZ1val, *ST2val, *SV2val, *SW2val, *SZ2val, *SX2val, *SY2val, *SY3val;
 	extern Double_t *I_V1_Y2, *I_W1_Y2, *I_Z1_Y2;
 	extern Double_t *I_V2_Y3, *I_W2_Y3, *I_Z2_Y3, *I_X2_Y3, *I_Y2_Y3;
 //	extern Double_t ampW2, ampY3fromW2, Gamma_U2_U3, *Y3InitialValues;
@@ -941,29 +1037,41 @@ Double_t BFitNamespace::Ycap (Int_t i, Double_t *a, Double_t tvar) {
 	static Int_t n, k;
 	V = W = Z = X = Y = f = 0.0;
 	n = Ceil((tvar-tBac)/tCap);
-	if (tvar==tBac) n=1;
+	//if (tvar==tBac) n=1;
+	tk = tvar-tBac-(n-1)*tCap;
 	if (i==2) {
-		//V = ampV1 * ( I_V1_Y2[n-1] + SV1val[n] * H_V1_Y2(a,timeOfCapt[n-1],tvar) );
-		//W = ampW1 * ( I_W1_Y2[n-1] + SW1val[n] * H_W1_Y2(a,timeOfCapt[n-1],tvar) );
-		//Z = ampZ1 * ( I_Z1_Y2[n-1] + SZ1val[n] * H_Z1_Y2_Zpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_Z1_Y2_Tpart(a,timeOfCapt[n-1],tvar) );
-		f = (V + W + Z) * Exp(-tvar/tU2) / t1;
+	//	V = ampV1 * ( I_V1_Y2[n-1] + SV1val[n] * H_V1_Y2(a,timeOfCapt[n-1],tvar) );
+	//	W = ampW1 * ( I_W1_Y2[n-1] + SW1val[n] * H_W1_Y2(a,timeOfCapt[n-1],tvar) );
+	//	Z = ampZ1 * ( I_Z1_Y2[n-1] + SZ1val[n] * H_Z1_Y2_Zpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_Z1_Y2_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	f = (V + W + Z) * Exp(-tvar/tU2) / t1;
+		f = SY2val[n] * Exp(-tk/tU2)
+			+ tU1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tU1) ) * ( ampV1*SV1val[n] + ampW1*SW1val[n] + ampZ1*SZ1val[n] )
+			- tT1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tT1) ) * ampZ1 * ST1val[n];
+//		printf("tk=%f, B1=%f, ampV1=%f, ampW1=%f, ampZ1=%f, SV1=%f, SW1=%f, SZ1=%f, SY2=%f, eU2=%f, eU1=%f, y2=%f\n",tk,B1,ampV1,ampW1,ampZ1,SV1val[n],SW1val[n],SZ1val[n],SZ1val[n],Exp(-tk/tU2),Exp(-tk/tU1),f);
 	}
 	if (i==3) {
-//		y3k = 0.0;
-//		f += (ampW2/t2/Gamma_U2_U3) * ( I_W2_Y3[n] + SigmaW(a[rho],tT2,tU2,n)*H_W2_Y3(a,tBac+(n-1)*tCap,tvar) ) * Exp(-(tvar-tBac)/tU3);// * Exp(-(tvar-tBac)/tU3);// * (eU3 - eU2);
-//		printf("ampW2=%f, I_W2_Y3[n])
-		V = ampV2 * ( I_V2_Y3[n-1] + SV2val[n] * H_V2_Y3(a,timeOfCapt[n-1],tvar) );
-		W = ampW2 * ( I_W2_Y3[n-1] + SW2val[n] * H_W2_Y3(a,timeOfCapt[n-1],tvar) );
-		Z = ampZ2 * ( I_Z2_Y3[n-1] + SZ2val[n] * H_Z2_Y3_Zpart(a,timeOfCapt[n-1],tvar) - ST2val[n] * H_Z2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
-		X = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3_Xpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_X2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
-//		X = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3(a,timeOfCapt[n-1],tvar) );
-//		Y = ampX2 * ( I_Y2_Y3[n-1] + SY2val[n] * H_Y2_Y3(a,timeOfCapt[n-1],tvar) );
-		f = (V + W + Z + X + Y) * Exp(-tvar/tU3) / t2;
+	//	V  = ampV2 * ( I_V2_Y3[n-1] + SV2val[n] * H_V2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	W  = ampW2 * ( I_W2_Y3[n-1] + SW2val[n] * H_W2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	Z  = ampZ2 * ( I_Z2_Y3[n-1] + SZ2val[n] * H_Z2_Y3_Zpart(a,timeOfCapt[n-1],tvar) - ST2val[n] * H_Z2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	X  = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3_Xpart(a,timeOfCapt[n-1],tvar) - ST1val[n] * H_X2_Y3_Tpart(a,timeOfCapt[n-1],tvar) );
+	//	Y += ampV1 * ( I_V1_Y3[n-1] + SV1val[n] * H_X2_Y3_Xpart(a,timeOfCapt[n-1],tvar);
+////		X = ampX2 * ( I_X2_Y3[n-1] + SX2val[n] * H_X2_Y3(a,timeOfCapt[n-1],tvar) );
+////		Y = ampX2 * ( I_Y2_Y3[n-1] + SY2val[n] * H_Y2_Y3(a,timeOfCapt[n-1],tvar) );
+	//	f = (V + W + Z + X + Y) * Exp(-tvar/tU3) / t2;
+	
+		f = SY3val[n] * Exp(-tk/tU3)
+			+ tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) * ( ampV2*SV2val[n] + ampW2*SW2val[n] + ampZ2*SZ2val[n] + ampX2*SX2val[n] )
+			- tT2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tT2) ) * (ampZ2+ampX2) * ST2val[n]
+			//+ ampV1*tU1U2/t1/t2 * ( tU2U3 * ( ( sigmaI(1,aU1,k) + (aU2-aU1)*sigmaII(1,aU1,aU2,k) ) * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) - tU1U3 * sigmaII(1,aU1,aU3,k) );
+			+ tU2U3/t2 * (ampV1*tU1U2/t1*(aU2-aU1)*sigmaIII(1,aU1,aU2,aU3,n)) * ( Exp(-tk/tU3) - Exp(-tk/tU2) )
+			+ ampV1*tU1U2/t1 * (sigmaII(1,aU1,aU3,n)) * ( tU2U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU2) ) - tU1U3/t2 * ( Exp(-tk/tU3) - Exp(-tk/tU1) ) );
+	
 	}
 ////	Y3InitialValues[k-1] = Ycap(3,a,tBac+(k-1)*tCap);
 ////		printf("Y3IV[%d]=%f\n",k-1,Y3InitialValues[k-1]);
 	return f;
 }
+*/
 Double_t BFitNamespace::Ytot (Int_t i, Double_t *a, Double_t tvar) {
 	extern Int_t nCap;
 	extern Double_t tBac, tCyc, tU1, tU2, tU3, U10, U20, Y20, Y30;

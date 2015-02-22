@@ -59,7 +59,9 @@ bool		b134sbFlag = 0; // flag for 134sb cases which get special treatment
 Int_t 		nParChanges; // counts # of times pars have changed
 Double_t	*lastPar; // holds most recent paramter values for comparison
 Double_t	tT1, tT2, tT3, tU1, tU2, tU3; // modified lifetimes
+Double_t	aT1, aT2, aT3, aU1, aU2, aU3; // Decay factors for one capture interval tCap
 Double_t	eU1tCyc, eU2tCyc, eU3tCyc; // background decay at end of cycle: exp(-tCyc/tU1), ...
+Double_t	tT1U2, tT1U3, tU1U2, tU1U3, tT2U3, tU2U3; // Coefficients used in Y2 and Y3
 Double_t	cT1, cU1, cU2, cZT2, cZU2, cZU3, cXT1, cXU2, cXU3, cYU1, cYU2, cYU3, ThetaU, ThetaY; // various products of lifetimes
 Double_t	ST1_1cap, SW11_1cap, SZ11_1cap, ST2_1cap, SW22_1cap, SZ12_1cap, SZ22_1cap; // specific values of the SigmaT, SigmaW, and SigmaZ functions
 Double_t	*ST1val, *ST2val, *ST3val;
@@ -67,6 +69,8 @@ Double_t	*SV1val, *SV2val, *SV3val;
 Double_t	*SW1val, *SW2val, *SW3val;
 Double_t	*SZ1val, *SZ2val, *SZ3val;
 Double_t			 *SX2val, *SX3val;
+Double_t	*sY2V, *sY2W, *sY2Z, *SY2val;
+Double_t	*sY3V, *sY3W, *sY3Z, *sY3X, *sY3YV, *sY3YW, *sY3YZ, *SY3val;
 Double_t	*timeOfCapt; 
 Double_t	Gamma_T1_U2, Gamma_T2_U3;
 Double_t	Gamma_U1_U2, Gamma_U2_U3;
@@ -167,11 +171,25 @@ int BFit () {
 	SZ3val	= new Double_t [nCapMax+1];
 	SX2val	= new Double_t [nCapMax+1];
 	SX3val	= new Double_t [nCapMax+1];
+	sY2V	= new Double_t [nCapMax+1];
+	sY2W	= new Double_t [nCapMax+1];
+	sY2Z	= new Double_t [nCapMax+1];
+	sY3V	= new Double_t [nCapMax+1];
+	sY3W	= new Double_t [nCapMax+1];
+	sY3Z	= new Double_t [nCapMax+1];
+	sY3X	= new Double_t [nCapMax+1];
+	sY3YV	= new Double_t [nCapMax+1];
+	sY3YW	= new Double_t [nCapMax+1];
+	sY3YZ	= new Double_t [nCapMax+1];
+	SY2val	= new Double_t [nCapMax+1];
+	SY3val	= new Double_t [nCapMax+1];
 	ST1val[0] = ST2val[0] = ST3val[0] = 0.0; // zero index not used -- set to zero for definiteness
 	SV1val[0] = SV2val[0] = SV3val[0] = 0.0; // zero index not used -- set to zero for definiteness
 	SW1val[0] = SW2val[0] = SW3val[0] = 0.0; // zero index not used -- set to zero for definiteness
 	SZ1val[0] = SZ2val[0] = SZ3val[0] = 0.0; // zero index not used -- set to zero for definiteness
 				SX2val[0] = SX3val[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sY2V[0] = sY2W[0] = sY2Z[0] = SY2val[0] = 0.0;
+	sY3V[0] = sY3W[0] = sY3Z[0] = sY3X[0] = sY3YV[0] = sY3YW[0] = sY3YZ[0] = SY3val[0] = 0.0;
 // Arrays to hold partial integrals of functions through [index] teeth:
 // Zero index used only as an initializer (+1 element),
 // but don't need an element for the last tooth (-1 element)
@@ -215,7 +233,7 @@ int BFit () {
 	TH1D *h	= (TH1D*)f->Get(stBFitCase.pcsHistName);
 	Double_t dBinWidth		= stBFitCase.pdSeed[dt];
 	Double_t dNBins			= tCyc/dBinWidth;// # of bins covered by funtion  //h->GetNbinsX();
-	Double_t pointsPerBin	= 10;
+	Double_t pointsPerBin	= 20;
 	Double_t nPoints		= pointsPerBin * dNBins;
 	Double_t dRebinFactor	= dBinWidth/(h->GetBinWidth(1));
 //	Double_t dRebinFactor = stBFitCase.iBinWidth/(h->GetBinWidth(1));
@@ -917,6 +935,8 @@ int BFit () {
 			fyY3->Draw("SAME");
 			fyY2->Draw("SAME");
 			yMax = Max(h_DY2->GetMaximum(),h_DY3->GetMaximum());
+			yMax = Max(yMax,fyY2->GetMaximum(tBac,tCyc,10.0,20));
+			yMax = Max(yMax,fyY3->GetMaximum(tBac,tCyc,10.0,20));
 			yMin = -0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DY2->GetYaxis()->SetRangeUser(yMin,yMax);
@@ -1006,9 +1026,9 @@ int BFit () {
 			h_DT3->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_T3V3W3Z3);
 			
-			Double_t tval1 = 101000;
+			Double_t tval1 = tCyc;
 			Double_t tvaln[1] = {tval1};
-			printf("f(%f) = %f\n", tval1, yY(2,par,tval1));
+			printf("f(%f) = %f\n", tval1, Ycap(3,par,tval1));
 			//printf("f(%f) = %f\n", tval1, yAll(tvaln,par));
 			
 		} // end if (has_VWXY == 1)
