@@ -63,14 +63,15 @@ Double_t	aT1, aT2, aT3, aU1, aU2, aU3; // Decay factors for one capture interval
 Double_t	eU1tCyc, eU2tCyc, eU3tCyc; // background decay at end of cycle: exp(-tCyc/tU1), ...
 Double_t	tT1U2, tT1U3, tU1U2, tU1U3, tT2U3, tU2U3; // Coefficients used in Y2 and Y3
 Double_t	cT1, cU1, cU2, cZT2, cZU2, cZU3, cXT1, cXU2, cXU3, cYU1, cYU2, cYU3, ThetaU, ThetaY; // various products of lifetimes
-Double_t	ST1_1cap, SW11_1cap, SZ11_1cap, ST2_1cap, SW22_1cap, SZ12_1cap, SZ22_1cap; // specific values of the SigmaT, SigmaW, and SigmaZ functions
-Double_t	*ST1val, *ST2val, *ST3val;
-Double_t	*SV1val, *SV2val, *SV3val;
-Double_t	*SW1val, *SW2val, *SW3val;
-Double_t	*SZ1val, *SZ2val, *SZ3val;
-Double_t			 *SX2val, *SX3val;
-Double_t	*sY2V, *sY2W, *sY2Z, *SY2val;
-Double_t	*sY3V, *sY3W, *sY3Z, *sY3X, *sY3YV, *sY3YW, *sY3YZ, *SY3val;
+//Double_t	ST1_1cap, SW11_1cap, SZ11_1cap, ST2_1cap, SW22_1cap, SZ12_1cap, SZ22_1cap; // specific values of the SigmaT, SigmaW, and SigmaZ functions
+Double_t	*sigmaT1, *sigmaT2, *sigmaT3;
+Double_t	*sigmaV1, *sigmaV2, *sigmaV3;
+Double_t	*sigmaW1, *sigmaW2, *sigmaW3;
+Double_t	*sigmaZ1, *sigmaZ2, *sigmaZ3;
+Double_t			  *sigmaX2, *sigmaX3;
+Double_t			  *sigmaY2, *sigmaY3;
+Double_t	*sY2v1, *sY2w1, *sY2z1;
+Double_t	*sY3v2, *sY3w2, *sY3z2, *sY3x2, *sY3v1, *sY3w1, *sY3z1;
 Double_t	*timeOfCapt; 
 Double_t	Gamma_T1_U2, Gamma_T2_U3;
 Double_t	Gamma_U1_U2, Gamma_U2_U3;
@@ -157,39 +158,41 @@ int BFit () {
 		timeOfCapt[k] = tBac + k*tCap;
 // Arrays to hold the sigma values in each [index] tooth:
 // Zero index not used (+1 element), for notational consistency
-	ST1val	= new Double_t [nCapMax+1];
-	ST2val	= new Double_t [nCapMax+1];
-	ST3val	= new Double_t [nCapMax+1];
-	SV1val	= new Double_t [nCapMax+1];
-	SV2val	= new Double_t [nCapMax+1];
-	SV3val	= new Double_t [nCapMax+1];
-	SW1val	= new Double_t [nCapMax+1];
-	SW2val	= new Double_t [nCapMax+1];
-	SW3val	= new Double_t [nCapMax+1];
-	SZ1val	= new Double_t [nCapMax+1];
-	SZ2val	= new Double_t [nCapMax+1];
-	SZ3val	= new Double_t [nCapMax+1];
-	SX2val	= new Double_t [nCapMax+1];
-	SX3val	= new Double_t [nCapMax+1];
-	sY2V	= new Double_t [nCapMax+1];
-	sY2W	= new Double_t [nCapMax+1];
-	sY2Z	= new Double_t [nCapMax+1];
-	sY3V	= new Double_t [nCapMax+1];
-	sY3W	= new Double_t [nCapMax+1];
-	sY3Z	= new Double_t [nCapMax+1];
-	sY3X	= new Double_t [nCapMax+1];
-	sY3YV	= new Double_t [nCapMax+1];
-	sY3YW	= new Double_t [nCapMax+1];
-	sY3YZ	= new Double_t [nCapMax+1];
-	SY2val	= new Double_t [nCapMax+1];
-	SY3val	= new Double_t [nCapMax+1];
-	ST1val[0] = ST2val[0] = ST3val[0] = 0.0; // zero index not used -- set to zero for definiteness
-	SV1val[0] = SV2val[0] = SV3val[0] = 0.0; // zero index not used -- set to zero for definiteness
-	SW1val[0] = SW2val[0] = SW3val[0] = 0.0; // zero index not used -- set to zero for definiteness
-	SZ1val[0] = SZ2val[0] = SZ3val[0] = 0.0; // zero index not used -- set to zero for definiteness
-				SX2val[0] = SX3val[0] = 0.0; // zero index not used -- set to zero for definiteness
-	sY2V[0] = sY2W[0] = sY2Z[0] = SY2val[0] = 0.0;
-	sY3V[0] = sY3W[0] = sY3Z[0] = sY3X[0] = sY3YV[0] = sY3YW[0] = sY3YZ[0] = SY3val[0] = 0.0;
+	sigmaT1	= new Double_t [nCapMax+1];
+	sigmaT2	= new Double_t [nCapMax+1];
+	sigmaT3	= new Double_t [nCapMax+1];
+	sigmaV1	= new Double_t [nCapMax+1];
+	sigmaV2	= new Double_t [nCapMax+1];
+	sigmaV3	= new Double_t [nCapMax+1];
+	sigmaW1	= new Double_t [nCapMax+1];
+	sigmaW2	= new Double_t [nCapMax+1];
+	sigmaW3	= new Double_t [nCapMax+1];
+	sigmaZ1	= new Double_t [nCapMax+1];
+	sigmaZ2	= new Double_t [nCapMax+1];
+	sigmaZ3	= new Double_t [nCapMax+1];
+	sigmaX2	= new Double_t [nCapMax+1];
+	sigmaX3	= new Double_t [nCapMax+1];
+	sigmaY2	= new Double_t [nCapMax+1];
+	sigmaY3	= new Double_t [nCapMax+1];
+	sY2v1	= new Double_t [nCapMax+1];
+	sY2w1	= new Double_t [nCapMax+1];
+	sY2z1	= new Double_t [nCapMax+1];
+	sY3v2	= new Double_t [nCapMax+1];
+	sY3w2	= new Double_t [nCapMax+1];
+	sY3z2	= new Double_t [nCapMax+1];
+	sY3x2	= new Double_t [nCapMax+1];
+	sY3v1	= new Double_t [nCapMax+1];
+	sY3w1	= new Double_t [nCapMax+1];
+	sY3z1	= new Double_t [nCapMax+1];
+	sigmaT1[0] = sigmaT2[0] = sigmaT3[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sigmaV1[0] = sigmaV2[0] = sigmaV3[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sigmaW1[0] = sigmaW2[0] = sigmaW3[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sigmaZ1[0] = sigmaZ2[0] = sigmaZ3[0] = 0.0; // zero index not used -- set to zero for definiteness
+				sigmaX2[0] = sigmaX3[0] = 0.0; // zero index not used -- set to zero for definiteness
+				sigmaY2[0] = sigmaY3[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sY2v1[0]  = sY2w1[0]  = sY2z1[0]  = 0.0; // zero index not used -- set to zero for definiteness
+	sY3v2[0]  = sY3w2[0]  = sY3z2[0]  = sY3x2[0] = 0.0; // zero index not used -- set to zero for definiteness
+	sY3v1[0]  = sY3w1[0]  = sY3z1[0]  = 0.0; // zero index not used -- set to zero for definiteness
 // Arrays to hold partial integrals of functions through [index] teeth:
 // Zero index used only as an initializer (+1 element),
 // but don't need an element for the last tooth (-1 element)
