@@ -32,10 +32,12 @@
 //#include "include/bdn.h"
 //#include "include/sb135.h"
 //#include "bdn_cases.h"
-#include "bdn_histograms.h"
+#include "bdnHistograms.h"
 #include "CSVtoStruct.h"
 #include "BFit2Model.h"
 using namespace std;
+
+#include "TVirtualFitter.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Global variables
@@ -379,17 +381,44 @@ int BFit () {
 			if (tog[index] == 0) fyAll->FixParameter(index, stBFitCase.pdSeed[index]);
 		}
 		if (b134sbFlag && tog[gammaT2]==0) fyAll->FixParameter(gammaT3, stBFitCase.pdSeed[gammaT2]);
+	// Print initial parameters: (see similar code in yAll() in BFit2Model.cxx)
+		if (nParChanges == 0) {
+			printf("Ini pars (   0): ",nParChanges);
+			for (index = 0; index < nPars; index++) {
+				if (stBFitCases[iBFitCaseIndex].pbToggle[index]) printf("%s=%.4e ",parNames[index],par[index]);
+			}
+			printf("\n");
+		}
 	// Do fit and get results
 		timer = clock();
-		TFitResultPtr fit = h1->Fit("fyAll",stBFitCase.pcsOptions);
+	//	TVirtualFitter::SetDefaultFitter("Minuit2");
+	//	TVirtualFitter *fitter;
+	//	
+		TFitResultPtr fit = h1->Fit(fyAll,stBFitCase.pcsOptions);
 		timer = clock() - timer;
-		printf("Fitting done in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
+		printf("\nFitting done in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
+		printf("Fit status = %d\n",fit->Status());
+		printf("Cov status = %d\n",fit->CovMatrixStatus());
 		TMatrixDSym cov = fit->GetCovarianceMatrix();
+	//	Double_t *cov2 = fit->GetCovarianceMatrix();
+	//	Int_t ii=0, jj=0;
+		Double_t *covArray = new Double_t [nPars*nPars];
+		covArray = cov.GetMatrixArray();
+		
+		for (Int_t ii=0; ii<8; ii++) {
+		//	printf("%.3e  ",cov.GetMatrixArray()[ii]);
+			for (Int_t jj=0; jj<8; jj++) {
+			//	printf("%.6e  ", cov[ii][jj]);
+				printf("%.6e  ", covArray[ii+jj*nPars] );
+			}
+			cout << endl;
+		}
 		fit->Print("V");
 	// Get parameter values from fit
 		for (index = 0; index < nPars; index++) {
 			par[index] = fyAll->GetParameter(index);
 			err[index] = fyAll->GetParError(index);
+		//	printf("%12s err = %f\n", fyAll->GetParName(index), err[index]);
 		}
 	// par is now up to date...
 	// Set other functions to parameter values from fit
@@ -444,39 +473,49 @@ int BFit () {
 	//	printf("\n");
 		
 	// Estimate # of betas detected and error
-		T1_integral = par[nCyc]*frT1->Integral( 0.0, tCyc);
-		T2_integral = par[nCyc]*frT2->Integral( 0.0, tCyc);
-		T3_integral = par[nCyc]*frT3->Integral( 0.0, tCyc);
-		U1_integral = par[nCyc]*frU1->Integral( 0.0, tCyc);
-		U2_integral = par[nCyc]*frU2->Integral( 0.0, tCyc);
-		U3_integral = par[nCyc]*frU3->Integral( 0.0, tCyc);
-		DC_integral = par[nCyc]*frDC->Integral( 0.0, tCyc);
-		All_integral = par[nCyc]*frAll->Integral( 0.0, tCyc);
+		T1_integral = frT1->Integral( 0.0, tCyc);
+		T2_integral = frT2->Integral( 0.0, tCyc);
+		T3_integral = frT3->Integral( 0.0, tCyc);
+		U1_integral = frU1->Integral( 0.0, tCyc);
+		U2_integral = frU2->Integral( 0.0, tCyc);
+		U3_integral = frU3->Integral( 0.0, tCyc);
+		DC_integral = frDC->Integral( 0.0, tCyc);
+		All_integral = frAll->Integral( 0.0, tCyc);
 		Integral_sum = DC_integral + T1_integral + T2_integral + T3_integral + U1_integral + U2_integral + U3_integral;
 		
 		timer = clock() - timer;
 		printf("\nIntegrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		
 		if (stBFitCase.bComputeOtherIntegrals) {
-			U1_integral_trap_empty = par[nCyc]*frU1->Integral( 0.0, tBac);
-			U2_integral_trap_empty = par[nCyc]*frU2->Integral( 0.0, tBac);
-			U3_integral_trap_empty = par[nCyc]*frU3->Integral( 0.0, tBac);
-			U1_integral_trap_full  = par[nCyc]*frU1->Integral( tBac, tCyc);
-			U2_integral_trap_full  = par[nCyc]*frU2->Integral( tBac, tCyc);
-			U3_integral_trap_full  = par[nCyc]*frU3->Integral( tBac, tCyc);
+			U1_integral_trap_empty = frU1->Integral( 0.0, tBac);
+			U2_integral_trap_empty = frU2->Integral( 0.0, tBac);
+			U3_integral_trap_empty = frU3->Integral( 0.0, tBac);
+			U1_integral_trap_full  = frU1->Integral( tBac, tCyc);
+			U2_integral_trap_full  = frU2->Integral( tBac, tCyc);
+			U3_integral_trap_full  = frU3->Integral( tBac, tCyc);
 			
 			timer = clock() - timer;
 			printf("Other integrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		}
 		
-		T1_integral_error = par[nCyc]*frT1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		T2_integral_error = par[nCyc]*frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		T3_integral_error = par[nCyc]*frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U1_integral_error = par[nCyc]*frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U2_integral_error = par[nCyc]*frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U3_integral_error = par[nCyc]*frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		DC_integral_error = par[nCyc]*frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		All_integral_error = par[nCyc]*frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T1_integral_error = frT1->IntegralError( 0.0, tCyc);//, par, cov);//.GetMatrixArray() );
+		T2_integral_error = frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		T3_integral_error = frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U1_integral_error = frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U2_integral_error = frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		U3_integral_error = frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		DC_integral_error = frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+		
+	//	printf("tCyc=%f\n",tCyc);
+	//	T1_integral_error = frT1->IntegralError( 0.0, 1000*tCyc);
+	//	T2_integral_error = frT2->IntegralError( 0.0, tCyc);
+	//	T3_integral_error = frT3->IntegralError( 0.0, tCyc);
+	//	U1_integral_error = frU1->IntegralError( 0.0, tCyc);
+	//	U2_integral_error = frU2->IntegralError( 0.0, tCyc);
+	//	U3_integral_error = frU3->IntegralError( 0.0, tCyc);
+	//	DC_integral_error = frDC->IntegralError( 0.0, tCyc);
+	//	All_integral_error = frAll->IntegralError( 0.0, tCyc);
 		
 		Integral_sum_error = Sqrt( Power(DC_integral_error,2.0) + Power(T1_integral_error,2.0) + Power(T2_integral_error,2.0) + Power(T3_integral_error,2.0) + Power(U1_integral_error,2.0) + Power(U2_integral_error,2.0) + Power(U3_integral_error,2.0) );
 		
@@ -486,16 +525,16 @@ int BFit () {
 		cout << endl << separator << endl;
 		printf("NUMBER OF BETAS DETECTED, by population:\n");
 		cout << separator << endl;
-		printf("T1 integral = %f +/- %f\n", T1_integral, T1_integral_error);
-		printf("U1 integral = %f +/- %f\n", U1_integral, U1_integral_error);
-		printf("T2 integral = %f +/- %f\n", T2_integral, T2_integral_error);
-		printf("U2 integral = %f +/- %f\n", U2_integral, U2_integral_error);
-		printf("T3 integral = %f +/- %f\n", T3_integral, T3_integral_error);
-		printf("U3 integral = %f +/- %f\n", U3_integral, U3_integral_error);
-		printf("DC integral = %f +/- %f\n", DC_integral, DC_integral_error);
+		printf("T1 integral = %f +/- %.24f\n", T1_integral, T1_integral_error);
+		printf("U1 integral = %f +/- %.24f\n", U1_integral, U1_integral_error);
+		printf("T2 integral = %f +/- %.24f\n", T2_integral, T2_integral_error);
+		printf("U2 integral = %f +/- %.24f\n", U2_integral, U2_integral_error);
+		printf("T3 integral = %f +/- %.24f\n", T3_integral, T3_integral_error);
+		printf("U3 integral = %f +/- %.24f\n", U3_integral, U3_integral_error);
+		printf("DC integral = %f +/- %.24f\n", DC_integral, DC_integral_error);
 		cout << separator << endl;
-		printf("Sum of above = %f +/- %f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
-		printf("All integral = %f +/- %f\n", All_integral, All_integral_error);
+		printf("Sum of above = %f +/- %.24f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
+		printf("All integral = %f +/- %.24f\n", All_integral, All_integral_error);
 		if (stBFitCase.bComputeOtherIntegrals) {
 			cout << separator << endl;
 			printf("U1 with trap emtpy = %f; trap full = %f\n", U1_integral_trap_empty, U1_integral_trap_full);
@@ -1033,6 +1072,18 @@ int BFit () {
 			Double_t tvaln[1] = {tval1};
 			printf("f(%f) = %f\n", tval1, Ycap(3,par,tval1));
 			//printf("f(%f) = %f\n", tval1, yAll(tvaln,par));
+			
+			// Print Reduced Chi-Square
+			TH1D *hChiSq = (TH1D*)h1->Clone("hChiSq");
+			TF1  *fChiSq = (TF1*) fyAll->Clone("fChiSq");
+			Double_t fy, sigma, chisq;
+		//	for (Int_t pt = 0; pt < nPoints; pt++) {
+		//		yData = hChiSq->Get
+		//	}
+		//	Double_t dNBins			= tCyc/dBinWidth;// # of bins covered by funtion  //h->GetNbinsX();
+		//	Double_t pointsPerBin	= 20;
+		//	Double_t nPoints		= pointsPerBin * dNBins;
+		//	Double_t dRebinFactor	= dBinWidth/(h->GetBinWidth(1));
 			
 		} // end if (has_VWXY == 1)
 		

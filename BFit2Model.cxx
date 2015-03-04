@@ -115,7 +115,15 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	tU1 = 1.0 / ( 1.0/t1 + a[gammaU1]/1000.0 ); // net variable lifetvar (1/e) in ms
 	tU2 = 1.0 / ( 1.0/t2 + a[gammaU2]/1000.0 ); // net variable lifetvar (1/e) in ms
 	tU3 = 1.0 / ( 1.0/t3 + a[gammaU3]/1000.0 ); // net variable lifetvar (1/e) in ms
-	printf("tT1=%f, tT2=%f, tT3=%f, tU1=%f, tU2=%f, tU3=%f\n", tT1, tT2, tT3, tU1, tU2, tU3);
+	if (tT1==tU1 || tT2==tU2 || tT3==tU3) {
+		printf("\n************************************************************");
+		printf("\n*** WARNING: Found gamma_Ti = gamma_Ui for some i.");
+		printf("\n*** Z_i population will wrongly evaluate to 0, and");
+		printf("\n*** Y_{i+1} populations will be too small.");
+		printf("\n*** Suggestion: Slightly change either gamma_Ti or gamma_Ui.");
+		printf("\n************************************************************\n\n");
+	}
+//	printf("tT1=%f, tT2=%f, tT3=%f, tU1=%f, tU2=%f, tU3=%f\n", tT1, tT2, tT3, tU1, tU2, tU3);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 	Gamma_T1_U2	= 1/tT1 - 1/tU2;
 	Gamma_U1_U2	= 1/tU1 - 1/tU2;
@@ -172,6 +180,7 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 	ampZ1		= a[r1] * tCap * a[p] * (a[gammaT1]+iota)/((a[gammaT1]-a[gammaU1])+iota);
 	ampZ2		= a[r2] * tCap * a[p] * (a[gammaT2]+iota)/((a[gammaT2]-a[gammaU2])+iota);
 	ampZ3		= a[r3] * tCap * a[p] * (a[gammaT3]+iota)/((a[gammaT3]-a[gammaU3])+iota);
+	//printf("ampZ2=%f\n",ampZ2);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 	ampX2		= a[r1] * tCap * a[p] * (1/t1) * (tT1*tU2/(tU2-tT1));
 	ampX3		= a[r2] * tCap * a[p] * (1/t2) * (tT2*tU3/(tU3-tT2));
@@ -209,12 +218,11 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 		sigmaZ3[k] = (aU3-aT3) * sigmaII(a[rho],aT3,aU3,k) + sigmaT3[k];//SigmaZ(a[rho],tT3,tU3,k);
 		sigmaX2[k] = (aU2-aT1) * sigmaII(a[rho],aT1,aU2,k) + sigmaT1[k];//SigmaZ(a[rho],tT1,tU2,k);
 		sigmaX3[k] = (aU3-aT2) * sigmaII(a[rho],aT2,aU3,k) + sigmaT2[k];//SigmaZ(a[rho],tT2,tU3,k);
-		// Components of Y2 initial value:
+		// Components of y2 initial value:
 		sY2v1[k]  = tU1U2/t1 * (aU2-aU1) * sigmaII(1,aU1,aU2,k);
 		sY2w1[k]  = tU1U2/t1 * (aU2-aU1) * aT1 * sigmaIII(a[rho],aT1,aU1,aU2,k);
 		sY2z1[k]  = tU1U2/t1 * (aU2-aU1) * ( sigmaII(a[rho],aT1,aU2,k) + (aU1-aT1) * sigmaIII(a[rho],aT1,aU1,aU2,k) ) - tT1U2/t1 * (aU2-aT1) * sigmaII(a[rho],aT1,aU2,k);
-		sigmaY2[k] = ampV1*sY2v1[k] + ampW1*sY2w1[k] + ampZ1*sY2z1[k];
-		// Components of Y3 initial value:
+		// Components of y3 initial value:
 		sY3v2[k]  = tU2U3/t2 * (aU3-aU2) * sigmaII(1,aU2,aU3,k);
 		sY3w2[k]  = tU2U3/t2 * (aU3-aU2) * aT2 * sigmaIII(a[rho],aT2,aU2,aU3,k);
 		sY3z2[k]  = tU2U3/t2 * (aU3-aU2) * ( sigmaII(a[rho],aT2,aU3,k) + (aU2-aT2) * sigmaIII(a[rho],aT2,aU2,aU3,k) ) - tT2U3/t2 * (aU3-aT2) * sigmaII(a[rho],aT2,aU3,k);
@@ -233,12 +241,13 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 				  //
 				  - tU2U3/t2 * (aU3-aU2) * tT1U2/t1                         * sigmaII (a[rho],aT1,aU3,        k)
 				  + tT1U3/t2 * (aU3-aT1) * tT1U2/t1                         * sigmaII (a[rho],aT1,aU3,        k);
-				  
+		// y2 and y3 initial values
+		sigmaY2[k] = ampV1*sY2v1[k] + ampW1*sY2w1[k] + ampZ1*sY2z1[k];
 		sigmaY3[k] = ampV2*sY3v2[k] + ampW2*sY3w2[k] + ampZ2*sY3z2[k] + ampX2*sY3x2[k] + ampV1*sY3v1[k] + ampW1*sY3w1[k] + ampZ1*sY3z1[k];
 		
-		Double_t sIII = sigmaIII(a[rho],aT1,aU1,aU3,k);
-		Double_t sIV  = sigmaIV (a[rho],aT1,aU1,aU2,aU3,k);
-		printf("n=%d, sIII=%f, sIV=%f, sY3w1=%f, sY3z1=%f, SY3=%f\n", k, sIII, sIV, sY3w1[k], sY3z1[k], sigmaY3[k]);
+	//	Double_t sIII = sigmaIII(a[rho],aT1,aU1,aU3,k);
+	//	Double_t sIV  = sigmaIV (a[rho],aT1,aU1,aU2,aU3,k);
+	//	printf("n=%d, sIII=%f, sIV=%f, sY3w1=%f, sY3z1=%f, SY3=%f\n", k, sIII, sIV, sY3w1[k], sY3z1[k], sigmaY3[k]);
 		
 	//	I_V2_Y3[k] = I_V2_Y3[k-1] + sigmaV2[k] * H_V2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
 	//	I_W2_Y3[k] = I_W2_Y3[k-1] + sigmaW2[k] * H_W2_Y3(a,timeOfCapt[k-1],timeOfCapt[k]);
@@ -306,7 +315,7 @@ void BFitNamespace::ComputeParameterDependentVars (Double_t *a) {
 		+ U20 * tU2/t2 * tU3/(tU3-tU2) * ( eU3tCyc - eU2tCyc )
 		+ U10 * tU1/t1 * tU2/t2 * tU3/ThetaU * ( tU1 * (tU3-tU2) * eU1tCyc - tU2 * (tU3-tU1) * eU2tCyc + tU3 * (tU2-tU1) * eU3tCyc ) ) / ( 1 - eU3tCyc );
 	//U30 = ( V30 + W30 + Z30 + X30 + Y30 );
-	printf("Parameter-dependent values computed.\n");
+//	printf("Parameter-dependent values computed.\n");
 	//printf("ST1_1cap=%f, ST2_1cap=%f, SW11_1cap=%f, SW22_1cap=%f, SZ11_1cap=%f, SZ12_1cap=%f, SZ22_1cap=%f\n", ST1_1cap, ST2_1cap, SW11_1cap, SW22_1cap, SZ11_1cap, SZ12_1cap, SZ22_1cap);
 }
 
@@ -320,7 +329,7 @@ Double_t BFitNamespace::sigmaII (Double_t r, Double_t a1, Double_t a2, Int_t n) 
 	extern Double_t iota, tCap;
 //	static Double_t f1;
 //	f1	= r*a1;
-	return 1/(1-r*a1) * ( (1-Power(a2,n-1))/(1-a2) - (r*a1*Power(a2,n-1)-Power(r*a1,n)+iota)/(a2-r*a1+iota) );
+	return 1/(1-r*a1) * ( (1-Power(a2,n-1))/(1-a2) - r*a1 * (Power(a2,n-1)-Power(r*a1,n-1)+iota)/(a2-r*a1+iota) );
 }
 Double_t BFitNamespace::sigmaIII (Double_t r, Double_t aT1, Double_t aU1, Double_t aU2, Int_t n) {
 	using namespace TMath;
@@ -380,7 +389,7 @@ Double_t BFitNamespace::Ycap (Int_t i, Double_t *a, Double_t tvar) {
 	//	f = (V + W + Z) * Exp(-tvar/tU2) / t1;
 		f = sigmaY2[n] * Exp(-tk/tU2)
 			+ tU1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tU1) ) * ( ampV1*sigmaV1[n] + ampW1*sigmaW1[n] + ampZ1*sigmaZ1[n] )
-			- tT1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tT1) ) * ampZ1 * sigmaT1[n];
+			- tT1U2/t1 * ( Exp(-tk/tU2) - Exp(-tk/tT1) ) *   ampZ1*sigmaT1[n];
 //		printf("tk=%f, B1=%f, ampV1=%f, ampW1=%f, ampZ1=%f, SV1=%f, SW1=%f, SZ1=%f, SY2=%f, eU2=%f, eU1=%f, y2=%f\n",tk,B1,ampV1,ampW1,ampZ1,sigmaV1[n],sigmaW1[n],sigmaZ1[n],sigmaZ1[n],Exp(-tk/tU2),Exp(-tk/tU1),f);
 	}
 	if (i==3) {
@@ -576,42 +585,33 @@ void BFitNamespace::ComputePopulations (Double_t *t, Double_t *a) {
 //////////////////////////////////////////////////////////////////////////
 Double_t BFitNamespace::yAll(Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
-// Global variables that are constant throughout the fit
+	// Global variables that are constant throughout the fit
 	extern char parNames[30][5];
 	extern BFitCase_t stBFitCases[FILE_ROWS_BFit];
 	extern Int_t iBFitCaseIndex, nPars;
 	extern Double_t iota, t1, t2, t3;
-// Global variables that depend only on the parameters
+	// Global variables that depend only on the parameters
 	extern Int_t nParChanges; // counts # of times pars have changed
 	extern Double_t *lastPar; // holds most recent paramter values for comparison
-// Global variables that depend on t
+	// Global variables that depend on t
 	extern Double_t T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W2val, W3val, Z1val, Z2val, Z3val, X2val, X3val, Y2val, Y3val;
-// Local variables
+	// Local variables
 	static Double_t f;
 	static Int_t index; // index of parameter array
-	
-// When parameters change:
+
+	// When parameters change:
 	if (!CompareParArrays(a,lastPar,sizeof(Double_t),iota)) {
-		//printf("\n\nArrays not equal.\n\n");
 		ComputeParameterDependentVars(a);
 		memcpy(lastPar,a,nPars*sizeof(Double_t));
 		nParChanges++;
-		
-		printf("New params (%d): ",nParChanges);
-	// Print current paramters, for parameters that may have changed
+		// Print updated paramters
+		printf("New pars (%4d): ",nParChanges);
 		for (index = 0; index < nPars; index++) {
 			if (stBFitCases[iBFitCaseIndex].pbToggle[index]) printf("%s=%.4e ",parNames[index],a[index]);
 		}
 		printf("\n");
 	}
-	
-// Always:
-//	ComputeTimeDependentVars(t,a);
-//	ComputePopulations(t,a);
-	
-	f = 0.0;
-	f = yDC(t,a) + yT1(t,a) + yT2(t,a) + yT3(t,a) + a[epsU]*(yU1(t,a) + yU2(t,a) + yU3(t,a));
-	return f;
+	return yDC(t,a) + yT1(t,a) + yT2(t,a) + yT3(t,a) + a[epsU]*(yU1(t,a) + yU2(t,a) + yU3(t,a));
 }
 /////////////////////////////////////////////////////////////////////
 // y functions with the right signature for use in a TF1
@@ -815,46 +815,61 @@ Double_t BFitNamespace::oU3 (Double_t *t, Double_t *a) { return BFitNamespace::y
 // Used for calculating the desired integrals... apply nCyc to those
 //////////////////////////////////////////////////////////////////////////
 Double_t BFitNamespace::rDC (Double_t *t, Double_t *a) {
-	return a[DC];
+	return a[nCyc]*a[DC];
 }
 Double_t BFitNamespace::rT1 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t1;
-	return a[epsT]*Ttot(1,a,t[0])/t1;
+//	return a[epsT]*Ttot(1,a,t[0])/t1;
+	return a[nCyc]*a[epsT]*T1(t,a)/t1;
 }
 Double_t BFitNamespace::rT2 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t2;
-	return a[epsT]*Ttot(2,a,t[0])/t2;
+	return a[nCyc]*a[epsT]*Ttot(2,a,t[0])/t2;
 }
 Double_t BFitNamespace::rT3 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t3;
-	return a[epsT]*Ttot(3,a,t[0])/t3;
+	return a[nCyc]*a[epsT]*Ttot(3,a,t[0])/t3;
 }
 Double_t BFitNamespace::rU1 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t1;
-	return a[epsU]*(a[epsV]*Vtot(1,a,t[0]) + a[epsW]*Wtot(1,a,t[0]) + a[epsZ]*Ztot(1,a,t[0]))/t1;
+	return a[nCyc]*a[epsU]*(a[epsV]*Vtot(1,a,t[0]) + a[epsW]*Wtot(1,a,t[0]) + a[epsZ]*Ztot(1,a,t[0]))/t1;
 }
 Double_t BFitNamespace::rU2 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t2;
-	return a[epsU]*(a[epsV]*Vtot(2,a,t[0]) + a[epsW]*Wtot(2,a,t[0]) + a[epsZ]*Ztot(2,a,t[0]) + a[epsX]*Xtot(2,a,t[0]) + a[epsY]*Ytot(2,a,t[0]))/t2;
+	return a[nCyc]*a[epsU]*(a[epsV]*Vtot(2,a,t[0]) + a[epsW]*Wtot(2,a,t[0]) + a[epsZ]*Ztot(2,a,t[0]) + a[epsX]*Xtot(2,a,t[0]) + a[epsY]*Ytot(2,a,t[0]))/t2;
 }
 Double_t BFitNamespace::rU3 (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
 	extern Double_t t3;
-	return a[epsU]*(a[epsV]*Vtot(3,a,t[0]) + a[epsW]*Wtot(3,a,t[0]) + a[epsZ]*Ztot(3,a,t[0]) + a[epsX]*Xtot(3,a,t[0]) + a[epsY]*Ytot(3,a,t[0]))/t3;
+	return a[nCyc]*a[epsU]*(a[epsV]*Vtot(3,a,t[0]) + a[epsW]*Wtot(3,a,t[0]) + a[epsZ]*Ztot(3,a,t[0]) + a[epsX]*Xtot(3,a,t[0]) + a[epsY]*Ytot(3,a,t[0]))/t3;
 }
 Double_t BFitNamespace::rAll (Double_t *t, Double_t *a) {
 	using namespace BFitNamespace;
-	return a[DC] + rT1(t,a) + rT2(t,a) + rT3(t,a) + rU1(t,a) + rU2(t,a) + rU3(t,a);
+	return a[nCyc]*a[DC] + rT1(t,a) + rT2(t,a) + rT3(t,a) + rU1(t,a) + rU2(t,a) + rU3(t,a);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // T & U populations
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Double_t BFitNamespace::T1 (Double_t *t, Double_t *a) {
+	using namespace BFitNamespace;
+	using namespace TMath;
+	extern Double_t tCap, tBac, tCyc, tT1;
+	extern Double_t ampT1, *sigmaT1;
+	static Double_t f;
+	static Int_t n;
+	f = 0.0;
+	n = Ceil((t[0]-tBac)/tCap);
+	if (tBac <= t[0] && t[0] <= tCyc) {
+		f = ampT1 * sigmaT1[n] * Exp(-(t[0]-tBac-(n-1)*tCap)/tT1);
+	}
+	return f;
+}
 Double_t BFitNamespace::Ttot (Int_t i, Double_t *a, Double_t tvar) {
 	using namespace BFitNamespace;
 	using namespace TMath;

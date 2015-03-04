@@ -81,8 +81,8 @@ namespace BFitNamespace {
 	Double_t H_U1_U3		(Double_t*, Double_t, Double_t);
 	
 // Trapped and untrapped populations 1, 2, 3
-/*	Double_t T1 (Double_t*, Double_t*);
-	Double_t T2 (Double_t*, Double_t*);
+	Double_t T1 (Double_t*, Double_t*);
+/*	Double_t T2 (Double_t*, Double_t*);
 	Double_t T3 (Double_t*, Double_t*);
 	Double_t U1 (Double_t*, Double_t*);
 	Double_t U2 (Double_t*, Double_t*);
