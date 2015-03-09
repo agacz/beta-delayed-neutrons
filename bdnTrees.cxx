@@ -1,5 +1,5 @@
 #define _bdn_trees_20140613_cxx "bdn_trees_20140613.cxx"
-#include "bdn_trees_20140613.h"
+#include "bdnTrees.h"
 
 void book_trees()
 {

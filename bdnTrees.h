@@ -42,7 +42,7 @@ struct fileMetadata_t
 			nNetZeroTOFIntegral[4],		nNetLowTOFIntegral[4],		nNetFastIntegral[4],		nNetSlowIntegral[4], \
 			nZeroTOFBkgdIntegral[4],	nLowTOFBkgdIntegral[4],		nFastBkgdIntegral[4],		nSlowBkgdIntegral[4],	nOopsBkgdIntegral[4], \
 			nNetZeroTOFBkgdIntegral[4],	nNetLowTOFBkgdIntegral[4],	nNetFastBkgdIntegral[4],	nNetSlowBkgdIntegral[4];
-};
+} __attribute__((packed));
 /*
 struct fileMetadata_t
 {
@@ -83,7 +83,7 @@ struct bdnEvent_t
 	s_ms_since_capt, s_capt_state, s_ms_since_eject, s_capt, deadTime_us, s_SiX4, event_good, event, run; \
 	double T_mcpX, T_mcpY, R_mcpX, R_mcpY, T_mcpPhysX, T_mcpPhysY, R_mcpPhysX, R_mcpPhysY, \
 	t_B_dE, t_L_dE, tof_LT, tof_LR, tof_BT, tof_BR, v_LT, v_LR, v_BT, v_BR, En_LT, En_LR, En_BT, En_BR, rf_phase;
-};
+} __attribute__((packed));
 
 EXTERNAL fileMetadata_t		metadata;
 EXTERNAL bdnEvent_t			bdn;

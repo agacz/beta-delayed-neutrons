@@ -1,5 +1,5 @@
 #define _bdn_histograms_cxx "bdn_histograms.cxx"
-#include "bdn_histograms.h"
+#include "bdnHistograms.h"
 
 void book_histograms()
 {
@@ -207,6 +207,7 @@ h_BR_oops_mcpMap			= new TH2I("h_BR_oops_mcpMap"		,"MCP map for Bottom-Right TOF
 // Events vs Cycle Time
 // Declared as TH1D so that they can be multiplied by a TH1D containing per-bin deadtime corrections
 h_state_vs_cycle_time					= new TH2I("h_state_vs_cycle_time","Capt state versus Cycle Time (ms)",tCycBins,tCycMin,tCycMax,2,-0.5,1.5);
+h_cycles_vs_cycle_time					= new TH1D("h_cycles_vs_cycle_time","Number of times each Cycle Time (ms) was covered by experiment",tCycBins,tCycMin,tCycMax);
 h_all_vs_cycle_time_observed			= new TH1D("h_all_vs_cycle_time_observed","All Triggers vs Cycle Time (ms)",tCycBins,tCycMin,tCycMax);
 h_betas_vs_cycle_time_observed			= new TH1D("h_betas_vs_cycle_time_observed","Beta singles versus cycle time (ms), Both detectors (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_L_betas_vs_cycle_time_observed		= new TH1D("h_L_betas_vs_cycle_time_observed","Beta singles versus cycle time (ms), Left detector (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);

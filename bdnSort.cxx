@@ -144,6 +144,10 @@
 //	Adding h_dE-E_vs_cycle_time for deltaE-E's.
 // 2014-10-27
 //	Fixing bdn.tof_LT, etc. Had put them under beta-recoil cuts between 0515 and 0527. Now moving them back out, above bdn_Tree->Fill().
+// 2015-03-09
+//	Adding h_cycles_vs_cycle_time to count number of times each cycle-time bin was covered by each run.
+//	- The y value of this histo gives the number of cycles in each run, and this may depend on which bin of cycle time you're in.
+//	- The integral of this histo will be the run time to within a few ms.
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,9 +208,11 @@
 #include "TRandom3.h"
 #include "TMath.h"
 #include "bdn.h"
-#include "bdn_trees_20140613.h"
-#include "bdn_histograms.h"
+//#include "bdn_trees_20140613.h"
+//#include "bdn_histograms.h"
 //#include "sb135.h"
+#include "bdnTrees.h"
+#include "bdnHistograms.h"
 #include "CSVtoStruct.h"
 
 // Declare functions:
@@ -412,6 +418,7 @@ int main(int argc, char *argv[]) {
 	int sTot_SiX4	= 0;
 	int event_good	= 1; // 0 means a data marker was not found where expected
 	int n_bad_events= 0;
+	int n_ejects_found = 0;
 	//int trig_day, trig_hour, trig_min, trig_sec;	// not used
 	
 	// Variables for SYNC events
@@ -453,6 +460,7 @@ int main(int argc, char *argv[]) {
 	int sync_time_sec	= 0;
 	int now_time_sec;
 	int run_time_min, run_time_sec, run_remainder_sec;
+	int first_event_cycle_time_ms, last_event_cycle_time_ms, run_time_ms;
 	int clock = 0;
 	int lastClock = 0;
 	int event = 0;
@@ -1135,6 +1143,36 @@ int main(int argc, char *argv[]) {
 				bdn.event_good	=  event_good;
 				bdn.event 		=  n_trig;
 				bdn.run 		=  n_run;
+				
+		// Get run time from cycle time:
+				if (n_trig==1) {
+					printf("First event cycle time = %d\n",s_ms_since_eject);
+					last_event_cycle_time_ms = s_ms_since_eject; // to avoid enetering the conditions below
+					h_cycles_vs_cycle_time->Fill(s_ms_since_eject); // fill first event
+				}
+				Int_t ms_bin;
+				// if s_ms_since_eject > last_event_cycle_time_ms, no action required
+				if (s_ms_since_eject > last_event_cycle_time_ms) { // Usual case
+					// Fill histo up to new cycle_time
+					for (ms_bin = last_event_cycle_time_ms + 1; ms_bin <= s_ms_since_eject; ms_bin++) {
+						h_cycles_vs_cycle_time->Fill(ms_bin);
+					//	printf("ms_bin = %d\n",ms_bin);
+					}
+					last_event_cycle_time_ms = s_ms_since_eject;
+				}
+				if (s_ms_since_eject < last_event_cycle_time_ms - 0.5*(1000*stBDNCase.dCycleTime)) { // Has an eject pulse, cycle-time has cycled; half the cycle duration is used as a buffer to eliminate false positives
+					n_ejects_found++;
+					printf("ejects found = %d: this t = %d, last t = %d\n", n_ejects_found, s_ms_since_eject, last_event_cycle_time_ms);
+					// Fill histo to end of cycle
+					for (ms_bin = last_event_cycle_time_ms + 1; ms_bin <= 1000*stBDNCase.dCycleTime-1; ms_bin++) {
+						h_cycles_vs_cycle_time->Fill(ms_bin);
+					}
+					// Fill histo from beginning of cycle to current bin
+					for (ms_bin = 0; ms_bin <= s_ms_since_eject; ms_bin++) {
+						h_cycles_vs_cycle_time->Fill(ms_bin);
+					}
+					last_event_cycle_time_ms = s_ms_since_eject;
+				}
 				
 		// MCP Maps -- Top
 				if (a_mcp_lo < a_T_mcpSum_corr) {

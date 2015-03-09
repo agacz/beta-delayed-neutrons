@@ -266,6 +266,7 @@ EXTERNAL TH2I *h_BR_oops_mcpMap;
 // Events vs Cycle Time
 // Declared as TH1D so that they can be multiplied by a TH1D containing per-bin deadtime corrections
 EXTERNAL TH2I *h_state_vs_cycle_time;
+EXTERNAL TH1D *h_cycles_vs_cycle_time;
 EXTERNAL TH1D *h_betas_vs_cycle_time_observed;
 EXTERNAL TH1D *h_L_betas_vs_cycle_time_observed;
 EXTERNAL TH1D *h_B_betas_vs_cycle_time_observed;
@@ -285,6 +286,22 @@ EXTERNAL TH1D *h_slow_vs_cycle_time_observed;
 EXTERNAL TH1D *h_T_oops_vs_cycle_time_observed;
 EXTERNAL TH1D *h_R_oops_vs_cycle_time_observed;
 EXTERNAL TH1D *h_oops_vs_cycle_time_observed;
+EXTERNAL TH1D *h_T_CE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_R_CE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_CE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_B_dEE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_L_dEE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_dEE_vs_cycle_time_observed;
+EXTERNAL TH1D *h_LT_bg_vs_cycle_time_observed;
+EXTERNAL TH1D *h_LR_bg_vs_cycle_time_observed;
+EXTERNAL TH1D *h_BT_bg_vs_cycle_time_observed;
+EXTERNAL TH1D *h_BR_bg_vs_cycle_time_observed;
+EXTERNAL TH1D *h_bg_vs_cycle_time_observed;
+EXTERNAL TH1D *h_LT_bg_gt2MeV_vs_cycle_time_observed;
+EXTERNAL TH1D *h_LR_bg_gt2MeV_vs_cycle_time_observed;
+EXTERNAL TH1D *h_BT_bg_gt2MeV_vs_cycle_time_observed;
+EXTERNAL TH1D *h_BR_bg_gt2MeV_vs_cycle_time_observed;
+EXTERNAL TH1D *h_bg_gt2MeV_vs_cycle_time_observed;
 // Beta-Gamma, ADC
 EXTERNAL TH1I *ha_bg_LT;
 EXTERNAL TH1I *ha_bg_LR;
