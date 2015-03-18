@@ -7,6 +7,12 @@
 // Need to finalize the value of dCaptVetoOver_us
 // Not all 250us of it sits in the first bin of the capt... only 150-200us of it
 // Even though the # of events in this bin 
+//
+// 2014-08-08 Adding CE histograms for 134sb conversion electrons.
+// 2015-03-15 Added h_cycles histo, and now using this direct count of number of times each cycle-time bin was covered to determine time spent in each bin
+//	Time in bin i = 1ms * number of times bin i was covered
+// 	This affects the deadtime correction, then also requires its own correction after the deadtime correction is done.
+//	I'm calling it the "bin coverage correction."
 
 #include <unistd.h>
 #include <iostream>
@@ -85,6 +91,7 @@ int DeadtimeCorrection () {
 		meta->GetEntry(iRun);
 		nTrigs		+= (Int_t)meta->GetLeaf("n_trigs")->GetValue();
 		runTime_sec	+= (Int_t)meta->GetLeaf("run_time_sec")->GetValue();
+		cout << "run #" << (Int_t)meta->GetLeaf("n_run")->GetValue() << endl;
 	}
 	cout << "# runs     = "			<< nRuns				<< endl;
 	cout << "# triggers = "			<< nTrigs				<< endl;
@@ -122,12 +129,22 @@ int DeadtimeCorrection () {
 	Double_t	y, x;
 	Double_t	binObservedRateHz;
 	Double_t	binDeadtimeCorrFactor;
-	Double_t	binDeadtimeCorrError;
+	Double_t	binDeadtimeCorrError, binDeadtimeCorrError_old;
 	Double_t	sig_obs_rate_over_obs_rate;
-//	cout << "vars defined." << endl;
+	
+// Values for deadtime factor error calculation -- some redundant with other variables in program
+// Shorter names used for readability:
+//   y = counts
+//   d = deadtime per event
+//   t = time in bin
+	Double_t	yVal, ySig; // Counts in bin and sigma of that: sqrt(counts)
+	Double_t	tVal, tSig; // Total time in bin, and sigma of that
+	Double_t	dVal = dEvtDeadtime_sec;
+	Double_t	dSig = dEvtDeadtime_sec_err;
 	
 // Delete all previous cycles (instances) of each histo
 	file->Delete("h_deadtime_correction_vs_cycle_time;*");
+	file->Delete("h_coverage_correction_vs_cycle_time;*");
 	file->Delete("h_deadtime_correction_vs_rf_phase;*");
 	file->Delete("h_all_vs_cycle_time;*");
 	file->Delete("h_betas_vs_cycle_time;*");
@@ -148,6 +165,22 @@ int DeadtimeCorrection () {
 	file->Delete("h_oops_vs_cycle_time;*");
 	file->Delete("h_R_oops_vs_cycle_time;*");
 	file->Delete("h_T_oops_vs_cycle_time;*");
+	file->Delete("h_CE_vs_cycle_time;*");
+	file->Delete("h_R_CE_vs_cycle_time;*");
+	file->Delete("h_T_CE_vs_cycle_time;*");
+	file->Delete("h_B_dEE_vs_cycle_time;*");
+	file->Delete("h_L_dEE_vs_cycle_time;*");
+	file->Delete("h_dEE_vs_cycle_time;*");
+	file->Delete("h_LT_bg_vs_cycle_time;*");
+	file->Delete("h_LR_bg_vs_cycle_time;*");
+	file->Delete("h_BT_bg_vs_cycle_time;*");
+	file->Delete("h_BR_bg_vs_cycle_time;*");
+	file->Delete("h_bg_vs_cycle_time;*");
+	file->Delete("h_LT_bg_gt2MeV_vs_cycle_time;*");
+	file->Delete("h_LR_bg_gt2MeV_vs_cycle_time;*");
+	file->Delete("h_BT_bg_gt2MeV_vs_cycle_time;*");
+	file->Delete("h_BR_bg_gt2MeV_vs_cycle_time;*");
+	file->Delete("h_bg_gt2MeV_vs_cycle_time;*");
 	file->Delete("h_all_vs_rf_phase;*");
 	file->Delete("h_slow_vs_rf_phase;*");
 	file->Delete("h_LT_slow_vs_rf_phase;*");
@@ -168,6 +201,7 @@ int DeadtimeCorrection () {
 // Histos to hold deadtime correction factors, cloned from the ones they will correct to ensure same bins.
 // Each will be filled in its own loop.
 	TH1D *h_deadtime_correction_vs_cycle_time	= (TH1D*)gDirectory->Get("h_all_vs_cycle_time_observed")		->Clone("h_deadtime_correction_vs_cycle_time"); // Copy structure to deadtime corr histo
+	TH1D *h_coverage_correction_vs_cycle_time	= (TH1D*)gDirectory->Get("h_all_vs_cycle_time_observed")		->Clone("h_coverage_correction_vs_cycle_time"); // Copy structure to deadtime corr histo
 	TH1D *h_deadtime_correction_vs_rf_phase		= (TH1D*)gDirectory->Get("h_all_vs_rf_phase_observed")			->Clone("h_deadtime_correction_vs_rf_phase");
 //	cout << "Deadtime histos defined." << endl;
 // Define histos by cloning from uncorrected ones. Will be multiplied by the deadtime correction factors.
@@ -191,6 +225,22 @@ int DeadtimeCorrection () {
 	TH1D *h_oops_vs_cycle_time					= (TH1D*)gDirectory->Get("h_oops_vs_cycle_time_observed")		->Clone("h_oops_vs_cycle_time");
 	TH1D *h_R_oops_vs_cycle_time				= (TH1D*)gDirectory->Get("h_R_oops_vs_cycle_time_observed")		->Clone("h_R_oops_vs_cycle_time");
 	TH1D *h_T_oops_vs_cycle_time				= (TH1D*)gDirectory->Get("h_T_oops_vs_cycle_time_observed")		->Clone("h_T_oops_vs_cycle_time");
+	TH1D *h_CE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_CE_vs_cycle_time_observed")			->Clone("h_CE_vs_cycle_time");
+	TH1D *h_R_CE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_R_CE_vs_cycle_time_observed")		->Clone("h_R_CE_vs_cycle_time");
+	TH1D *h_T_CE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_T_CE_vs_cycle_time_observed")		->Clone("h_T_CE_vs_cycle_time");
+	TH1D *h_B_dEE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_B_dEE_vs_cycle_time_observed")		->Clone("h_B_dEE_vs_cycle_time");
+	TH1D *h_L_dEE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_L_dEE_vs_cycle_time_observed")		->Clone("h_L_dEE_vs_cycle_time");
+	TH1D *h_dEE_vs_cycle_time					= (TH1D*)gDirectory->Get("h_dEE_vs_cycle_time_observed")		->Clone("h_dEE_vs_cycle_time");
+	TH1D *h_LT_bg_vs_cycle_time					= (TH1D*)gDirectory->Get("h_LT_bg_vs_cycle_time_observed")		->Clone("h_LT_bg_vs_cycle_time");
+	TH1D *h_LR_bg_vs_cycle_time					= (TH1D*)gDirectory->Get("h_LR_bg_vs_cycle_time_observed")		->Clone("h_LR_bg_vs_cycle_time");
+	TH1D *h_BT_bg_vs_cycle_time					= (TH1D*)gDirectory->Get("h_BT_bg_vs_cycle_time_observed")		->Clone("h_BT_bg_vs_cycle_time");
+	TH1D *h_BR_bg_vs_cycle_time					= (TH1D*)gDirectory->Get("h_BR_bg_vs_cycle_time_observed")		->Clone("h_BR_bg_vs_cycle_time");
+	TH1D *h_bg_vs_cycle_time					= (TH1D*)gDirectory->Get("h_bg_vs_cycle_time_observed")			->Clone("h_bg_vs_cycle_time");
+	TH1D *h_LT_bg_gt2MeV_vs_cycle_time			= (TH1D*)gDirectory->Get("h_LT_bg_gt2MeV_vs_cycle_time_observed")		->Clone("h_LT_bg_gt2MeV_vs_cycle_time");
+	TH1D *h_LR_bg_gt2MeV_vs_cycle_time			= (TH1D*)gDirectory->Get("h_LR_bg_gt2MeV_vs_cycle_time_observed")		->Clone("h_LR_bg_gt2MeV_vs_cycle_time");
+	TH1D *h_BT_bg_gt2MeV_vs_cycle_time			= (TH1D*)gDirectory->Get("h_BT_bg_gt2MeV_vs_cycle_time_observed")		->Clone("h_BT_bg_gt2MeV_vs_cycle_time");
+	TH1D *h_BR_bg_gt2MeV_vs_cycle_time			= (TH1D*)gDirectory->Get("h_BR_bg_gt2MeV_vs_cycle_time_observed")		->Clone("h_BR_bg_gt2MeV_vs_cycle_time");
+	TH1D *h_bg_gt2MeV_vs_cycle_time				= (TH1D*)gDirectory->Get("h_bg_gt2MeV_vs_cycle_time_observed")			->Clone("h_bg_gt2MeV_vs_cycle_time");
 //	cout << "vs_cycle_time read-in successful." << endl;
 // _vs_rf_phase
 	TH1D *h_all_vs_rf_phase						= (TH1D*)gDirectory->Get("h_all_vs_rf_phase_observed")			->Clone("h_all_vs_rf_phase");
@@ -213,38 +263,85 @@ int DeadtimeCorrection () {
 	cout << "Correcting _vs_cycle_time. Number of events = " << h_all_vs_cycle_time	->GetEntries() << endl;
 	cout << "Correcting _vs_rf_phase.   Number of events = " << h_all_vs_rf_phase	->GetEntries() << endl;
 	
+	TH1D *h_cycles = (TH1D*)file->Get("h_cycles_vs_cycle_time");
+	Double_t coverage;
+	Double_t avgCoverage = h_cycles->Integral()/tCyc_ms;
+	Double_t binTimeFromFile;
+	
 // Correction for _vs_cycle_time histos
 	for (i=1; i<=tCycBins; i++) {
+		
 		y = (Double_t)h_all_vs_cycle_time->GetBinContent(i); // "observed" ie. raw data
-		binTimeVsCycTime_sec	= (binVsCycTimeWidth_ms/tCyc_ms)*runTime_sec;
+		// binTimeVsCycTime_sec	= (binVsCycTimeWidth_ms/tCyc_ms)*runTime_sec; // old: now use next line
+		coverage = (Double_t)h_cycles->GetBinContent(i);
+		binTimeFromFile = coverage * binVsCycTimeWidth_ms * 0.001; // seconds spent in bin i
+		//printf("Bin %d, myBinTime=%f, binTimeFromFile=%f\n", i, binTimeVsCycTime_sec, binTimeFromFile);
 		if (i >= binVsCycTimeBkgd && (i-binVsCycTimeBkgd)%tCapt_ms == 0) {
 		// for these bins the bin time is shortened by the veto, so decrease the bin time accordingly
 //			cout << i << endl;
-			binTimeVsCycTime_sec *= (binVsCycTimeWidth_us-dCaptVetoOver_us)/binVsCycTimeWidth_us; // Correct for capture pulse veto
+			//binTimeVsCycTime_sec *= (binVsCycTimeWidth_us-dCaptVetoOver_us)/binVsCycTimeWidth_us; // Correct for capture pulse veto
+			binTimeFromFile *= (binVsCycTimeWidth_us-dCaptVetoOver_us)/binVsCycTimeWidth_us; // Correct for capture pulse veto
 		}
-		binTimeVsCycTime_sec_err = (0.5/nCycles)*binTimeVsCycTime_sec; // frac unc of due to where the file started/stopped -- crude!
-		binObservedRateHz = y/binTimeVsCycTime_sec;
-//		if (i >= binVsCycTimeBkgd && (i-binVsCycTimeBkgd)%tCapt_ms == 0) {
-//		// for these bins the bin time is shortened by the veto, so increase the bin rate accordingly
-//			binObservedRateHz *= binVsCycTimeWidth_us/(binVsCycTimeWidth_us-dCaptVetoOver_us); // Correct for capture pulse veto of ~ .175 ms
-//		}
+		if (binTimeFromFile==0.0) binTimeFromFile = 1.0; // placeholder value for empty bins in events histo -- just to avoid divide-by-0
+		//binTimeVsCycTime_sec_err = (0.5/nCycles)*binTimeVsCycTime_sec; // frac unc of due to where the file started/stopped -- crude!
+		// ^ above no longer needed when using binTimeFromFile
+		binObservedRateHz = y/binTimeFromFile; // y/binTimeVsCycTime_sec;
+
+	// Special correction for bins in which capture happens (veto covers part of bin)
+		if (i >= binVsCycTimeBkgd && (i-binVsCycTimeBkgd)%tCapt_ms == 0) {
+		// for these bins the bin time is shortened by the veto, so increase the bin rate accordingly
+			binObservedRateHz *= binVsCycTimeWidth_us/(binVsCycTimeWidth_us-dCaptVetoOver_us); // Correct for capture pulse veto of ~ .175 ms
+		}
 		binDeadtimeCorrFactor = 1.0 / (1.0 - binObservedRateHz*dEvtDeadtime_sec);
 //		x = y/Power(binTimeVsCycTime_sec,2.0);
-//		binDeadtimeCorrError = Power(binDeadtimeCorrFactor,2)*Sqrt(Power(x,2)*(1+Power(x,2)*binTimeVsCycTime_sec_err+Power(y,3)*dEvtDeadtime_sec_err));
-// next line is incomplete, but the last term leads to something funny looking
-// need to figure out how to incorporate uncertainty due to file start and stop (unc in # of cycles)
-		sig_obs_rate_over_obs_rate = Sqrt(1.0/(y+.000000000001));// + binTimeVsCycTime_sec_err/binTimeVsCycTime_sec);
-		binDeadtimeCorrError = Power(binDeadtimeCorrFactor,2)*binObservedRateHz*Sqrt(Power(dEvtDeadtime_sec_err,2)+Power(dEvtDeadtime_sec*sig_obs_rate_over_obs_rate,2));
-// For vetoed bins, need another factor of 1ms/(1ms-veto) to correct for the lost *counts*
-// Decreasing binTimeVsCycTime_sec previously only corrected the *rate*
+		if (IsNaN(binDeadtimeCorrFactor))
+			printf("Bin %d not a number: Bin y = %f, Bin time = %f, factor = %f\n", i, y, binTimeFromFile, binDeadtimeCorrFactor);
+		
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Error calculation: inculdes several old versions...
+	//		binDeadtimeCorrError = Power(binDeadtimeCorrFactor,2)*Sqrt(Power(x,2)*(1+Power(x,2)*binTimeVsCycTime_sec_err+Power(y,3)*dEvtDeadtime_sec_err));
+	// next line is incomplete, but the last term leads to something funny looking
+	// need to figure out how to incorporate uncertainty due to file start and stop (unc in # of cycles)
+	// Latest "old" version
+		//sig_obs_rate_over_obs_rate = Sqrt(1.0/(y+.000000000001));// + binTimeVsCycTime_sec_err/binTimeVsCycTime_sec);
+		//binDeadtimeCorrError_old = Power(binDeadtimeCorrFactor,2)*binObservedRateHz*Sqrt(Power(dEvtDeadtime_sec_err,2)+Power(dEvtDeadtime_sec*sig_obs_rate_over_obs_rate,2));
+	// New version -- incorporates file start and stop times using h_cycles histo from ROOT files.
+		// Change didn't make a difference, which was expected.
+		yVal = y;
+		ySig = Sqrt(y);
+		tVal = binTimeFromFile;
+		tSig = 0.001; // say the error is 0.1 ms -- probably too large
+		if (yVal > 0)
+			binDeadtimeCorrError = Sqrt( Power(yVal*dVal*tSig,2) + Power(yVal*dSig*tVal,2) + Power(ySig*dVal*tVal,2) ) / Power(tVal-yVal*dVal,2);
+		else
+			binDeadtimeCorrError = 0.0;
+	//	printf("Old = %f, New = %f, New rel = %f\n", binDeadtimeCorrError_old, binDeadtimeCorrError, binDeadtimeCorrError/(binDeadtimeCorrFactor-1));
+	//	if (i == 101345)
+	//		printf("i=%d, y=%f, sy=%f, t=%f, st=%f, d=%f, sd=%f, corr=%f, err=%f\n", i, yVal, ySig, tVal, tSig, dVal, dSig, binDeadtimeCorrFactor, binDeadtimeCorrError);
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// For vetoed bins, need another factor of 1ms/(1ms-veto) to correct for the lost *counts*
+	// Decreasing binTimeVsCycTime_sec previously only corrected the *rate*
 		if (i >= binVsCycTimeBkgd && (i-binVsCycTimeBkgd)%tCapt_ms == 0) {
 			binDeadtimeCorrFactor *= binVsCycTimeWidth_us/(binVsCycTimeWidth_us-dCaptVetoOver_us);
-//			printf("\ni = %d, y = %f, rate = %f, corr = %f +/- %f\n",i,y,binObservedRateHz,binDeadtimeCorrFactor,binDeadtimeCorrError);
+		//	printf("\ni = %d, y = %f, rate = %f, corr = %f +/- %f\n",i,y,binObservedRateHz,binDeadtimeCorrFactor,binDeadtimeCorrError);
 		}
-//		printf("\ni = %d, y = %f, rate = %f, corr = %f +/- %f\n",i,y,binObservedRateHz,binDeadtimeCorrFactor,binDeadtimeCorrError);
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Fill histos:
 		h_deadtime_correction_vs_cycle_time	->SetBinContent	(i,binDeadtimeCorrFactor);
 		h_deadtime_correction_vs_cycle_time	->SetBinError	(i,binDeadtimeCorrError);
-	}
+		if (coverage == 0) {
+			h_coverage_correction_vs_cycle_time ->SetBinContent(i, 0.0);
+			h_coverage_correction_vs_cycle_time ->SetBinError  (i, 0.0);
+		}
+		else {
+			h_coverage_correction_vs_cycle_time ->SetBinContent(i, avgCoverage/coverage);
+			h_coverage_correction_vs_cycle_time ->SetBinError  (i, Sqrt(coverage)/tCyc_ms);
+		}
+	} // end for loop over cycle time bins
+	
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 // Correction for _vs_rf_phase histos
 	for (i=1; i<=rfBins; i++) {
@@ -257,7 +354,7 @@ int DeadtimeCorrection () {
 		h_deadtime_correction_vs_rf_phase	->SetBinError	(i,binDeadtimeCorrError);
 	}
 	
-// Manipulate things before writing file
+// Sumw2 to make histo errors multiply correctly
 	// _vs_cycle_time
 	h_all_vs_cycle_time->Sumw2();
 	h_betas_vs_cycle_time->Sumw2();
@@ -278,6 +375,22 @@ int DeadtimeCorrection () {
 	h_oops_vs_cycle_time->Sumw2();
 	h_R_oops_vs_cycle_time->Sumw2();
 	h_T_oops_vs_cycle_time->Sumw2();
+	h_CE_vs_cycle_time->Sumw2();
+	h_R_CE_vs_cycle_time->Sumw2();
+	h_T_CE_vs_cycle_time->Sumw2();
+	h_B_dEE_vs_cycle_time->Sumw2();
+	h_L_dEE_vs_cycle_time->Sumw2();
+	h_dEE_vs_cycle_time->Sumw2();
+	h_LT_bg_vs_cycle_time->Sumw2();
+	h_LR_bg_vs_cycle_time->Sumw2();
+	h_BT_bg_vs_cycle_time->Sumw2();
+	h_BR_bg_vs_cycle_time->Sumw2();
+	h_bg_vs_cycle_time->Sumw2();
+	h_LT_bg_gt2MeV_vs_cycle_time->Sumw2();
+	h_LR_bg_gt2MeV_vs_cycle_time->Sumw2();
+	h_BT_bg_gt2MeV_vs_cycle_time->Sumw2();
+	h_BR_bg_gt2MeV_vs_cycle_time->Sumw2();
+	h_bg_gt2MeV_vs_cycle_time->Sumw2();
 	// _vs_rf_phase
 	h_all_vs_rf_phase->Sumw2();
 	h_slow_vs_rf_phase->Sumw2();
@@ -296,8 +409,12 @@ int DeadtimeCorrection () {
 	h_bkgd_BT_slow_vs_rf_phase->Sumw2();
 	h_bkgd_BR_slow_vs_rf_phase->Sumw2();
 	
-// Apply deadtime corrections
-	// _vs_cycle_time
+	printf("Bin 5000, before correction: h_all = %f, h_all error = %f\n", h_all_vs_cycle_time->GetBinContent(5000), h_all_vs_cycle_time->GetBinError  (5000));
+	printf("                 correction: h_dt  = %f, h_dt  error = %f\n", h_deadtime_correction_vs_cycle_time->GetBinContent(5000), h_deadtime_correction_vs_cycle_time->GetBinError  (5000));
+	printf("                 correction: h_cov = %f, h_cov error = %f\n", h_coverage_correction_vs_cycle_time->GetBinContent(5000), h_coverage_correction_vs_cycle_time->GetBinError  (5000));
+	
+// Apply corrections
+// deadtime_vs_cycle_time
 	h_all_vs_cycle_time			->Multiply(h_deadtime_correction_vs_cycle_time);
 	h_betas_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
 	h_B_betas_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
@@ -317,7 +434,59 @@ int DeadtimeCorrection () {
 	h_oops_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
 	h_R_oops_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
 	h_T_oops_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
-	// _vs_rf_phase
+	h_CE_vs_cycle_time			->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_R_CE_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_T_CE_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_B_dEE_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_L_dEE_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_dEE_vs_cycle_time			->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_LT_bg_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_LR_bg_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_BT_bg_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_BR_bg_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_bg_vs_cycle_time			->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_LT_bg_gt2MeV_vs_cycle_time	->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_LR_bg_gt2MeV_vs_cycle_time	->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_BT_bg_gt2MeV_vs_cycle_time	->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_BR_bg_gt2MeV_vs_cycle_time	->Multiply(h_deadtime_correction_vs_cycle_time);
+	h_bg_gt2MeV_vs_cycle_time		->Multiply(h_deadtime_correction_vs_cycle_time);
+// coverage_vs_cycle_time
+	h_all_vs_cycle_time			->Multiply(h_coverage_correction_vs_cycle_time);
+	h_betas_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_B_betas_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_L_betas_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_zero_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_zero_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_zero_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_lowTOF_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_lowTOF_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_lowTOF_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_fast_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_fast_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_fast_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_slow_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_slow_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_slow_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_oops_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_oops_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_oops_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_CE_vs_cycle_time			->Multiply(h_coverage_correction_vs_cycle_time);
+	h_R_CE_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_T_CE_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_B_dEE_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_L_dEE_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_dEE_vs_cycle_time			->Multiply(h_coverage_correction_vs_cycle_time);
+	h_LT_bg_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_LR_bg_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_BT_bg_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_BR_bg_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+	h_bg_vs_cycle_time			->Multiply(h_coverage_correction_vs_cycle_time);
+	h_LT_bg_gt2MeV_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_LR_bg_gt2MeV_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_BT_bg_gt2MeV_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_BR_bg_gt2MeV_vs_cycle_time	->Multiply(h_coverage_correction_vs_cycle_time);
+	h_bg_gt2MeV_vs_cycle_time		->Multiply(h_coverage_correction_vs_cycle_time);
+// deadtime_vs_rf_phase
 	h_all_vs_rf_phase			->Multiply(h_deadtime_correction_vs_rf_phase);
 	h_slow_vs_rf_phase			->Multiply(h_deadtime_correction_vs_rf_phase);
 	h_LT_slow_vs_rf_phase		->Multiply(h_deadtime_correction_vs_rf_phase);
@@ -337,43 +506,63 @@ int DeadtimeCorrection () {
 
 // Update # of entries
 	// _vs_cycle_time
-	h_all_vs_cycle_time			->SetEntries(h_all_vs_cycle_time		->Integral());
-	h_betas_vs_cycle_time		->SetEntries(h_betas_vs_cycle_time		->Integral() );
-	h_B_betas_vs_cycle_time		->SetEntries(h_B_betas_vs_cycle_time	->Integral() );
-	h_L_betas_vs_cycle_time		->SetEntries(h_L_betas_vs_cycle_time	->Integral() );
-	h_zero_vs_cycle_time		->SetEntries(h_zero_vs_cycle_time		->Integral() );
-	h_R_zero_vs_cycle_time		->SetEntries(h_R_zero_vs_cycle_time		->Integral() );
-	h_T_zero_vs_cycle_time		->SetEntries(h_T_zero_vs_cycle_time		->Integral() );
-	h_lowTOF_vs_cycle_time		->SetEntries(h_lowTOF_vs_cycle_time		->Integral() );
-	h_R_lowTOF_vs_cycle_time	->SetEntries(h_R_lowTOF_vs_cycle_time	->Integral() );
-	h_T_lowTOF_vs_cycle_time	->SetEntries(h_T_lowTOF_vs_cycle_time	->Integral() );
-	h_fast_vs_cycle_time		->SetEntries(h_fast_vs_cycle_time		->Integral() );
-	h_R_fast_vs_cycle_time		->SetEntries(h_R_fast_vs_cycle_time		->Integral() );
-	h_T_fast_vs_cycle_time		->SetEntries(h_T_fast_vs_cycle_time		->Integral() );
-	h_slow_vs_cycle_time		->SetEntries(h_slow_vs_cycle_time		->Integral() );
-	h_R_slow_vs_cycle_time		->SetEntries(h_R_slow_vs_cycle_time		->Integral() );
-	h_T_slow_vs_cycle_time		->SetEntries(h_T_slow_vs_cycle_time		->Integral() );
-	h_oops_vs_cycle_time		->SetEntries(h_oops_vs_cycle_time		->Integral() );
-	h_R_oops_vs_cycle_time		->SetEntries(h_R_oops_vs_cycle_time		->Integral() );
-	h_T_oops_vs_cycle_time		->SetEntries(h_T_oops_vs_cycle_time		->Integral() );
+	h_all_vs_cycle_time			->SetEntries( h_all_vs_cycle_time			->Integral() );
+	h_betas_vs_cycle_time		->SetEntries( h_betas_vs_cycle_time			->Integral() );
+	h_B_betas_vs_cycle_time		->SetEntries( h_B_betas_vs_cycle_time		->Integral() );
+	h_L_betas_vs_cycle_time		->SetEntries( h_L_betas_vs_cycle_time		->Integral() );
+	h_zero_vs_cycle_time		->SetEntries( h_zero_vs_cycle_time			->Integral() );
+	h_R_zero_vs_cycle_time		->SetEntries( h_R_zero_vs_cycle_time		->Integral() );
+	h_T_zero_vs_cycle_time		->SetEntries( h_T_zero_vs_cycle_time		->Integral() );
+	h_lowTOF_vs_cycle_time		->SetEntries( h_lowTOF_vs_cycle_time		->Integral() );
+	h_R_lowTOF_vs_cycle_time	->SetEntries( h_R_lowTOF_vs_cycle_time		->Integral() );
+	h_T_lowTOF_vs_cycle_time	->SetEntries( h_T_lowTOF_vs_cycle_time		->Integral() );
+	h_fast_vs_cycle_time		->SetEntries( h_fast_vs_cycle_time			->Integral() );
+	h_R_fast_vs_cycle_time		->SetEntries( h_R_fast_vs_cycle_time		->Integral() );
+	h_T_fast_vs_cycle_time		->SetEntries( h_T_fast_vs_cycle_time		->Integral() );
+	h_slow_vs_cycle_time		->SetEntries( h_slow_vs_cycle_time			->Integral() );
+	h_R_slow_vs_cycle_time		->SetEntries( h_R_slow_vs_cycle_time		->Integral() );
+	h_T_slow_vs_cycle_time		->SetEntries( h_T_slow_vs_cycle_time		->Integral() );
+	h_oops_vs_cycle_time		->SetEntries( h_oops_vs_cycle_time			->Integral() );
+	h_R_oops_vs_cycle_time		->SetEntries( h_R_oops_vs_cycle_time		->Integral() );
+	h_T_oops_vs_cycle_time		->SetEntries( h_T_oops_vs_cycle_time		->Integral() );
+	h_CE_vs_cycle_time			->SetEntries( h_CE_vs_cycle_time			->Integral() );
+	h_R_CE_vs_cycle_time		->SetEntries( h_R_CE_vs_cycle_time			->Integral() );
+	h_T_CE_vs_cycle_time		->SetEntries( h_T_CE_vs_cycle_time			->Integral() );
+	h_B_dEE_vs_cycle_time		->SetEntries( h_B_dEE_vs_cycle_time			->Integral() );
+	h_L_dEE_vs_cycle_time		->SetEntries( h_L_dEE_vs_cycle_time			->Integral() );
+	h_dEE_vs_cycle_time			->SetEntries( h_dEE_vs_cycle_time			->Integral() );
+	h_LT_bg_vs_cycle_time		->SetEntries( h_LT_bg_vs_cycle_time			->Integral() );
+	h_LR_bg_vs_cycle_time		->SetEntries( h_LR_bg_vs_cycle_time			->Integral() );
+	h_BT_bg_vs_cycle_time		->SetEntries( h_BT_bg_vs_cycle_time			->Integral() );
+	h_BR_bg_vs_cycle_time		->SetEntries( h_BR_bg_vs_cycle_time			->Integral() );
+	h_bg_vs_cycle_time			->SetEntries( h_bg_vs_cycle_time			->Integral() );
+	h_LT_bg_gt2MeV_vs_cycle_time->SetEntries( h_LT_bg_gt2MeV_vs_cycle_time	->Integral() );
+	h_LR_bg_gt2MeV_vs_cycle_time->SetEntries( h_LR_bg_gt2MeV_vs_cycle_time	->Integral() );
+	h_BT_bg_gt2MeV_vs_cycle_time->SetEntries( h_BT_bg_gt2MeV_vs_cycle_time	->Integral() );
+	h_BR_bg_gt2MeV_vs_cycle_time->SetEntries( h_BR_bg_gt2MeV_vs_cycle_time	->Integral() );
+	h_bg_gt2MeV_vs_cycle_time	->SetEntries( h_bg_gt2MeV_vs_cycle_time		->Integral() );
 	// _vs_rf_phase
-	h_all_vs_rf_phase			->SetEntries(h_all_vs_rf_phase			->Integral() );
-	h_slow_vs_rf_phase			->SetEntries(h_slow_vs_rf_phase			->Integral() );
-	h_LT_slow_vs_rf_phase		->SetEntries(h_LT_slow_vs_rf_phase		->Integral() );
-	h_LR_slow_vs_rf_phase		->SetEntries(h_LR_slow_vs_rf_phase		->Integral() );
-	h_BT_slow_vs_rf_phase		->SetEntries(h_BT_slow_vs_rf_phase		->Integral() );
-	h_BR_slow_vs_rf_phase		->SetEntries(h_BR_slow_vs_rf_phase		->Integral() );
-	h_oops_vs_rf_phase			->SetEntries(h_oops_vs_rf_phase			->Integral() );
-	h_LT_oops_vs_rf_phase		->SetEntries(h_LT_oops_vs_rf_phase		->Integral() );
-	h_LR_oops_vs_rf_phase		->SetEntries(h_LR_oops_vs_rf_phase		->Integral() );
-	h_BT_oops_vs_rf_phase		->SetEntries(h_BT_oops_vs_rf_phase		->Integral() );
-	h_BR_oops_vs_rf_phase		->SetEntries(h_BR_oops_vs_rf_phase		->Integral() );
-	h_bkgd_slow_vs_rf_phase		->SetEntries(h_bkgd_slow_vs_rf_phase	->Integral() );
-	h_bkgd_LT_slow_vs_rf_phase	->SetEntries(h_bkgd_LT_slow_vs_rf_phase	->Integral() );
-	h_bkgd_LR_slow_vs_rf_phase	->SetEntries(h_bkgd_LR_slow_vs_rf_phase	->Integral() );
-	h_bkgd_BT_slow_vs_rf_phase	->SetEntries(h_bkgd_BT_slow_vs_rf_phase	->Integral() );
-	h_bkgd_BR_slow_vs_rf_phase	->SetEntries(h_bkgd_BR_slow_vs_rf_phase	->Integral() );
-		
+	h_all_vs_rf_phase			->SetEntries( h_all_vs_rf_phase				->Integral() );
+	h_slow_vs_rf_phase			->SetEntries( h_slow_vs_rf_phase			->Integral() );
+	h_LT_slow_vs_rf_phase		->SetEntries( h_LT_slow_vs_rf_phase			->Integral() );
+	h_LR_slow_vs_rf_phase		->SetEntries( h_LR_slow_vs_rf_phase			->Integral() );
+	h_BT_slow_vs_rf_phase		->SetEntries( h_BT_slow_vs_rf_phase			->Integral() );
+	h_BR_slow_vs_rf_phase		->SetEntries( h_BR_slow_vs_rf_phase			->Integral() );
+	h_oops_vs_rf_phase			->SetEntries( h_oops_vs_rf_phase			->Integral() );
+	h_LT_oops_vs_rf_phase		->SetEntries( h_LT_oops_vs_rf_phase			->Integral() );
+	h_LR_oops_vs_rf_phase		->SetEntries( h_LR_oops_vs_rf_phase			->Integral() );
+	h_BT_oops_vs_rf_phase		->SetEntries( h_BT_oops_vs_rf_phase			->Integral() );
+	h_BR_oops_vs_rf_phase		->SetEntries( h_BR_oops_vs_rf_phase			->Integral() );
+	h_bkgd_slow_vs_rf_phase		->SetEntries( h_bkgd_slow_vs_rf_phase		->Integral() );
+	h_bkgd_LT_slow_vs_rf_phase	->SetEntries( h_bkgd_LT_slow_vs_rf_phase	->Integral() );
+	h_bkgd_LR_slow_vs_rf_phase	->SetEntries( h_bkgd_LR_slow_vs_rf_phase	->Integral() );
+	h_bkgd_BT_slow_vs_rf_phase	->SetEntries( h_bkgd_BT_slow_vs_rf_phase	->Integral() );
+	h_bkgd_BR_slow_vs_rf_phase	->SetEntries( h_bkgd_BR_slow_vs_rf_phase	->Integral() );
+	
+	printf("Bin 5000,  after correction: h_all = %f, h_all error = %f\n",
+		h_all_vs_cycle_time->GetBinContent(5000),
+		h_all_vs_cycle_time->GetBinError  (5000)
+	);
 /*	h_all_vs_cycle_time		->SetName("h_all_vs_cycle_time");
 	h_betas_vs_cycle_time	->SetName("h_betas_vs_cycle_time");
 	h_B_betas_vs_cycle_time	->SetName("h_B_betas_vs_cycle_time");
@@ -397,6 +586,7 @@ int DeadtimeCorrection () {
 // Change histo titles
 	// _vs_cycle_time
 	h_deadtime_correction_vs_cycle_time			->SetTitle("1/(fraction of events lost to deadtime), per ms of cycle");
+	h_coverage_correction_vs_cycle_time			->SetTitle("Coverage correction factor, per ms of cycle");
 	h_all_vs_cycle_time		->SetTitle("All Triggers vs Cycle Time (ms), corrected for deadtime");
 	h_betas_vs_cycle_time	->SetTitle("Beta singles vs cycle time (ms), Both detectors, corrected for deadtime");
 	h_B_betas_vs_cycle_time	->SetTitle("Beta singles vs cycle time (ms), Bottom detector, corrected for deadtime");
@@ -416,6 +606,22 @@ int DeadtimeCorrection () {
 	h_oops_vs_cycle_time	->SetTitle("All dE-MCP Accidentals vs Cycle Time (ms), corrected for deadtime");
 	h_R_oops_vs_cycle_time	->SetTitle("dE - Right MCP Accidentals vs Cycle Time (ms), corrected for deadtime");
 	h_T_oops_vs_cycle_time	->SetTitle("dE - Top MCP Accidentals vs Cycle Time (ms), corrected for deadtime");
+	h_CE_vs_cycle_time		->SetTitle("All dE-MCP Conversion electrons (134-Sb) vs Cycle Time (ms), corrected for deadtime");
+	h_R_CE_vs_cycle_time	->SetTitle("dE - Right MCP Conversion electrons (134-Sb) vs Cycle Time (ms), corrected for deadtime");
+	h_T_CE_vs_cycle_time	->SetTitle("dE - Top MCP Conversion electrons (134-Sb) vs Cycle Time (ms), corrected for deadtime");
+	h_B_dEE_vs_cycle_time	->SetTitle("Bottom dE-E Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_L_dEE_vs_cycle_time	->SetTitle("Left dE-E Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_dEE_vs_cycle_time		->SetTitle("All dE-E Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_LT_bg_vs_cycle_time	->SetTitle("Left-Top Beta-Gamma Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_LR_bg_vs_cycle_time	->SetTitle("Left-Right Beta-Gamma Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_BT_bg_vs_cycle_time	->SetTitle("Bottom-Top Beta-Gamma Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_BR_bg_vs_cycle_time	->SetTitle("Bottom-Right Beta-Gamma Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_bg_vs_cycle_time		->SetTitle("All Beta-Gamma Coincidences vs Cycle Time (ms), corrected for deadtime");
+	h_LT_bg_gt2MeV_vs_cycle_time->SetTitle("Left-Top Beta-Gamma Coincidences, w/ Gamma > 2MeV, vs Cycle Time (ms), corrected for deadtime");
+	h_LR_bg_gt2MeV_vs_cycle_time->SetTitle("Left-Right Beta-Gamma Coincidences, w/ Gamma > 2MeV, vs Cycle Time (ms), corrected for deadtime");
+	h_BT_bg_gt2MeV_vs_cycle_time->SetTitle("Bottom-Top Beta-Gamma Coincidences, w/ Gamma > 2MeV, vs Cycle Time (ms), corrected for deadtime");
+	h_BR_bg_gt2MeV_vs_cycle_time->SetTitle("Bottom-Right Beta-Gamma Coincidences, w/ Gamma > 2MeV, vs Cycle Time (ms), corrected for deadtime");
+	h_bg_gt2MeV_vs_cycle_time	->SetTitle("All Beta-Gamma Coincidences, w/ Gamma > 2MeV, vs Cycle Time (ms), corrected for deadtime");
 	// _vs_rf_phase
 	h_deadtime_correction_vs_rf_phase			->SetTitle("1/(fraction of events lost to deadtime), per bin of (RF Phase / 2pi)");
 	h_all_vs_rf_phase		->SetTitle("All Triggers vs (RF Phase / 2pi), corrected for deadtime");
@@ -437,6 +643,7 @@ int DeadtimeCorrection () {
 	
 // Write deadtime-corrected histos
 	gDirectory->WriteTObject(h_deadtime_correction_vs_cycle_time);
+	gDirectory->WriteTObject(h_coverage_correction_vs_cycle_time);
 	gDirectory->WriteTObject(h_deadtime_correction_vs_rf_phase);
 	gDirectory->WriteTObject(h_all_vs_cycle_time);
 	gDirectory->WriteTObject(h_betas_vs_cycle_time);
@@ -457,6 +664,22 @@ int DeadtimeCorrection () {
 	gDirectory->WriteTObject(h_oops_vs_cycle_time);
 	gDirectory->WriteTObject(h_R_oops_vs_cycle_time);
 	gDirectory->WriteTObject(h_T_oops_vs_cycle_time);
+	gDirectory->WriteTObject(h_CE_vs_cycle_time);
+	gDirectory->WriteTObject(h_R_CE_vs_cycle_time);
+	gDirectory->WriteTObject(h_T_CE_vs_cycle_time);
+	gDirectory->WriteTObject(h_B_dEE_vs_cycle_time);
+	gDirectory->WriteTObject(h_L_dEE_vs_cycle_time);
+	gDirectory->WriteTObject(h_dEE_vs_cycle_time);
+	gDirectory->WriteTObject(h_LT_bg_vs_cycle_time);
+	gDirectory->WriteTObject(h_LR_bg_vs_cycle_time);
+	gDirectory->WriteTObject(h_BT_bg_vs_cycle_time);
+	gDirectory->WriteTObject(h_BR_bg_vs_cycle_time);
+	gDirectory->WriteTObject(h_bg_vs_cycle_time);
+	gDirectory->WriteTObject(h_LT_bg_gt2MeV_vs_cycle_time);
+	gDirectory->WriteTObject(h_LR_bg_gt2MeV_vs_cycle_time);
+	gDirectory->WriteTObject(h_BT_bg_gt2MeV_vs_cycle_time);
+	gDirectory->WriteTObject(h_BR_bg_gt2MeV_vs_cycle_time);
+	gDirectory->WriteTObject(h_bg_gt2MeV_vs_cycle_time);
 	gDirectory->WriteTObject(h_all_vs_rf_phase);
 	gDirectory->WriteTObject(h_slow_vs_rf_phase);
 	gDirectory->WriteTObject(h_LT_slow_vs_rf_phase);
