@@ -802,4 +802,3 @@ Double_t BFitNamespace::yY3 (Double_t *t, Double_t *a) {
 	extern Double_t t3;
 	return a[nCyc]*a[dt]*a[epsY]*BFitNamespace::Y3(t,a)/t3;
 }
-
