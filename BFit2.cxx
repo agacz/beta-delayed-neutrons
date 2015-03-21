@@ -37,7 +37,7 @@
 #include "BFit2Model.h"
 using namespace std;
 
-#include "TVirtualFitter.h"
+//#include "TVirtualFitter.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Global variables
@@ -99,6 +99,7 @@ Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W
 /////////////////////////////////////////////////////////////////////////////
 
 // Functions
+Double_t intErr (TF1*, Double_t*, Double_t, Double_t);
 void HistPrep (TH1*, Int_t);
 void FuncPrep (TF1*, Double_t*, Int_t, Int_t, Int_t);
 int BFit ();
@@ -151,7 +152,11 @@ int BFit () {
 	t1		= 1000.0 * stBDNCase.dLifetime1[0]; // radioactive lifetime (1/e) in ms
 	t2		= 1000.0 * stBDNCase.dLifetime2[0]; // radioactive lifetime (1/e) in ms
 	t3		= 1000.0 * stBDNCase.dLifetime3[0]; // radioactive lifetime (1/e) in ms
-	iota	= 0.000000000001;
+	iota	= 1e-9;
+//	printf("          iota = %.4e\n",iota);
+//	printf("          iota = %32.16f\n",iota);
+//	printf("1000000 + iota = %32.16f\n",1000000+iota);
+//	return 0;
 	nCapMax	= Ceil((tCyc-tBac)/tCap);
 	//printf("nCapMax=%d\n",nCapMax);
 // Array to hold injection times
@@ -199,22 +204,22 @@ int BFit () {
 // Zero index used only as an initializer (+1 element),
 // but don't need an element for the last tooth (-1 element)
 // These are integrals of the feeding terms into the Y2 and Y3 populations
-	I_V1_Y2	= new Double_t [nCapMax];
-	I_W1_Y2	= new Double_t [nCapMax];
-	I_Z1_Y2	= new Double_t [nCapMax];
-	I_V2_Y3	= new Double_t [nCapMax];
-	I_W2_Y3	= new Double_t [nCapMax];
-	I_Z2_Y3	= new Double_t [nCapMax];
-	I_X2_Y3	= new Double_t [nCapMax];
-	I_Y2_Y3	= new Double_t [nCapMax];
-	I_V1_Y2[0] = I_V2_Y3[0] = 0.0; // zero index used as init value of zero
-	I_W1_Y2[0] = I_W2_Y3[0] = 0.0; // zero index used as init value of zero
-	I_Z1_Y2[0] = I_Z2_Y3[0] = 0.0; // zero index used as init value of zero
-				 I_X2_Y3[0] = 0.0; // zero index used as init value of zero
-				 I_Y2_Y3[0] = 0.0; // zero index used as init value of zero
+//	I_V1_Y2	= new Double_t [nCapMax];
+//	I_W1_Y2	= new Double_t [nCapMax];
+//	I_Z1_Y2	= new Double_t [nCapMax];
+//	I_V2_Y3	= new Double_t [nCapMax];
+//	I_W2_Y3	= new Double_t [nCapMax];
+//	I_Z2_Y3	= new Double_t [nCapMax];
+//	I_X2_Y3	= new Double_t [nCapMax];
+//	I_Y2_Y3	= new Double_t [nCapMax];
+//	I_V1_Y2[0] = I_V2_Y3[0] = 0.0; // zero index used as init value of zero
+//	I_W1_Y2[0] = I_W2_Y3[0] = 0.0; // zero index used as init value of zero
+//	I_Z1_Y2[0] = I_Z2_Y3[0] = 0.0; // zero index used as init value of zero
+//				 I_X2_Y3[0] = 0.0; // zero index used as init value of zero
+//				 I_Y2_Y3[0] = 0.0; // zero index used as init value of zero
 // Arrays to hold initial values of Y pops... I think these will be deprecated
-	Y2InitialValues	= new Double_t [nCapMax];
-	Y3InitialValues	= new Double_t [nCapMax];
+//	Y2InitialValues	= new Double_t [nCapMax];
+//	Y3InitialValues	= new Double_t [nCapMax];
 
 	
 // Print message
@@ -324,6 +329,15 @@ int BFit () {
 	par = stBFitCase.pdSeed;
 	err = stBFitCase.pdStep;
 	Int_t index;
+// Special cases -- modifications to parameters -- catch right after param import
+	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb02") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb03") ||
+		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb0103"))
+	{
+		b134sbFlag = 1;
+		par[gammaT3] = par[gammaT2];
+	}
 // Initialize global lastPar to values that guarantee computation of parameter-dependent variables in first eval of yAll
 	lastPar	= new Double_t [nPars];
 	memcpy(lastPar,par,nPars*sizeof(Double_t));
@@ -342,15 +356,17 @@ int BFit () {
 		cout << setw(14) << fyAll->GetParName(index) << setw(10) << tog[index] << "\t" << fyAll->GetParameter(index) << " +/- " << fyAll->GetParError(index) << endl;
 	}
 	cout << separator << endl;
-	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
-		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb02") ||
-		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb03") ||
-		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb0103"))
-	{
-		b134sbFlag = 1;
-		fyAll->SetParameter(gammaT3, stBFitCase.pdSeed[gammaT2]);
-		cout << "134-Sb data detected. Forcing gammaT3 = gammaT2. YOU SHOULD GUARANTEE THAT X3 = Y3 = 0. You can set epsX = epsY = 0." << endl << endl;
-	}
+//	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
+//		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb02") ||
+//		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb03") ||
+//		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb0103"))
+//	{
+//		b134sbFlag = 1;
+//		fyAll->SetParameter(gammaT3, stBFitCase.pdSeed[gammaT2]);
+//		par
+//		cout << "134-Sb data detected. Forcing gammaT3 = gammaT2. YOU SHOULD GUARANTEE THAT X3 = Y3 = 0. You can set epsX = epsY = 0." << endl << endl;
+//	}
+	if (b134sbFlag) cout << "134-Sb data detected. Forcing gammaT3 = gammaT2. YOU SHOULD GUARANTEE THAT X3 = Y3 = 0. You can set epsX = epsY = 0." << endl << endl;
 	else cout << endl;
 // Initialize all functions to parameter seed values
 	fyDC	-> SetParameters(par);
@@ -405,14 +421,14 @@ int BFit () {
 		Double_t *covArray = new Double_t [nPars*nPars];
 		covArray = cov.GetMatrixArray();
 		
-		for (Int_t ii=0; ii<8; ii++) {
-		//	printf("%.3e  ",cov.GetMatrixArray()[ii]);
-			for (Int_t jj=0; jj<8; jj++) {
-			//	printf("%.6e  ", cov[ii][jj]);
-				printf("%.6e  ", covArray[ii+jj*nPars] );
-			}
-			cout << endl;
-		}
+	//	for (Int_t ii=0; ii<8; ii++) {
+	//	//	printf("%.3e  ",cov.GetMatrixArray()[ii]);
+	//		for (Int_t jj=0; jj<8; jj++) {
+	//		//	printf("%.6e  ", cov[ii][jj]);
+	//			printf("%.6e  ", covArray[ii+jj*nPars] );
+	//		}
+	//		cout << endl;
+	//	}
 		fit->Print("V");
 	// Get parameter values from fit
 		for (index = 0; index < nPars; index++) {
@@ -472,6 +488,36 @@ int BFit () {
 	//	printf("N_beta_3 (detected) = %f +/- %f\n", N_beta_3, N_beta_3_err);
 	//	printf("\n");
 		
+		if (0) {
+			for (Int_t iPar = 0; iPar < nPars; iPar++) {
+			//	grads[iPar] = frT2->GradientPar(iPar,par,0.0001);
+				printf("%12s val = %f, err = %f\n", fyAll->GetParName(iPar), par[iPar], err[iPar]);
+			}
+			TF1 *fInt	= new TF1("frT2", rT2, 0.0, tCyc, nPars);
+			sleep(1.5);
+			Double_t grads[nPars];
+			printf("\n");
+			Double_t timeVar[1] = {0.0};
+		//	fInt->GradientPar(timeVar,grads,0.001);
+		//	fInt->GradientPar(par,grads,0.001);
+			for (Int_t iPar = 0; iPar < nPars; iPar++) {
+			//	grads[iPar] = frT2->GradientPar(iPar,par,0.0001);
+				printf("%s grad = %.24f\n", parNames[iPar], grads[iPar]);
+			}
+			printf("\n");
+			
+			Double_t par1[nPars], par2[nPars];
+			memcpy(par1,par,nPars*sizeof(Double_t));
+			memcpy(par2,par,nPars*sizeof(Double_t));
+			par2[r2] = par2[r2]*1.1;
+			fInt->SetParameters(par1);
+			Double_t fr_int_1 = fInt->Integral(0.0, tCyc);
+			fInt->SetParameters(par2);
+			Double_t fr_int_2 = fInt->Integral(0.0, tCyc);
+			sleep(0.25);
+			printf("int1 = %f, int2 = %f\n", fr_int_1, fr_int_2);
+		}
+		
 	// Estimate # of betas detected and error
 		T1_integral = frT1->Integral( 0.0, tCyc);
 		T2_integral = frT2->Integral( 0.0, tCyc);
@@ -498,14 +544,30 @@ int BFit () {
 			printf("Other integrals computed in %d clicks (%f seconds).\n", timer, (Float_t)timer/CLOCKS_PER_SEC);
 		}
 		
-		T1_integral_error = frT1->IntegralError( 0.0, tCyc);//, par, cov);//.GetMatrixArray() );
-		T2_integral_error = frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		T3_integral_error = frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U1_integral_error = frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U2_integral_error = frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		U3_integral_error = frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		DC_integral_error = frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
-		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		T1_integral_error = frT1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+	//	printf("Getting rT2 integral error in 5 seconds...\n"); sleep(1);
+	//	printf("Getting rT2 integral error in 4 seconds...\n"); sleep(1);
+	//	printf("Getting rT2 integral error in 3 seconds...\n"); sleep(1);
+	//	printf("Getting rT2 integral error in 2 seconds...\n"); sleep(1);
+	//	printf("Getting rT2 integral error in 1 seconds...\n"); sleep(1);
+		
+	//	T2_integral_error = frT2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+	//	T1_integral_error = intErr( frT1, covArray, 0.0, tCyc );
+		T1_integral_error = intErr( frT1, covArray, 0.0, tCyc );
+		T2_integral_error = intErr( frT2, covArray, 0.0, tCyc );
+		T3_integral_error = intErr( frT3, covArray, 0.0, tCyc );
+		U1_integral_error = intErr( frU1, covArray, 0.0, tCyc );
+		U2_integral_error = intErr( frU2, covArray, 0.0, tCyc );
+		U3_integral_error = intErr( frU3, covArray, 0.0, tCyc );
+		DC_integral_error = intErr( frDC, covArray, 0.0, tCyc );
+		All_integral_error = intErr( frAll, covArray, 0.0, tCyc );
+//		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		T3_integral_error = frT3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		U1_integral_error = frU1->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		U2_integral_error = frU2->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		U3_integral_error = frU3->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		DC_integral_error = frDC->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
+//		All_integral_error = frAll->IntegralError( 0.0, tCyc, par, cov.GetMatrixArray() );
 		
 	//	printf("tCyc=%f\n",tCyc);
 	//	T1_integral_error = frT1->IntegralError( 0.0, 1000*tCyc);
@@ -525,21 +587,21 @@ int BFit () {
 		cout << endl << separator << endl;
 		printf("NUMBER OF BETAS DETECTED, by population:\n");
 		cout << separator << endl;
-		printf("T1 integral = %f +/- %.24f\n", T1_integral, T1_integral_error);
-		printf("U1 integral = %f +/- %.24f\n", U1_integral, U1_integral_error);
-		printf("T2 integral = %f +/- %.24f\n", T2_integral, T2_integral_error);
-		printf("U2 integral = %f +/- %.24f\n", U2_integral, U2_integral_error);
-		printf("T3 integral = %f +/- %.24f\n", T3_integral, T3_integral_error);
-		printf("U3 integral = %f +/- %.24f\n", U3_integral, U3_integral_error);
-		printf("DC integral = %f +/- %.24f\n", DC_integral, DC_integral_error);
+		printf("T1 integral = %.1f +/- %.1f\n", T1_integral, T1_integral_error);
+		printf("U1 integral = %.1f +/- %.1f\n", U1_integral, U1_integral_error);
+		printf("T2 integral = %.1f +/- %.1f\n", T2_integral, T2_integral_error);
+		printf("U2 integral = %.1f +/- %.1f\n", U2_integral, U2_integral_error);
+		printf("T3 integral = %.1f +/- %.1f\n", T3_integral, T3_integral_error);
+		printf("U3 integral = %.1f +/- %.1f\n", U3_integral, U3_integral_error);
+		printf("DC integral = %.1f +/- %.1f\n", DC_integral, DC_integral_error);
 		cout << separator << endl;
-		printf("Sum of above = %f +/- %.24f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
-		printf("All integral = %f +/- %.24f\n", All_integral, All_integral_error);
+		printf("Sum of above = %.1f +/- %.1f <-- no cov in unc\n", Integral_sum, Integral_sum_error);
+		printf("All integral = %.1f +/- %.1f\n", All_integral, All_integral_error);
 		if (stBFitCase.bComputeOtherIntegrals) {
 			cout << separator << endl;
-			printf("U1 with trap emtpy = %f; trap full = %f\n", U1_integral_trap_empty, U1_integral_trap_full);
-			printf("U2 with trap emtpy = %f; trap full = %f\n", U2_integral_trap_empty, U2_integral_trap_full);
-			printf("U3 with trap emtpy = %f; trap full = %f\n", U3_integral_trap_empty, U3_integral_trap_full);
+			printf("U1 with trap emtpy = %.1f; trap full = %.1f\n", U1_integral_trap_empty, U1_integral_trap_full);
+			printf("U2 with trap emtpy = %.1f; trap full = %.1f\n", U2_integral_trap_empty, U2_integral_trap_full);
+			printf("U3 with trap emtpy = %.1f; trap full = %.1f\n", U3_integral_trap_empty, U3_integral_trap_full);
 //			printf("All untrapped with trap empty = %f (bin %f to bin %f)\n", h1->Integral(binZero, binCap-1) - par[DC]*tBac, binZero, binCap);
 //			printf("All data area in histogram = %f\n", h1->Integral(binZero, binCycle-1));
 //			printf("All data area in histogram = %f\n", h1->Integral());
@@ -1114,6 +1176,55 @@ void FuncPrep (TF1 *f, Double_t *pars, Int_t nPoints, Int_t color, Int_t style) 
 	f->SetNpx(nPoints);
 	f->SetLineColor(color);
 	f->SetLineStyle(style);
+}
+
+Double_t intErr (TF1 *fn, Double_t *cov, Double_t t1, Double_t t2) {
+	using namespace TMath;
+//	extern BFitCase_t stBFitCase;
+	Double_t dp, I0 = 0, I1 = 0, I2 = 0, variance = 0;
+	Double_t *p0, *p1, *p2;
+	Int_t i, j; // param indices
+	Int_t		nPar	= fn->GetNpar();
+				p0		= fn->GetParameters(); // This won't be changed; should be best-fit values
+				p1		= new Double_t [nPar];
+				p2		= new Double_t [nPar];
+	Double_t	step = 1; // Fraction of 1-sigma in parameter to use as parameter step size
+	Double_t	dIdp[nPar]; // to hold gradient of integral wrt each param
+	for (i=0; i<nPar; i++) dIdp[i] = 0; // initialize so we can skip some
+	// Three lines: Update PDV's; Ensure fn params are right; Get integral at best-fit values
+//	BFitNamespace::ComputeParameterDependentVars(p0);
+	I0=fn->Integral(t1,t2,p0);
+	
+	// Loop over params and get derivative of integral wrt each param
+	for (i=0; i<nPar; i++) {
+		if (cov[i+i*nPar]>0) {// skip fixed params, which have cov(i,i) = 0
+			dp = step * Sqrt(cov[i+i*nPar]); // Parameter step size = step * (sigma of i^th param)
+			memcpy(p1,p0,nPar*sizeof(Double_t)); // Initialize p1
+			memcpy(p2,p0,nPar*sizeof(Double_t)); // Initialize p2
+			p1[i] = p0[i] - 0.5*dp; // p1: change i^th param by -dp/2
+			p2[i] = p0[i] + 0.5*dp; // p2: change i^th param by +dp/2
+			// Get integrals for + and - changes:
+			BFitNamespace::ComputeParameterDependentVars(p1);
+			I1 = fn->Integral(t1,t2,p1);
+			BFitNamespace::ComputeParameterDependentVars(p2);
+			I2 = fn->Integral(t1,t2,p2);
+			// Get derivative from finite difference about central value
+			dIdp[i] = (I2-I1) / dp;
+		//	printf("par %2d:  dp=%.4e, p0=%+.4e, p1=%+.4e, p2=%+.4e, I0=%.6e, I1=%.6e, I2=%.6e, dIdp=%+.6e\n", i, dp, p0[i], p1[i], p2[i], I0, I1, I2, dIdp[i]);
+		//	for (j=0; j<nPar; j++)
+		//		printf("p0[%d]=%+.4e, p1[%d]=%+.4e, p2[%d]=%+.4e\n", j, p0[j], j, p1[j], j, p2[j]);
+		}
+	}
+	// Now get variances:
+	for (i=0; i<nPar; i++) {
+		if (cov[i+i*nPar]>0) { // skip fixed params, which have cov(i,i) = 0
+			for (j=i; j<nPar; j++) {
+				if (i==j)	variance +=     dIdp[i] * dIdp[j] * cov[i+j*nPar]; // Update variance --     diagonal elements
+				else		variance += 2 * dIdp[i] * dIdp[j] * cov[i+j*nPar]; // Update variance -- off-diagonal elements
+			}
+		}
+	}
+	return Sqrt(variance);
 }
 
 //int find_struct_index (void *p, char* pcsSearchString, int numStructs, int struct_size ) {
