@@ -52,33 +52,34 @@ namespace BFitNamespace {
 	Double_t Zcap		(Int_t, Double_t*, Double_t);
 	Double_t Xcap		(Int_t, Double_t*, Double_t);
 	Double_t Ycap		(Int_t, Double_t*, Double_t);
+	Double_t Ybkgd		(Int_t, Double_t);
 // Helper functions to calculate pops
 	Double_t sigmaI			(Double_t, Double_t, Int_t);
 	Double_t sigmaII		(Double_t, Double_t, Double_t, Int_t);
 	Double_t sigmaIII		(Double_t, Double_t, Double_t, Double_t, Int_t);
 	Double_t sigmaIV		(Double_t, Double_t, Double_t, Double_t, Double_t, Int_t);
-	Double_t SigmaT			(Double_t, Double_t, Int_t);
-	Double_t SigmaW			(Double_t, Double_t, Double_t, Int_t);
-	Double_t SigmaZ			(Double_t, Double_t, Double_t, Int_t);
-	Double_t SigmaY2		(Double_t, Double_t, Double_t, Double_t, Int_t);
-	Double_t SigmaY2T1		(Double_t, Double_t, Double_t, Double_t, Int_t);
+//	Double_t SigmaT			(Double_t, Double_t, Int_t);
+//	Double_t SigmaW			(Double_t, Double_t, Double_t, Int_t);
+//	Double_t SigmaZ			(Double_t, Double_t, Double_t, Int_t);
+//	Double_t SigmaY2		(Double_t, Double_t, Double_t, Double_t, Int_t);
+//	Double_t SigmaY2T1		(Double_t, Double_t, Double_t, Double_t, Int_t);
 	Double_t Y2Background	(Double_t, Double_t, Double_t);
 	Double_t Y3Background	(Double_t, Double_t, Double_t, Double_t);
-	Double_t Y2InitialValue	(Double_t, Double_t*, Double_t, Double_t);
-	Double_t Y3InitialValue	(Double_t, Double_t*, Double_t, Double_t);
+//	Double_t Y2InitialValue	(Double_t, Double_t*, Double_t, Double_t);
+//	Double_t Y3InitialValue	(Double_t, Double_t*, Double_t, Double_t);
 	
-	Double_t H_V1_Y2		(Double_t*, Double_t, Double_t);
-	Double_t H_W1_Y2		(Double_t*, Double_t, Double_t);
-	Double_t H_Z1_Y2_Zpart	(Double_t*, Double_t, Double_t);
-	Double_t H_Z1_Y2_Tpart	(Double_t*, Double_t, Double_t);
-	Double_t H_V2_Y3		(Double_t*, Double_t, Double_t);
-	Double_t H_W2_Y3		(Double_t*, Double_t, Double_t);
-	Double_t H_Z2_Y3_Zpart	(Double_t*, Double_t, Double_t);
-	Double_t H_Z2_Y3_Tpart	(Double_t*, Double_t, Double_t);
-	Double_t H_X2_Y3_Xpart	(Double_t*, Double_t, Double_t);
-	Double_t H_X2_Y3_Tpart	(Double_t*, Double_t, Double_t);
-	Double_t H_Y2_Y3		(Double_t*, Double_t, Double_t);
-	Double_t H_U1_U3		(Double_t*, Double_t, Double_t);
+//	Double_t H_V1_Y2		(Double_t*, Double_t, Double_t);
+//	Double_t H_W1_Y2		(Double_t*, Double_t, Double_t);
+//	Double_t H_Z1_Y2_Zpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_Z1_Y2_Tpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_V2_Y3		(Double_t*, Double_t, Double_t);
+//	Double_t H_W2_Y3		(Double_t*, Double_t, Double_t);
+//	Double_t H_Z2_Y3_Zpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_Z2_Y3_Tpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_X2_Y3_Xpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_X2_Y3_Tpart	(Double_t*, Double_t, Double_t);
+//	Double_t H_Y2_Y3		(Double_t*, Double_t, Double_t);
+//	Double_t H_U1_U3		(Double_t*, Double_t, Double_t);
 	
 // Trapped and untrapped populations 1, 2, 3
 	Double_t T1 (Double_t*, Double_t*);
