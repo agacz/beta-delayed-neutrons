@@ -90,38 +90,38 @@ void BMonteCarlo () {
 	
 // Filename for simulation
 	TRandom3 *randgen = new TRandom3(2);
-	TFile *rootfile = new TFile("BMC_0015.root","RECREATE");
+	TFile *rootfile = new TFile("BMC_0033.root","RECREATE");
 // Injection parameters
-    const Double_t rDC		= 0.000; // in 1/ms
-    const Double_t r1		= 0.000; // in 1/ms
-    const Double_t r2		= 0.100; // in 1/ms
-	const Double_t r3		= 0.000; // in 1/ms
-	const Double_t p		= 1.000;
-	const Double_t rho		= 0.000;
+    const Double_t rDC		= 0.040; // in 1/ms
+    const Double_t r1		= 0.080; // in 1/ms
+    const Double_t r2		= 0.120; // in 1/ms
+	const Double_t r3		= 0.100; // in 1/ms
+	const Double_t p		= 0.67134;
+	const Double_t rho		= 0.88552;
 // Cycle parameters
 	const Long64_t	T_cycle	= 246000;//000;
 	const Long64_t	T_bkgd	= 101000;//000;
 	const Long64_t	T_capt	= 6000;//00;
-	const Int_t		T_step	= 100;
-	const Int_t 	nCycles = 100;
+	const Int_t		T_step	= 5;
+	const Int_t 	nCycles = 2000;
 // Decay parameters
 	const Double_t ln2		= 0.69314718056;
 	const Double_t t1		= 2490.0/ln2;//3592.0;
     const Double_t t2		= 24500.0/ln2;//34812.0;
     const Double_t t3		= 3.818*60000.0/ln2;//330493.0;
-	const Double_t gT1		= 0*1.0/10000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gT2		= 0*1.0/20000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gT3		= 0*1.0/30000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gU1		= 0*1.0/40000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gU2		= 0*1.0/50000.0; // non-radioactive decay rate (1/ms)
-	const Double_t gU3		= 0*1.0/60000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT1		= 1.0/15000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT2		= 1.0/25000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gT3		= 1.0/35000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gU1		= 1.0/55000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gU2		= 1.0/65000.0; // non-radioactive decay rate (1/ms)
+	const Double_t gU3		= 1.0/75000.0; // non-radioactive decay rate (1/ms)
 // Detection efficiencies
-	const Double_t eps_T	= 1.00;
-	const Double_t eps_V	= 1.00;
-	const Double_t eps_W	= 1.00;
-	const Double_t eps_X	= 1.00;
-	const Double_t eps_Y	= 1.00;
-	const Double_t eps_Z	= 1.00;
+	const Double_t eps_T	= 0.91;
+	const Double_t eps_V	= 0.92;
+	const Double_t eps_W	= 0.93;
+	const Double_t eps_X	= 0.94;
+	const Double_t eps_Y	= 0.95;
+	const Double_t eps_Z	= 0.96;
 	
 // Calculations
 	Int_t	T_run	= nCycles*T_cycle + T_bkgd;

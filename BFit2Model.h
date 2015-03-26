@@ -8,7 +8,6 @@
 namespace BFitNamespace {
 	
 	enum ParIndex { nCyc, dt, DC, r1, r2, r3, p, rho, epsT, epsU, epsV, epsW, epsX, epsY, epsZ, gammaT1, gammaT2, gammaT3, gammaU1, gammaU2, gammaU3 };
-	// a[nCyc]	= number of cycles of data summed in histogram
 	// a[dt]	= bin width in ms
 	// a[DC]	= DC detection rate in cycles/ms
 	// a[r1]	= Species 1 injection rate in cycles/ms
@@ -30,6 +29,7 @@ namespace BFitNamespace {
 	// a[gammaU1]	= Non-radioactive decay rate of untrapped species 1 population (U1) (1/s)
 	// a[gammaU2]	= Non-radioactive decay rate of untrapped species 2 population (U2) (1/s)
 	// a[gammaU3]	= Non-radioactive decay rate of untrapped species 3 population (U3) (1/s)
+	// NB: the words are array indices, ie. numbers! If you put p instead of a[p] you will get 
 	
 // Function used to detect when the fitter changes the parameters
 	bool CompareParArrays (const Double_t*, const Double_t*, size_t n, Double_t eps);
@@ -104,13 +104,13 @@ namespace BFitNamespace {
 	Double_t All (Double_t*, Double_t*);*/
 	
 // Functions to compare to data: (obs. decay rate)x(bin dt) = counts by bin
-	Double_t yT (Int_t, Double_t*, Double_t);
-	Double_t yU (Int_t, Double_t*, Double_t);
-	Double_t yV (Int_t, Double_t*, Double_t);
-	Double_t yW (Int_t, Double_t*, Double_t);
-	Double_t yZ (Int_t, Double_t*, Double_t);
-	Double_t yX (Int_t, Double_t*, Double_t);
-	Double_t yY (Int_t, Double_t*, Double_t);
+//	Double_t yT (Int_t, Double_t*, Double_t);
+//	Double_t yU (Int_t, Double_t*, Double_t);
+//	Double_t yV (Int_t, Double_t*, Double_t);
+//	Double_t yW (Int_t, Double_t*, Double_t);
+//	Double_t yZ (Int_t, Double_t*, Double_t);
+//	Double_t yX (Int_t, Double_t*, Double_t);
+//	Double_t yY (Int_t, Double_t*, Double_t);
 // These are kept as a layer having the signature that works easily in ROOT
 // They just call the yT, yV, etc...
 	Double_t yDC (Double_t*, Double_t*);
@@ -143,6 +143,19 @@ namespace BFitNamespace {
 	Double_t rU1 (Double_t*, Double_t*);
 	Double_t rU2 (Double_t*, Double_t*);
 	Double_t rU3 (Double_t*, Double_t*);
+	Double_t rV1 (Double_t*, Double_t*);
+	Double_t rV2 (Double_t*, Double_t*);
+	Double_t rV3 (Double_t*, Double_t*);
+	Double_t rW1 (Double_t*, Double_t*);
+	Double_t rW2 (Double_t*, Double_t*);
+	Double_t rW3 (Double_t*, Double_t*);
+	Double_t rX2 (Double_t*, Double_t*);
+	Double_t rX3 (Double_t*, Double_t*);
+	Double_t rY2 (Double_t*, Double_t*);
+	Double_t rY3 (Double_t*, Double_t*);
+	Double_t rZ1 (Double_t*, Double_t*);
+	Double_t rZ2 (Double_t*, Double_t*);
+	Double_t rZ3 (Double_t*, Double_t*);
 	Double_t rAll (Double_t*, Double_t*);
 	
 // Offset functions to improve visualization: oTi = yTi + yDC

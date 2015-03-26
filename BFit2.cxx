@@ -55,6 +55,7 @@ Double_t	iota; // tiny number for avoiding divide-by-0
 Double_t	tCap, tBac, tCyc; // cycle times
 Double_t	t1, t2, t3; // radioactive half-lives
 //Double_t	tZeroArg[1], tCycArg[1]; // specifc time values 1-element array for passing by reference
+Int_t		nCycles; // number of cycles in dataset -- don't confuse with parameter indec nCyc
 Int_t		nCapMax; // number of injections per cycle
 bool		b134sbFlag = 0; // flag for 134sb cases which get special treatment
 // These change only when the parameters change during fitting and are set in yAll()
@@ -100,7 +101,7 @@ Double_t	T1val, T2val, T3val, U1val, U2val, U3val, V1val, V2val, V3val, W1val, W
 
 // Functions
 Double_t intErr (TF1*, Double_t*, Double_t, Double_t);
-void HistPrep (TH1*, Int_t);
+void HistPrep (TH1*, Int_t, Int_t, char*);
 void FuncPrep (TF1*, Double_t*, Int_t, Int_t, Int_t);
 int BFit ();
 
@@ -144,7 +145,6 @@ int BFit () {
 	//printf("Bdn Case index = %d, BFit case index = %d\n", iBDNCaseIndex, iBFitCaseIndex);
 	
 // Assign global variables
-	Int_t k;
 	nPars	= stBFitCase.iNPars;
 	tCap	= 1000.0 * stBDNCase.dCaptureTime;	// Time between BPT captures (ms)
 	tBac	= 1000.0 * stBDNCase.dBackgroundTime; // Time spent in background measurment, per cycle (ms)
@@ -152,6 +152,7 @@ int BFit () {
 	t1		= 1000.0 * stBDNCase.dLifetime1[0]; // radioactive lifetime (1/e) in ms
 	t2		= 1000.0 * stBDNCase.dLifetime2[0]; // radioactive lifetime (1/e) in ms
 	t3		= 1000.0 * stBDNCase.dLifetime3[0]; // radioactive lifetime (1/e) in ms
+	nCycles	= stBDNCase.nCycles; // Number of cycles in dataset
 	iota	= 1e-9;
 //	printf("          iota = %.4e\n",iota);
 //	printf("          iota = %32.16f\n",iota);
@@ -161,6 +162,7 @@ int BFit () {
 	//printf("nCapMax=%d\n",nCapMax);
 // Array to hold injection times
 	timeOfCapt	= new Double_t [nCapMax+1];
+	Int_t k;
 	for (k=0; k<nCapMax+1; k++)
 		timeOfCapt[k] = tBac + k*tCap;
 // Arrays to hold the sigma values in each [index] tooth:
@@ -246,6 +248,7 @@ int BFit () {
 	Double_t pointsPerBin	= 20;
 	Double_t nPoints		= pointsPerBin * dNBins;
 	Double_t dRebinFactor	= dBinWidth/(h->GetBinWidth(1));
+//	printf("dBinWidth=%f, GetBinWidth=%f, dRebinFactor=%f\n", dBinWidth, h->GetBinWidth(1), dRebinFactor);
 //	Double_t dRebinFactor = stBFitCase.iBinWidth/(h->GetBinWidth(1));
 	Double_t binZero  = (1.0/dRebinFactor)*(0.0  - tCycMin) + 1.0;
 	Double_t binCap  = (1.0/dRebinFactor)*(tBac - tCycMin) + 1.0;
@@ -329,6 +332,7 @@ int BFit () {
 	par = stBFitCase.pdSeed;
 	err = stBFitCase.pdStep;
 	Int_t index;
+	par[nCyc] = nCycles;
 // Special cases -- modifications to parameters -- catch right after param import
 	if (!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb01") ||
 		!strcmp(stBDNCases[iBDNCaseIndex].pcsCaseCode,"134sb02") ||
@@ -624,10 +628,10 @@ int BFit () {
 	h1->SetLineColor(16);
 //	h2->SetLineColor(16);
 	
-	fyDC->SetLineStyle(7);
-	foU1->SetLineStyle(7);
-	foU2->SetLineStyle(7);
-	foU3->SetLineStyle(7);
+	fyDC->SetLineStyle(2);
+	foU1->SetLineStyle(2);
+	foU2->SetLineStyle(2);
+	foU3->SetLineStyle(2);
 	
 //	Double_t nPoints = 2 * (1000.0 * stBDNCase.dCycleTime / dRebinFactor); // leading interger is number of points per bin
 // Now defined above
@@ -639,7 +643,26 @@ int BFit () {
 	foU2->SetNpx(nPoints);
 	foU3->SetNpx(nPoints);
 	
-	TCanvas *c_BFit	= new TCanvas("c_BFit","Beta singles fit",945,600);
+	FuncPrep(fyAll,par,nPoints,kBlack,1);
+	FuncPrep(foT1,par,nPoints,kGreen,1);
+	FuncPrep(foT2,par,nPoints,kBlue,1);
+	FuncPrep(foT3,par,nPoints,kRed,1);
+	FuncPrep(foU1,par,nPoints,kGreen,7);
+	FuncPrep(foU2,par,nPoints,kBlue,7);
+	FuncPrep(foU3,par,nPoints,kRed,7);
+	Float_t wdth = 1.4;
+	fyAll->SetLineWidth(wdth);
+	foT1->SetLineWidth(wdth);
+	foT2->SetLineWidth(1.5*wdth);
+	foT3->SetLineWidth(wdth);
+	foU1->SetLineWidth(wdth);
+	foU2->SetLineWidth(wdth);
+	foU3->SetLineWidth(wdth);
+	
+	Int_t bsmPlot = 0;
+	Float_t scale = 1.0;
+	//if (bsmPlot) scale = 2.0;
+	TCanvas *c_BFit	= new TCanvas("c_BFit","Beta singles fit",scale*945,scale*600);
 	gStyle->SetOptStat("e");
 	gStyle->SetOptFit(1111);
 	h1 ->Draw("HIST");
@@ -667,26 +690,55 @@ int BFit () {
 	h1->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
 //	h2->GetXaxis()->SetRangeUser(-1000,tCyc+1000);
 	
-	TLegend *leg_1 = new TLegend(0.13, 0.69, 0.32, 0.94);
-	leg_1->AddEntry(h1 , "Data");
-	leg_1->AddEntry(fyDC, "DC");
-	char pcsT1Name[STRING_SIZE], pcsT2Name[STRING_SIZE], pcsT3Name[STRING_SIZE];
-	char pcsU1Name[STRING_SIZE], pcsU2Name[STRING_SIZE], pcsU3Name[STRING_SIZE];
-	strcpy(pcsT1Name, stBDNCase.pcsSpecies1Name); strcat(pcsT1Name, " trapped");
-	strcpy(pcsT2Name, stBDNCase.pcsSpecies2Name); strcat(pcsT2Name, " trapped");
-	strcpy(pcsT3Name, stBDNCase.pcsSpecies3Name); strcat(pcsT3Name, " trapped");
-	strcpy(pcsU1Name, stBDNCase.pcsSpecies1Name); strcat(pcsU1Name, " untrapped");
-	strcpy(pcsU2Name, stBDNCase.pcsSpecies2Name); strcat(pcsU2Name, " untrapped");
-	strcpy(pcsU3Name, stBDNCase.pcsSpecies3Name); strcat(pcsU3Name, " untrapped");
-	leg_1->AddEntry(foT1, pcsT1Name);
-	leg_1->AddEntry(foU1, pcsU1Name);
-	leg_1->AddEntry(foT2, pcsT2Name);
-	leg_1->AddEntry(foU2, pcsU2Name);
-	leg_1->AddEntry(foT3, pcsT3Name);
-	leg_1->AddEntry(foU3, pcsU3Name);
-	leg_1->AddEntry(fyAll , "Fit function (all species)");
-	leg_1->SetFillColor(0);
-	leg_1->Draw();
+	if (bsmPlot) { // special case for a plot in Beta Singles Model appendix in my thesis
+		h1->SetXTitle("Cycle time (ms)");
+		h1->SetYTitle("Detections / 500 ms");
+		h1->SetTitle("Simulation vs Model, All populations");
+		h1->GetXaxis()->SetRangeUser(0,tCyc);
+		h1->GetYaxis()->SetTitleOffset(1.0);
+		TLegend *leg_1 = new TLegend(0.15, 0.62, 0.40, 0.87);
+		leg_1->AddEntry(h1 , "Data");
+		leg_1->AddEntry(fyDC, "DC");
+		char pcsT1Name[STRING_SIZE], pcsT2Name[STRING_SIZE], pcsT3Name[STRING_SIZE];
+		char pcsU1Name[STRING_SIZE], pcsU2Name[STRING_SIZE], pcsU3Name[STRING_SIZE];
+		sprintf(pcsT1Name,"Species 1, trapped");
+		sprintf(pcsT2Name,"Species 2, trapped");
+		sprintf(pcsT3Name,"Species 3, trapped");
+		sprintf(pcsU1Name,"Species 1, untrapped");
+		sprintf(pcsU2Name,"Species 2, untrapped");
+		sprintf(pcsU3Name,"Species 3, untrapped");
+		leg_1->AddEntry(foT1, pcsT1Name);
+		leg_1->AddEntry(foU1, pcsU1Name);
+		leg_1->AddEntry(foT2, pcsT2Name);
+		leg_1->AddEntry(foU2, pcsU2Name);
+		leg_1->AddEntry(foT3, pcsT3Name);
+		leg_1->AddEntry(foU3, pcsU3Name);
+		leg_1->AddEntry(fyAll , "Fit function (all species)");
+		leg_1->SetFillColor(0);
+		leg_1->Draw();
+	}
+	else { // normal case
+		TLegend *leg_1 = new TLegend(0.13, 0.69, 0.32, 0.94);
+		leg_1->AddEntry(h1 , "Data");
+		leg_1->AddEntry(fyDC, "DC");
+		char pcsT1Name[STRING_SIZE], pcsT2Name[STRING_SIZE], pcsT3Name[STRING_SIZE];
+		char pcsU1Name[STRING_SIZE], pcsU2Name[STRING_SIZE], pcsU3Name[STRING_SIZE];
+		strcpy(pcsT1Name, stBDNCase.pcsSpecies1Name); strcat(pcsT1Name, " trapped");
+		strcpy(pcsT2Name, stBDNCase.pcsSpecies2Name); strcat(pcsT2Name, " trapped");
+		strcpy(pcsT3Name, stBDNCase.pcsSpecies3Name); strcat(pcsT3Name, " trapped");
+		strcpy(pcsU1Name, stBDNCase.pcsSpecies1Name); strcat(pcsU1Name, " untrapped");
+		strcpy(pcsU2Name, stBDNCase.pcsSpecies2Name); strcat(pcsU2Name, " untrapped");
+		strcpy(pcsU3Name, stBDNCase.pcsSpecies3Name); strcat(pcsU3Name, " untrapped");
+		leg_1->AddEntry(foT1, pcsT1Name);
+		leg_1->AddEntry(foU1, pcsU1Name);
+		leg_1->AddEntry(foT2, pcsT2Name);
+		leg_1->AddEntry(foU2, pcsU2Name);
+		leg_1->AddEntry(foT3, pcsT3Name);
+		leg_1->AddEntry(foU3, pcsU3Name);
+		leg_1->AddEntry(fyAll , "Fit function (all species)");
+		leg_1->SetFillColor(0);
+		leg_1->Draw();
+	}
 	
 	if (stBFitCase.bDoFit) {
 		char int_T1[100]; char int_T2[100]; char int_T3[100]; char int_U1[100]; char int_U2[100]; char int_U3[100]; char int_All[100];
@@ -700,7 +752,7 @@ int BFit () {
 		sprintf(int_T3,"%8.0f +/- %6.0f", T3_integral, T3_integral_error);
 		sprintf(int_U3,"%8.0f +/- %6.0f", U3_integral, U3_integral_error);
 		sprintf(int_All,"%8.0f +/- %6.0f", All_integral, All_integral_error);
-		TLegend *calc = new TLegend(0.13, 0.50, 0.32, 0.69);
+		TLegend *calc = new TLegend(.13, 0.50, 0.32, 0.69);
 		calc->AddEntry(foT1, int_T1);
 		calc->AddEntry(foU1, int_U1);
 		calc->AddEntry(foT2, int_T2);
@@ -749,16 +801,16 @@ int BFit () {
 //		h_DU3->SetLineStyle(7);
 		
 		if (stBFitCase.bHasDDC) h_DDC->Rebin(dRebinFactor);
-		h_DT1->Rebin(dRebinFactor);
-		h_DT2->Rebin(dRebinFactor);
-		h_DT3->Rebin(dRebinFactor);
-		h_DU1->Rebin(dRebinFactor);
-		h_DU2->Rebin(dRebinFactor);
-		h_DU3->Rebin(dRebinFactor);
-		
-		fyT1->SetLineColor(kGreen);
-		fyT2->SetLineColor(kBlue);
-		fyT3->SetLineColor(kRed);
+	//	h_DT1->Rebin(dRebinFactor);
+	//	h_DT2->Rebin(dRebinFactor);
+	//	h_DT3->Rebin(dRebinFactor);
+	//	h_DU1->Rebin(dRebinFactor);
+	//	h_DU2->Rebin(dRebinFactor);
+	//	h_DU3->Rebin(dRebinFactor);
+	//	
+	//	fyT1->SetLineColor(kGreen);
+	//	fyT2->SetLineColor(kBlue);
+	//	fyT3->SetLineColor(kRed);
 		fyU1->SetLineColor(kGreen);
 		fyU2->SetLineColor(kBlue);
 		fyU3->SetLineColor(kRed);
@@ -767,9 +819,9 @@ int BFit () {
 //		fyU2->SetLineStyle(7);
 //		fyU3->SetLineStyle(7);
 		
-		fyT1->SetNpx(nPoints);
-		fyT2->SetNpx(nPoints);
-		fyT3->SetNpx(nPoints);
+	//	fyT1->SetNpx(nPoints);
+	//	fyT2->SetNpx(nPoints);
+	//	fyT3->SetNpx(nPoints);
 		fyU1->SetNpx(nPoints);
 		fyU2->SetNpx(nPoints);
 		fyU3->SetNpx(nPoints);
@@ -829,19 +881,22 @@ int BFit () {
 			TH1D *h_DY2	= (TH1D*)f->Get("h_DY2_cyctime");
 			TH1D *h_DY3	= (TH1D*)f->Get("h_DY3_cyctime");
 			
-			HistPrep(h_DV1,dRebinFactor);
-			HistPrep(h_DV2,dRebinFactor);
-			HistPrep(h_DV3,dRebinFactor);
-			HistPrep(h_DW1,dRebinFactor);
-			HistPrep(h_DW2,dRebinFactor);
-			HistPrep(h_DW3,dRebinFactor);
-			HistPrep(h_DZ1,dRebinFactor);
-			HistPrep(h_DZ2,dRebinFactor);
-			HistPrep(h_DZ3,dRebinFactor);
-			HistPrep(h_DX2,dRebinFactor);
-			HistPrep(h_DX3,dRebinFactor);
-			HistPrep(h_DY2,dRebinFactor);
-			HistPrep(h_DY3,dRebinFactor);
+			HistPrep(h_DT1,dRebinFactor,dBinWidth,"T");
+			HistPrep(h_DT2,dRebinFactor,dBinWidth,"T");
+			HistPrep(h_DT3,dRebinFactor,dBinWidth,"T");
+			HistPrep(h_DV1,dRebinFactor,dBinWidth,"V");
+			HistPrep(h_DV2,dRebinFactor,dBinWidth,"V");
+			HistPrep(h_DV3,dRebinFactor,dBinWidth,"V");
+			HistPrep(h_DW1,dRebinFactor,dBinWidth,"W");
+			HistPrep(h_DW2,dRebinFactor,dBinWidth,"W");
+			HistPrep(h_DW3,dRebinFactor,dBinWidth,"W");
+			HistPrep(h_DZ1,dRebinFactor,dBinWidth,"Z");
+			HistPrep(h_DZ2,dRebinFactor,dBinWidth,"Z");
+			HistPrep(h_DZ3,dRebinFactor,dBinWidth,"Z");
+			HistPrep(h_DX2,dRebinFactor,dBinWidth,"X");
+			HistPrep(h_DX3,dRebinFactor,dBinWidth,"X");
+			HistPrep(h_DY2,dRebinFactor,dBinWidth,"Y");
+			HistPrep(h_DY3,dRebinFactor,dBinWidth,"Y");
 			
 /*			h_DV1 ->Rebin(dRebinFactor);
 			h_DV2 ->Rebin(dRebinFactor);
@@ -892,19 +947,22 @@ int BFit () {
 			TF1 *fyY2	= new TF1("fyY2", yY2, 0.0, tCyc, nPars);
 			TF1 *fyY3	= new TF1("fyY3", yY3, 0.0, tCyc, nPars);
 			
-			FuncPrep(fyV1,par,nPoints,kGreen,9);
-			FuncPrep(fyV2,par,nPoints,kBlue,9);
-			FuncPrep(fyV3,par,nPoints,kRed,9);
-			FuncPrep(fyW1,par,nPoints,kGreen,2);
-			FuncPrep(fyW2,par,nPoints,kBlue,2);
-			FuncPrep(fyW3,par,nPoints,kRed,2);
-			FuncPrep(fyZ1,par,nPoints,kGreen,8);
-			FuncPrep(fyZ2,par,nPoints,kBlue,8);
-			FuncPrep(fyZ3,par,nPoints,kRed,8);
-			FuncPrep(fyX2,par,nPoints,kBlue,5);
-			FuncPrep(fyX3,par,nPoints,kRed,5);
-			FuncPrep(fyY2,par,nPoints,kBlue,1);
-			FuncPrep(fyY3,par,nPoints,kRed,1);
+			FuncPrep(fyT1,par,nPoints,kGreen,2);//9);
+			FuncPrep(fyT2,par,nPoints,kBlue,2);//9);
+			FuncPrep(fyT3,par,nPoints,kRed,2);//9);
+			FuncPrep(fyV1,par,nPoints,kGreen,2);//9);
+			FuncPrep(fyV2,par,nPoints,kBlue,2);//9);
+			FuncPrep(fyV3,par,nPoints,kRed,2);//9);
+			FuncPrep(fyW1,par,nPoints,kGreen,2);//2);
+			FuncPrep(fyW2,par,nPoints,kBlue,2);//2);
+			FuncPrep(fyW3,par,nPoints,kRed,2);//2);
+			FuncPrep(fyZ1,par,nPoints,kGreen,2);//8);
+			FuncPrep(fyZ2,par,nPoints,kBlue,2);//8);
+			FuncPrep(fyZ3,par,nPoints,kRed,2);//8);
+			FuncPrep(fyX2,par,nPoints,kBlue,2);//5);
+			FuncPrep(fyX3,par,nPoints,kRed,2);//5);
+			FuncPrep(fyY2,par,nPoints,kBlue,2);
+			FuncPrep(fyY3,par,nPoints,kRed,2);
 /*			fyV1->SetParameters(par);
 			fyV2->SetParameters(par);
 			fyV3->SetParameters(par);
@@ -978,7 +1036,7 @@ int BFit () {
 			fyT3->Draw("SAME");
 			fyT1->Draw("SAME");
 			yMax = Max(Max(h_DT1->GetMaximum(),h_DT2->GetMaximum()),h_DT3->GetMaximum());
-			yMin = -0.05 * yMax;
+			yMin = 0.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DT2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Ti);
@@ -991,7 +1049,7 @@ int BFit () {
 			fyV3->Draw("SAME");
 			fyV1->Draw("SAME");
 			yMax = Max(Max(h_DV1->GetMaximum(),h_DV2->GetMaximum()),h_DV3->GetMaximum());
-			yMin = -0.05 * yMax;
+			yMin = -20.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DV2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Vi);
@@ -1004,7 +1062,7 @@ int BFit () {
 			fyW3->Draw("SAME");
 			fyW1->Draw("SAME");
 			yMax = Max(Max(h_DW1->GetMaximum(),h_DW2->GetMaximum()),h_DW3->GetMaximum());
-			yMin = -0.05 * yMax;
+			yMin = -10.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DW2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Wi);
@@ -1017,7 +1075,7 @@ int BFit () {
 			fyZ3->Draw("SAME");
 			fyZ1->Draw("SAME");
 			yMax = Max(Max(h_DZ1->GetMaximum(),h_DZ2->GetMaximum()),h_DZ3->GetMaximum());
-			yMin = -0.05 * yMax;
+			yMin = -10.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DZ2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Zi);
@@ -1028,7 +1086,7 @@ int BFit () {
 			fyX3->Draw("SAME");
 			fyX2->Draw("SAME");
 			yMax = Max(h_DX2->GetMaximum(),h_DX3->GetMaximum());
-			yMin = -0.05 * yMax;
+			yMin = 0.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DX2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Xi);
@@ -1039,9 +1097,9 @@ int BFit () {
 			fyY3->Draw("SAME");
 			fyY2->Draw("SAME");
 			yMax = Max(h_DY2->GetMaximum(),h_DY3->GetMaximum());
-			yMax = Max(yMax,fyY2->GetMaximum(tBac,tCyc,10.0,20));
-			yMax = Max(yMax,fyY3->GetMaximum(tBac,tCyc,10.0,20));
-			yMin = -0.05 * yMax;
+			yMax = Max(yMax,fyY2->GetMaximum(0.0, tCyc, 0.1, 20));
+			yMax = Max(yMax,fyY3->GetMaximum(0.0, tCyc, 0.1, 20));
+			yMin = 0.0;//-0.05 * yMax;
 			yMax =  1.05 * yMax;
 			h_DY2->GetYaxis()->SetRangeUser(yMin,yMax);
 			outfile->WriteTObject(c_Yi);
@@ -1166,9 +1224,20 @@ int BFit () {
 	return iReturn;
 }
 
-void HistPrep (TH1 *h, Int_t rebin) {
+void HistPrep (TH1 *h, Int_t rebin, Int_t binWidth, char* pop) {
 	h->Rebin(rebin);
 	h->SetLineColor(kBlack);
+	
+	//printf("rebin=%d\n",rebin);
+	char xTitle[100], yTitle[100], Title[100];
+	sprintf(xTitle,"Cycle time (ms)");
+	sprintf(yTitle,"Detections / %d ms", binWidth);
+	sprintf(Title,"Simulation vs Model, %s populations", pop);
+	h->SetXTitle(xTitle);
+	h->SetYTitle(yTitle);
+	h->SetTitle(Title);
+	h->GetXaxis()->SetRangeUser(0,tCyc);
+	h->GetYaxis()->SetTitleOffset(1.4);
 }
 
 void FuncPrep (TF1 *f, Double_t *pars, Int_t nPoints, Int_t color, Int_t style) {

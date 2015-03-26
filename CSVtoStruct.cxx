@@ -457,6 +457,83 @@ int ParseToStruct_BDN (char *pcsLine, BDNCase_t *pstStruct) // change per struct
 #ifdef DEBUG
 		printf("RF Amplifier Power (Watts) = %.15g\n", pstStruct->dRFAmpPower);
 #endif
+
+// Get Species 1 beam rate to CPT
+	pcsResult = strtok(NULL,",");
+	pstStruct->dBeamRateCPTSpecies1 = atof(pcsResult);
+#ifdef DEBUG
+		printf("Beam rate of species 1 to CPT = %.15g\n", pstStruct->dBeamRateCPTSpecies1);
+#endif
+
+// Get Species 2 beam rate to CPT
+	pcsResult = strtok(NULL,",");
+	pstStruct->dBeamRateCPTSpecies2 = atof(pcsResult);
+#ifdef DEBUG
+		printf("Beam rate of species 2 to CPT = %.15g\n", pstStruct->dBeamRateCPTSpecies2);
+#endif
+
+// Get Species 3 beam rate to CPT
+	pcsResult = strtok(NULL,",");
+	pstStruct->dBeamRateCPTSpecies3 = atof(pcsResult);
+#ifdef DEBUG
+		printf("Beam rate of species 3 to CPT = %.15g\n", pstStruct->dBeamRateCPTSpecies3);
+#endif
+
+// Get runtime in seconds
+	pcsResult = strtok(NULL,",");
+	pstStruct->dRuntimeSec = 3600.0 * atof(pcsResult);
+#ifdef DEBUG
+		printf("Run time in seconds = %.15g\n", pstStruct->dRuntimeSec);
+#endif
+
+// Get number of run files
+	pcsResult = strtok(NULL,",");
+	pstStruct->nRunFiles = atof(pcsResult);
+#ifdef DEBUG
+		printf("Number of run files = %.15g\n", pstStruct->nRunFiles);
+#endif
+
+// Get number of events
+	pcsResult = strtok(NULL,",");
+	pstStruct->nEvents = atof(pcsResult);
+#ifdef DEBUG
+		printf("Number of events = %.15g\n", pstStruct->nEvents);
+#endif
+
+// Get number of cycles
+	pcsResult = strtok(NULL,",");
+	pstStruct->nCycles = atof(pcsResult);
+#ifdef DEBUG
+		printf("Number of cycles = %.15g\n", pstStruct->nCycles);
+#endif
+
+// Get trigger rate
+	pcsResult = strtok(NULL,",");
+	pstStruct->dAvgTriggerRate = atof(pcsResult);
+#ifdef DEBUG
+		printf("Average trigger rate -- whole cycle = %.15g\n", pstStruct->dAvgTriggerRate);
+#endif
+
+// Get deadtime correction
+	pcsResult = strtok(NULL,",");
+	pstStruct->dAvgDeadtimeCorrectionFactor = atof(pcsResult);
+#ifdef DEBUG
+		printf("Average deadtime correction -- whole cycle = %.15g\n", pstStruct->dAvgDeadtimeCorrectionFactor);
+#endif
+
+// Get deadtime correction
+	pcsResult = strtok(NULL,",");
+	pstStruct->dAvgDeadtimeCorrectionFactorBackground = atof(pcsResult);
+#ifdef DEBUG
+		printf("Average deadtime correction -- background = %.15g\n", pstStruct->dAvgDeadtimeCorrectionFactorBackground);
+#endif
+
+// Get deadtime correction
+	pcsResult = strtok(NULL,",");
+	pstStruct->dAvgDeadtimeCorrectionFactorTrapping = atof(pcsResult);
+#ifdef DEBUG
+		printf("Average deadtime correction -- trapping = %.15g\n", pstStruct->dAvgDeadtimeCorrectionFactorTrapping);
+#endif
 	
 	using namespace TMath;
 	const double c						= 299792.458;	// mm/us
@@ -505,6 +582,7 @@ int ParseToStruct_BDN (char *pcsLine, BDNCase_t *pstStruct) // change per struct
 	const double dMaxRightMCPDistance		= Sqrt(Power(pstStruct->dRightMCPDistance, 2.0) + Power(dMaxMCPTransverse,2.0));
 	double dGridRight						= pstStruct->dRightGridDistance;
 	double accelRight						= pstStruct->dRightGridAcceleration;
+	//printf("%s: var=%f\n",pstStruct->pcsCaseCode, pstStruct->dNeutronSeparationEnergyKeV);//pstStruct->dMaxFastIonEnergyKeV);
 	pstStruct->dRightMCPMinFastIonTOF		= (dGridRight/vMax) + (vMax/accelRight)*(Sqrt(2*accelRight*dRightGridGap/vMax/vMax + 1) - 1);
 	pstStruct->dRightMCPMaxFastIonTOF		= (dGridRight/vMin) + (vMin/accelRight)*(Sqrt(2*accelRight*dRightGridGap/vMin/vMin + 1) - 1);
 	
@@ -623,7 +701,7 @@ int ParseToStruct_BFit (char *pcsLine, BFitCase_t *pstStruct) // change per stru
 	printf("Histname = %s\n", pstStruct->pcsHistName);
 #endif
 
-// Get the bin width
+// Get the bin width -- No longer used!
 	pcsResult = strtok(NULL,",");
     pstStruct->iBinWidth = atoi(pcsResult);
 #ifdef DEBUG
