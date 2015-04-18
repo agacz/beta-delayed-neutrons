@@ -148,6 +148,13 @@
 //	Adding h_cycles_vs_cycle_time to count number of times each cycle-time bin was covered by each run.
 //	- The y value of this histo gives the number of cycles in each run, and this may depend on which bin of cycle time you're in.
 //	- The integral of this histo will be the run time to within a few ms.
+// 2015-04-10
+//	- Added tof ranges to metadata tree for later access
+// 2015-04-18
+//	- Moved filling of ha_R_mcpA_corr (etc.) from ADC read-in to after 3-post reconstruction
+//	- Changed beta-recoil cuts so that the mcp ADC cut uses a_R_mcpSum_corr or a_R_mcpSum_corr (so they include 3-post events)
+//	- Added h_tof_2dE_T_mcp (and 2 other histos) to catch events in which both dE's and an MCP were hit (TOF automatically taken from first dE by virtue of TDC trigger)
+//	--> search for 'two-dE + MCP coincidences: req L & B & an mcp' to find the code
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -343,6 +350,7 @@ int main(int argc, char *argv[]) {
 	int a_T_mcpA, a_T_mcpB, a_T_mcpC, a_T_mcpD, a_T_mcpE, a_T_ge, a_T_ge_highE;
 	double a_R_mcpA_corr, a_R_mcpB_corr, a_R_mcpC_corr, a_R_mcpD_corr, a_R_mcpE_corr, a_R_mcpSum_corr;
 	double a_T_mcpA_corr, a_T_mcpB_corr, a_T_mcpC_corr, a_T_mcpD_corr, a_T_mcpE_corr, a_T_mcpSum_corr;
+	double tof_2dE;
 		// "_ge" 		= HPGe 0-3.6 MeV range
 		// "_ge_highE"	= HPGe 0-9.2 MeV range
 	
@@ -460,7 +468,9 @@ int main(int argc, char *argv[]) {
 	int sync_time_sec	= 0;
 	int now_time_sec;
 	int run_time_min, run_time_sec, run_remainder_sec;
-	int first_event_cycle_time_ms, last_event_cycle_time_ms, run_time_ms;
+	int first_event_cycle_time_ms, last_event_cycle_time_ms;
+	Int_t		run_time_ms;
+	Double_t	n_cycles;
 	int clock = 0;
 	int lastClock = 0;
 	int event = 0;
@@ -676,28 +686,28 @@ int main(int argc, char *argv[]) {
 						a_T_mcpA = x;
 						ha_T_mcpA->Fill(x);
 						a_T_mcpA_corr = x - ped_T_mcpA + randgen->Rndm();
-						ha_T_mcpA_corr->Fill(a_T_mcpA_corr);
+						//ha_T_mcpA_corr->Fill(a_T_mcpA_corr); // moved to after 3-post reconstruction
 						na_T_mcpA++;
 					}
 					if (adc_ch == 6) {
 						a_T_mcpB = x;
 						ha_T_mcpB->Fill(x);
 						a_T_mcpB_corr = x - ped_T_mcpB + randgen->Rndm();
-						ha_T_mcpB_corr->Fill(a_T_mcpB_corr);
+						//ha_T_mcpB_corr->Fill(a_T_mcpB_corr); // moved to after 3-post reconstruction
 						na_T_mcpB++;
 					}
 					if (adc_ch == 7) {
 						a_T_mcpC = x;
 						ha_T_mcpC->Fill(x);
 						a_T_mcpC_corr = x - ped_T_mcpC + randgen->Rndm();
-						ha_T_mcpC_corr->Fill(a_T_mcpC_corr);
+						//ha_T_mcpC_corr->Fill(a_T_mcpC_corr); // moved to after 3-post reconstruction
 						na_T_mcpC++;
 					}
 					if (adc_ch == 8) {
 						a_T_mcpD = x;
 						ha_T_mcpD->Fill(x);
 						a_T_mcpD_corr = x - ped_T_mcpD + randgen->Rndm();
-						ha_T_mcpD_corr->Fill(a_T_mcpD_corr);
+						//ha_T_mcpD_corr->Fill(a_T_mcpD_corr); // moved to after 3-post reconstruction
 						na_T_mcpD++;
 					}
 					//if (adc_ch == 9) {
@@ -731,28 +741,28 @@ int main(int argc, char *argv[]) {
 						a_R_mcpA = x;
 						ha_R_mcpA->Fill(x);
 						a_R_mcpA_corr = x - ped_R_mcpA + randgen->Rndm();
-						ha_R_mcpA_corr->Fill(a_R_mcpA_corr);
+						//ha_R_mcpA_corr->Fill(a_R_mcpA_corr); // moved to after 3-post reconstruction
 						na_R_mcpA++;
 					}
 					if (adc_ch == 14) {
 						a_R_mcpB = x;
 						ha_R_mcpB->Fill(x);
 						a_R_mcpB_corr = x - ped_R_mcpB + randgen->Rndm();
-						ha_R_mcpB_corr->Fill(a_R_mcpB_corr);
+						//ha_R_mcpB_corr->Fill(a_R_mcpB_corr); // moved to after 3-post reconstruction
 						na_R_mcpB++;
 					}
 					if (adc_ch == 15) {
 						a_R_mcpC = x;
 						ha_R_mcpC->Fill(x);
 						a_R_mcpC_corr = x - ped_R_mcpC + randgen->Rndm();
-						ha_R_mcpC_corr->Fill(a_R_mcpC_corr);
+						//ha_R_mcpC_corr->Fill(a_R_mcpC_corr); // moved to after 3-post reconstruction
 						na_R_mcpC++;
 					}
 					if (adc_ch == 16) {
 						a_R_mcpD = x;
 						ha_R_mcpD->Fill(x);
 						a_R_mcpD_corr = x - ped_R_mcpD + randgen->Rndm();
-						ha_R_mcpD_corr->Fill(a_R_mcpD_corr);
+						//ha_R_mcpD_corr->Fill(a_R_mcpD_corr); // moved to after 3-post reconstruction
 						na_R_mcpD++;
 					}
 					
@@ -1127,12 +1137,20 @@ int main(int argc, char *argv[]) {
 				bdn.a_T_mcpSum	= a_T_mcpA + a_T_mcpB + a_T_mcpC + a_T_mcpD;
 				ha_T_mcpSum		->Fill(bdn.a_T_mcpSum);
 				a_T_mcpSum_corr = a_T_mcpA_corr + a_T_mcpB_corr + a_T_mcpC_corr + a_T_mcpD_corr;
+				ha_T_mcpA_corr -> Fill(a_T_mcpA_corr);
+				ha_T_mcpB_corr -> Fill(a_T_mcpB_corr);
+				ha_T_mcpC_corr -> Fill(a_T_mcpC_corr);
+				ha_T_mcpD_corr -> Fill(a_T_mcpD_corr);
 				ha_T_mcpSum_corr->Fill(a_T_mcpSum_corr);
 				bdn.T_mcpX		= (a_T_mcpC_corr + a_T_mcpD_corr - a_T_mcpA_corr - a_T_mcpB_corr)/a_T_mcpSum_corr;
 				bdn.T_mcpY		= (a_T_mcpA_corr + a_T_mcpD_corr - a_T_mcpB_corr - a_T_mcpC_corr)/a_T_mcpSum_corr;
 				bdn.a_R_mcpSum	= a_R_mcpA + a_R_mcpB + a_R_mcpC + a_R_mcpD;
 				ha_R_mcpSum		->Fill(bdn.a_R_mcpSum);
 				a_R_mcpSum_corr = a_R_mcpA_corr + a_R_mcpB_corr + a_R_mcpC_corr + a_R_mcpD_corr;
+				ha_R_mcpA_corr -> Fill(a_R_mcpA_corr);
+				ha_R_mcpB_corr -> Fill(a_R_mcpB_corr);
+				ha_R_mcpC_corr -> Fill(a_R_mcpC_corr);
+				ha_R_mcpD_corr -> Fill(a_R_mcpD_corr);
 				ha_R_mcpSum_corr->Fill(a_R_mcpSum_corr);
 				bdn.R_mcpX		= (a_R_mcpC_corr + a_R_mcpD_corr - a_R_mcpA_corr - a_R_mcpB_corr)/a_R_mcpSum_corr;
 				bdn.R_mcpY		= (a_R_mcpA_corr + a_R_mcpD_corr - a_R_mcpB_corr - a_R_mcpC_corr)/a_R_mcpSum_corr;
@@ -1162,7 +1180,7 @@ int main(int argc, char *argv[]) {
 				}
 				if (s_ms_since_eject < last_event_cycle_time_ms - 0.5*(1000*stBDNCase.dCycleTime)) { // Has an eject pulse, cycle-time has cycled; half the cycle duration is used as a buffer to eliminate false positives
 					n_ejects_found++;
-					printf("ejects found = %d: this t = %d, last t = %d\n", n_ejects_found, s_ms_since_eject, last_event_cycle_time_ms);
+				//	printf("ejects found = %d: this t = %d, last t = %d\n", n_ejects_found, s_ms_since_eject, last_event_cycle_time_ms);
 					// Fill histo to end of cycle
 					for (ms_bin = last_event_cycle_time_ms + 1; ms_bin <= 1000*stBDNCase.dCycleTime-1; ms_bin++) {
 						h_cycles_vs_cycle_time->Fill(ms_bin);
@@ -1333,7 +1351,8 @@ int main(int argc, char *argv[]) {
 				{
 // LT
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_L_dE && bdn.t_L_dE<t_dE_hi      && a_dE_lo<bdn.a_L_dEsum &&     t_mcp_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum) {
-					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) {
+					//if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) { // 2015-04-18
+					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<a_T_mcpSum_corr && bdn.fid_area_hit_T_mcp==1) {
 // 2014-10-27						bdn.tof_LT	= t_T_mcp - bdn.t_L_dE - LT_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'T', bdn.tof_LT); // need times in us
 						z1			= stBDNCase.dTopGridDistance;
@@ -1425,7 +1444,8 @@ int main(int argc, char *argv[]) {
 					}
 // LR
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_L_dE && bdn.t_L_dE<t_dE_hi      && a_dE_lo<bdn.a_L_dEsum &&     t_mcp_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum) {
-					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) {
+					//if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) { // 2015-04-18
+					if (event_good==1 && t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<a_R_mcpSum_corr && bdn.fid_area_hit_R_mcp==1) {
 // 2014-10-27						bdn.tof_LR	= t_R_mcp - bdn.t_L_dE - LR_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'R', bdn.tof_LR); // need times in us
 						z1			= stBDNCase.dRightGridDistance;
@@ -1515,9 +1535,10 @@ int main(int argc, char *argv[]) {
 								metadata.nOopsBkgdCount[LR]	+= 1.0;
 						}
 					}
-// BTbb
+// BT
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_B_dE && bdn.t_B_dE<t_dE_hi      && a_dE_lo<bdn.a_B_dEsum &&     t_mcp_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum) {
-					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) {
+					//if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<bdn.a_T_mcpSum && bdn.fid_area_hit_T_mcp==1) { // 2015-04-18
+					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_T_mcp && a_mcp_lo<a_T_mcpSum_corr && bdn.fid_area_hit_T_mcp==1) {
 // 2014-10-27						bdn.tof_BT	= t_T_mcp - bdn.t_B_dE - BT_zeroTime[0];
 						t1			= 0.001 * tofToMCPGrid (stBDNCase, 'T', bdn.tof_BT); // need times in us
 						z1			= stBDNCase.dTopGridDistance;
@@ -1609,7 +1630,8 @@ int main(int argc, char *argv[]) {
 					}
 // BR
 				  //if (event_good==1 &&      t_dE_lo<bdn.t_B_dE && bdn.t_B_dE<t_dE_hi      && a_dE_lo<bdn.a_B_dEsum &&     t_mcp_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum) {
-					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) {
+					//if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<bdn.a_R_mcpSum && bdn.fid_area_hit_R_mcp==1) { \\ 2015-04-18
+					if (event_good==1 && t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum && t_trigger_lo<t_R_mcp && a_mcp_lo<a_R_mcpSum_corr && bdn.fid_area_hit_R_mcp==1) {
 //						if (s_capt_state == 0){      h_tof->Fill(bdn.tof_BR);      h_tof_BR->Fill(bdn.tof_BR); }
 //						if (s_capt_state == 1){ h_bkgd_tof->Fill(bdn.tof_BR); h_bkgd_tof_BR->Fill(bdn.tof_BR); }
 // 2014-10-27						bdn.tof_BR	= t_R_mcp - bdn.t_B_dE - BR_zeroTime[0];
@@ -1701,6 +1723,26 @@ int main(int argc, char *argv[]) {
 							if (s_capt_state == 1)
 								metadata.nOopsBkgdCount[BR]	+= 1.0;
 						}
+					}
+					
+			// two-dE + MCP coincidences: req L & B & an mcp
+				// BLT coinc.
+					if (t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum &&
+						t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum &&
+						t_trigger_lo<t_T_mcp    && a_mcp_lo<a_T_mcpSum_corr && bdn.fid_area_hit_T_mcp==1) {
+						// do:
+						tof_2dE = Max( t_T_mcp - bdn.t_B_dE - BT_zeroTime[0], t_T_mcp - bdn.t_L_dE - LT_zeroTime[0] ); // take whichever is greater between L amd B tof's
+						h_tof_2dE_T_mcp	-> Fill(tof_2dE);
+						h_tof_2dE_mcp	-> Fill(tof_2dE);
+					}
+				// BLR coinc.
+					if (t_trigger_lo<bdn.t_B_dE && bdn.t_B_dE<t_trigger_hi && a_dE_lo<bdn.a_B_dEsum &&
+						t_trigger_lo<bdn.t_L_dE && bdn.t_L_dE<t_trigger_hi && a_dE_lo<bdn.a_L_dEsum &&
+						t_trigger_lo<t_R_mcp    && a_mcp_lo<a_R_mcpSum_corr && bdn.fid_area_hit_R_mcp==1) {
+						// do:
+						tof_2dE = Max( t_R_mcp - bdn.t_B_dE - BR_zeroTime[0], t_R_mcp - bdn.t_L_dE - LR_zeroTime[0] ); // take whichever is greater between L amd B tof's
+						h_tof_2dE_R_mcp	-> Fill(tof_2dE);
+						h_tof_2dE_mcp	-> Fill(tof_2dE);
 					}
 					
 					beta_recoil_tree->Fill();
@@ -2568,11 +2610,14 @@ int main(int argc, char *argv[]) {
 	sTot_all	= sTot_B_dEa + sTot_B_dEb + sTot_B_E + sTot_L_dEa + sTot_L_dEb + sTot_L_E + sTot_R_mcp + sTot_R_ge + sTot_T_mcp + sTot_T_ge;
 	nt_all		= nt_B_dEa + nt_B_dEb + nt_B_E + nt_L_dEa + nt_L_dEb + nt_L_E + nt_R_mcp + nt_R_ge + nt_T_mcp + nt_T_ge;
 	
+	run_time_ms	= (Int_t)h_cycles_vs_cycle_time->Integral();
+	n_cycles	= 0.001 * run_time_ms / stBDNCase.dCycleTime;
 //~~~~~~~~ Fill metadata (tree) ~~~~~~~~//
 	
 	metadata.n_run			= n_run;
 	metadata.n_trigs		= n_trig;
 	metadata.tot_trigs		= tot_trigs;
+	metadata.n_cycles		= n_cycles;
 	metadata.n_syncs		= n_sync;
 	metadata.n_treeEntries	= n_trig;
 	metadata.n_bad_events	= n_bad_events;
@@ -2590,6 +2635,7 @@ int main(int argc, char *argv[]) {
 	metadata.stop_sec		= stop_sec;
 	metadata.stop_time_sec	= stop_time_sec;
 	metadata.run_time_sec	= run_time_sec;
+	metadata.run_time_ms	= run_time_ms;
 	
 	metadata.n_scaler_hits_B_dEa	= sTot_B_dEa;
 	metadata.n_scaler_hits_B_dEb	= sTot_B_dEb;
@@ -2655,6 +2701,16 @@ int main(int argc, char *argv[]) {
 	
 	metadata.tot_liveTime_us = tot_liveTime_us;
 	metadata.tot_runTime_us = tot_runTime_us;
+	
+	
+	metadata.tof_R_fast_lo	= tof_R_fast_lo;
+	metadata.tof_R_fast_hi	= tof_R_fast_hi;
+	metadata.tof_T_fast_lo	= tof_T_fast_lo;
+	metadata.tof_T_fast_hi	= tof_T_fast_hi;
+	metadata.tof_R_slow_lo	= tof_R_slow_lo;
+	metadata.tof_R_slow_hi	= tof_R_slow_hi;
+	metadata.tof_T_slow_lo	= tof_T_slow_lo;
+	metadata.tof_T_slow_hi	= tof_T_slow_hi;
 	
 // Count Fast and Slow recoils, and other TOF regions
 	Float_t oopsPerNs, oopsPerNsBkgd;
@@ -2818,8 +2874,9 @@ int main(int argc, char *argv[]) {
 		printf("\nRun is ongoing");
 	else \
 		printf("\nRun stop time:  d:%02d, h:%02d, m:%02d, s:%02d, t = %d", stop_day, stop_hour, stop_min, stop_sec, stop_time_sec);
-	printf("\nRun time:       %d seconds",run_time_sec);
+	printf("\nRun time:       %d seconds, %d milliseconds", run_time_sec, run_time_ms);
 	cout<<endl<< "# trigs:"<< setw(12) << right << n_trig;
+	cout<<endl<< "# cycle:"<< setw(12) << right << n_cycles;
 	cout<<endl<< "# syncs:"<< setw(12) << right << n_sync;
 	cout<<endl<< "# bad events:"<< setw(12) << right << n_bad_events << endl;
 //	cout<<endl<< "# non-vetoed trigs:"<< setw(12) << tot_trigs;

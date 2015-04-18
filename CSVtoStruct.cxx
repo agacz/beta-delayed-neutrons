@@ -760,6 +760,10 @@ int ParseToStruct_BFit (char *pcsLine, BFitCase_t *pstStruct) // change per stru
 	pcsResult = strtok(NULL,",");
 	pstStruct->bDoFit = atoi(pcsResult);
 	
+	// DoFit
+	pcsResult = strtok(NULL,",");
+	pstStruct->bUseMyErrorFunction = atoi(pcsResult);
+	
 	// MonteCarlo
 	pcsResult = strtok(NULL,",");
 	pstStruct->bMonteCarlo = atoi(pcsResult);

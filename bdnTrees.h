@@ -20,7 +20,7 @@ struct fileMetadata_t
 {
 	Int_t n_run, n_trigs, tot_trigs, n_syncs, n_treeEntries, n_bad_events, bkgd_good, \
 	start_month, start_day, start_hour, start_min, start_sec, start_time_sec, \
-	stop_month, stop_day, stop_hour, stop_min, stop_sec, stop_time_sec, run_time_sec, tot_liveTime_us, tot_runTime_us, 
+	stop_month, stop_day, stop_hour, stop_min, stop_sec, stop_time_sec, run_time_sec, run_time_ms, tot_liveTime_us, tot_runTime_us, 
 	n_scaler_hits_B_dEa, n_scaler_hits_B_dEb, n_scaler_hits_B_E, \
 	n_scaler_hits_L_dEa, n_scaler_hits_L_dEb, n_scaler_hits_L_E, \
 	n_scaler_hits_R_mcp, n_scaler_hits_R_ge, n_scaler_hits_T_mcp, n_scaler_hits_T_ge, \
@@ -34,6 +34,8 @@ struct fileMetadata_t
 	n_adc_hits_T_mcpA, n_adc_hits_T_mcpB, n_adc_hits_T_mcpC, n_adc_hits_T_mcpD, n_adc_hits_T_mcpE, n_adc_hits_T_ge, n_adc_hits_T_ge_highE, \
 	n_missing_adc_hits_R_mcpA, n_missing_adc_hits_R_mcpB, n_missing_adc_hits_R_mcpC, n_missing_adc_hits_R_mcpD, n_missing_adc_hits_R_mcpE, \
 	n_missing_adc_hits_T_mcpA, n_missing_adc_hits_T_mcpB, n_missing_adc_hits_T_mcpC, n_missing_adc_hits_T_mcpD, n_missing_adc_hits_T_mcpE; \
+	Float_t	tof_R_fast_lo, tof_R_fast_hi, tof_T_fast_lo, tof_T_fast_hi, \
+			tof_R_slow_lo, tof_R_slow_hi, tof_T_slow_lo, tof_T_slow_hi; \
 	Float_t	nZeroTOFCount[4],			nLowTOFCount[4],			nFastCount[4],				nSlowCount[4],			nOopsCount[4], \
 			nNetZeroTOFCount[4],		nNetLowTOFCount[4],			nNetFastCount[4],			nNetSlowCount[4], \
 			nZeroTOFBkgdCount[4], 		nLowTOFBkgdCount[4],		nFastBkgdCount[4],			nSlowBkgdCount[4],		nOopsBkgdCount[4], \
@@ -41,7 +43,8 @@ struct fileMetadata_t
 			nZeroTOFIntegral[4],		nLowTOFIntegral[4],			nFastIntegral[4],			nSlowIntegral[4],		nOopsIntegral[4], \
 			nNetZeroTOFIntegral[4],		nNetLowTOFIntegral[4],		nNetFastIntegral[4],		nNetSlowIntegral[4], \
 			nZeroTOFBkgdIntegral[4],	nLowTOFBkgdIntegral[4],		nFastBkgdIntegral[4],		nSlowBkgdIntegral[4],	nOopsBkgdIntegral[4], \
-			nNetZeroTOFBkgdIntegral[4],	nNetLowTOFBkgdIntegral[4],	nNetFastBkgdIntegral[4],	nNetSlowBkgdIntegral[4];
+			nNetZeroTOFBkgdIntegral[4],	nNetLowTOFBkgdIntegral[4],	nNetFastBkgdIntegral[4],	nNetSlowBkgdIntegral[4], \
+			n_cycles;
 } __attribute__((packed));
 /*
 struct fileMetadata_t

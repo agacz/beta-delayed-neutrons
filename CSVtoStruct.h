@@ -25,7 +25,7 @@
 //		- cs = C string
 //		- d  = double
 //		- i  = int
-//		- b  = bool, but these are actually C strings. Usage: if (bStringVar) 
+//		- b  = bool, but these are actually C strings. Usage: if (bStringVar)
 //	EVERY STRUCT MUST HAVE THE CASE CODE AS A char AS ITS FIRST MEMBER
 
 // Configuration defines
@@ -33,8 +33,8 @@
 #define ERROR   1
 //#define DEBUG
 #define STRING_SIZE     4096
-#define FILE_ROWS_BDN     26 // number of structs in stBDNCases
-#define FILE_ROWS_BFit    17 // number of structs in stBFitCases
+#define FILE_ROWS_BDN     68 // number of structs in stBDNCases
+#define FILE_ROWS_BFit    48 // number of structs in stBFitCases
 
 struct BDNCase_t
 {
@@ -89,6 +89,19 @@ struct BDNCase_t
 	double dRFMeterAmplitude; // Trap RF amplitude from precision meter ("Vac")
 	double dRFFnGenAmplitude; // Trap RF amplitude on function generator (Vpp)
 	double dRFAmpPower; // Trap RF power from amplifier (Watts)
+// Case metadata
+	double dBeamRateCPTSpecies1;
+	double dBeamRateCPTSpecies2;
+	double dBeamRateCPTSpecies3;
+	double dRuntimeSec;
+	double nRunFiles;
+	double nEvents;
+	double nCycles;
+// Deadtime corrections
+	double dAvgTriggerRate;
+	double dAvgDeadtimeCorrectionFactor;
+	double dAvgDeadtimeCorrectionFactorBackground;
+	double dAvgDeadtimeCorrectionFactorTrapping;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // CALCULATED VALUES
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,6 +145,7 @@ struct BFitCase_t
 	double *pdStep;
 	char pcsOptions[STRING_SIZE];
 	char bDoFit;
+	char bUseMyErrorFunction;
 	char bMonteCarlo;
 	char bHasDDC;
 	char bHasVWXY;
