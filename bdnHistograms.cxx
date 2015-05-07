@@ -136,6 +136,11 @@ h_bkgd_En_LT	= new TH1I("h_bkgd_En_LT",	"Neutron energy in keV, Left-Top, Trap E
 h_bkgd_En_LR	= new TH1I("h_bkgd_En_LR",	"Neutron energy in keV, Left-Right, Trap Empty"		,EnBins,EnMin,EnMax);
 h_bkgd_En_BT	= new TH1I("h_bkgd_En_BT",	"Neutron energy in keV, Bottom-Top, Trap Empty"		,EnBins,EnMin,EnMax);
 h_bkgd_En_BR	= new TH1I("h_bkgd_En_BR",	"Neutron energy in keV, Bottom-Right, Trap Empty"	,EnBins,EnMin,EnMax);
+h_En_137Te_subtract		= new TH1I("h_En_137Te_subtract", 	"Neutron energy in keV, All combos, Trap Full, Last 3 seconds of each capt. to eliminate 137-Te"		,EnBins,EnMin,EnMax);
+h_En_137Te_subtract_LT	= new TH1I("h_En_137Te_subtract_LT","Neutron energy in keV, Left-Top, Trap Full, Last 3 seconds of each capt. to eliminate 137-Te"		,EnBins,EnMin,EnMax);
+h_En_137Te_subtract_LR	= new TH1I("h_En_137Te_subtract_LR","Neutron energy in keV, Left-Right, Trap Full, Last 3 seconds of each capt. to eliminate 137-Te"		,EnBins,EnMin,EnMax);
+h_En_137Te_subtract_BT	= new TH1I("h_En_137Te_subtract_BT","Neutron energy in keV, Bottom-Top, Trap Full, Last 3 seconds of each capt. to eliminate 137-Te"		,EnBins,EnMin,EnMax);
+h_En_137Te_subtract_BR	= new TH1I("h_En_137Te_subtract_BR","Neutron energy in keV, Bottom-Right, Trap Full, Last 3 seconds of each capt. to eliminate 137-Te"	,EnBins,EnMin,EnMax);
 // MCP maps
 h_R_mcpX		= new TH1I("h_R_mcpX"	,"Singles ADC data for Right MCP-X (Sum>100)"	, mapBins, mapMin, mapMax);
 h_R_mcpY		= new TH1I("h_R_mcpY"	,"Singles ADC data for Right MCP-Y (Sum>100)"	, mapBins, mapMin, mapMax);
@@ -221,12 +226,27 @@ h_zero_vs_cycle_time_observed			= new TH1D("h_zero_vs_cycle_time_observed","All 
 h_T_lowTOF_vs_cycle_time_observed		= new TH1D("h_T_lowTOF_vs_cycle_time_observed","dE - Top MCP \"Low-TOF\" events vs Cycle Time (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_R_lowTOF_vs_cycle_time_observed		= new TH1D("h_R_lowTOF_vs_cycle_time_observed","dE - Right MCP \"Low-TOF\" events vs Cycle Time (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_lowTOF_vs_cycle_time_observed			= new TH1D("h_lowTOF_vs_cycle_time_observed","All dE-MCP \"Low-TOF\" versus Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+//
+h_LT_fast_vs_cycle_time_observed		= new TH1D("h_LT_fast_vs_cycle_time_observed","Left-Top Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_LR_fast_vs_cycle_time_observed		= new TH1D("h_LR_fast_vs_cycle_time_observed","Left-Right Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BT_fast_vs_cycle_time_observed		= new TH1D("h_BT_fast_vs_cycle_time_observed","Bottom-Top Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BR_fast_vs_cycle_time_observed		= new TH1D("h_BR_fast_vs_cycle_time_observed","Bottom-Right Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_T_fast_vs_cycle_time_observed			= new TH1D("h_T_fast_vs_cycle_time_observed","Top MCP Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_R_fast_vs_cycle_time_observed			= new TH1D("h_R_fast_vs_cycle_time_observed","Right MCP Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_fast_vs_cycle_time_observed			= new TH1D("h_fast_vs_cycle_time_observed","All Fast Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+//
+h_LT_slow_vs_cycle_time_observed		= new TH1D("h_LT_slow_vs_cycle_time_observed","Left-Top Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_LR_slow_vs_cycle_time_observed		= new TH1D("h_LR_slow_vs_cycle_time_observed","Left-Right Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BT_slow_vs_cycle_time_observed		= new TH1D("h_BT_slow_vs_cycle_time_observed","Bottom-Top Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BR_slow_vs_cycle_time_observed		= new TH1D("h_BR_slow_vs_cycle_time_observed","Bottom-Right Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_T_slow_vs_cycle_time_observed			= new TH1D("h_T_slow_vs_cycle_time_observed","Top MCP Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_R_slow_vs_cycle_time_observed			= new TH1D("h_R_slow_vs_cycle_time_observed","Right MCP Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_slow_vs_cycle_time_observed			= new TH1D("h_slow_vs_cycle_time_observed","All Slow Recoils vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+//
+h_LT_oops_vs_cycle_time_observed		= new TH1D("h_LT_oops_vs_cycle_time_observed","Left-Top Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_LR_oops_vs_cycle_time_observed		= new TH1D("h_LR_oops_vs_cycle_time_observed","Left-Right Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BT_oops_vs_cycle_time_observed		= new TH1D("h_BT_oops_vs_cycle_time_observed","Bottom-Top Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
+h_BR_oops_vs_cycle_time_observed		= new TH1D("h_BR_oops_vs_cycle_time_observed","Bottom-Right Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_T_oops_vs_cycle_time_observed			= new TH1D("h_T_oops_vs_cycle_time_observed","dE - Top MCP Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_R_oops_vs_cycle_time_observed			= new TH1D("h_R_oops_vs_cycle_time_observed","dE - Right MCP Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);
 h_oops_vs_cycle_time_observed			= new TH1D("h_oops_vs_cycle_time_observed","All dE-MCP Accidentals vs Cycle Time (ms) (not corrected for deadtime)",tCycBins,tCycMin,tCycMax);

@@ -19,7 +19,7 @@ cxxsrcs = $(wildcard *.cxx)
 
 .PHONY: all clean
 
-targets = tof_cuts gate_on_low_tof_noise tof_from_E cooling no_spikes_sb135 draw_no_spikes_loop write_metadata no_spikes_diagnostic betas_vs_cycle_time betas_vs_cycle_time_i137 tof_official beta_gamma mcp_cal mcp_cal_i137 rf_phase gammas_vs_cycle_time beta_gamma_0 beta_gamma_1 bdn_sort_20130903 bdn_sort_20130923 bdn_sort_20130924 bdn_sort_20130925 bdn_sort_Ge_only bdn_sort_20131029 bdn_sort_empty bdn_sort_20131112 bdn_sort_ADC1_only bdn_sort_ADC1_TDC1_only bdn_sort_20131119 bdn_sort_20131120 bdn_sort_20131120_noLiveTime bdn_sort_20131125 bdn_sort_20131203 bdn_Sort_09272012_for_2013_run_grtrthan_1681 bdn_Sort_09272012_for_2013_run_lessthan_1682 bdn_sort_20131210 bdn_sort_20140104 bdn_Sort_09272012 bdn_Sort_09272012_for_137i02_run00002 BFit Metadata bdn_sort_20140308 mcp_cal_pedSubtract bdn_sort_20140417 DeadtimeCorrection bdn_sort_20140515 ExampleProgram bdn_sort_20140527 bdn_sort_20140613
+targets = tof_cuts gate_on_low_tof_noise tof_from_E cooling no_spikes_sb135 draw_no_spikes_loop write_metadata no_spikes_diagnostic betas_vs_cycle_time betas_vs_cycle_time_i137 tof_official beta_gamma mcp_cal mcp_cal_i137 rf_phase gammas_vs_cycle_time beta_gamma_0 beta_gamma_1 bdn_sort_20130903 bdn_sort_20130923 bdn_sort_20130924 bdn_sort_20130925 bdn_sort_Ge_only bdn_sort_20131029 bdn_sort_empty bdn_sort_20131112 bdn_sort_ADC1_only bdn_sort_ADC1_TDC1_only bdn_sort_20131119 bdn_sort_20131120 bdn_sort_20131120_noLiveTime bdn_sort_20131125 bdn_sort_20131203 bdn_Sort_09272012_for_2013_run_grtrthan_1681 bdn_Sort_09272012_for_2013_run_lessthan_1682 bdn_sort_20131210 bdn_sort_20140104 bdn_Sort_09272012 bdn_Sort_09272012_for_137i02_run00002 BFit Metadata bdn_sort_20140308 mcp_cal_pedSubtract bdn_sort_20140417 DeadtimeCorrection bdn_sort_20140515 ExampleProgram bdn_sort_20140527 bdn_sort_20140613 bdn_sort_20140805 bdn_sort_20140909 varTest BFitModelTest bdn_sort_20141027 bdnSort BFit2 PrintCaseInfo covTest
 
 all: $(targets)
 
@@ -148,9 +148,18 @@ bdn_Sort_09272012_for_137i02_run00002: bdn_Sort_09272012_for_137i02_run00002.o
 	
 #B_fit: B_fit.o bdn_cases.o B_fit_cases.o
 #	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
-	
+
 BFit: BFit.o CSVtoStruct.o BFitModel.o
 	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+#BFit: BFit.o CSVtoStruct.o BFitModel.o CSVtoStruct.h
+#	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+#CSVtoStruct.o: CSVtoStruct.cxx CSVtoStruct.h
+#	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+#BFitModel.o: BFitModel.cxx BFitModel.h CSVtoStruct.h
+#	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
 	
 Metadata: Metadata.o CSVtoStruct.o
 	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
@@ -177,6 +186,33 @@ bdn_sort_20140527: bdn_sort_20140527.o bdn_histograms.o bdn_trees.o CSVtoStruct.
 	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
 	
 bdn_sort_20140613: bdn_sort_20140613.o bdn_histograms.o bdn_trees_20140613.o CSVtoStruct.o mcpGridCorrection.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+bdn_sort_20140805: bdn_sort_20140805.o bdn_histograms.o bdn_trees_20140613.o CSVtoStruct.o mcpGridCorrection.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+bdn_sort_20140909: bdn_sort_20140909.o bdn_histograms.o bdn_trees_20140613.o CSVtoStruct.o mcpGridCorrection.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+varTest: varTest.o varTestFunc.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+BFitModelTest: BFitModelTest.o BFitModel.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+bdn_sort_20141027: bdn_sort_20141027.o bdn_histograms.o bdn_trees_20140613.o CSVtoStruct.o mcpGridCorrection.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+bdnSort: bdnSort.o bdnHistograms.o bdnTrees.o CSVtoStruct.o mcpGridCorrection.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+BFit2: BFit2.o CSVtoStruct.o BFit2Model.o BFit2Populations.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+PrintCaseInfo: PrintCaseInfo.o CSVtoStruct.o
+	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
+	
+covTest: covTest.o
 	$(CXX) $^ -o $@ $(LIBS) $(ROOTLIBS)
 	
 -include $(cxxsrcs:.cxx=.d)

@@ -1373,6 +1373,10 @@ int main(int argc, char *argv[]) {
 							h_vInv_LT	->Fill(1.0/(bdn.v_LT+0.000000001));
 							h_En		->Fill(bdn.En_LT);
 							h_En_LT		->Fill(bdn.En_LT);
+							if (s_ms_since_capt >= 3000) {
+								h_En_137Te_subtract_LT	-> Fill(bdn.En_LT);
+								h_En_137Te_subtract		-> Fill(bdn.En_LT);
+							}
 						}
 						if (s_capt_state == 1) {
 							h_bkgd_tof		->Fill(bdn.tof_LT);
@@ -1407,6 +1411,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_T_fast_lo < bdn.tof_LT && bdn.tof_LT < tof_T_fast_hi) {
 							h_LT_fast_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_fast_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_LT_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nFastCount[LT]		+= 1.0;
@@ -1415,6 +1420,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_T_slow_lo < bdn.tof_LT && bdn.tof_LT < tof_T_slow_hi) {
 							h_LT_slow_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_slow_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_LT_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) {
@@ -1431,6 +1437,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_oops_lo < bdn.tof_LT && bdn.tof_LT < tof_oops_hi) {
 							h_LT_oops_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_oops_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_LT_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 if (s_capt_state == 0) {
@@ -1466,6 +1473,10 @@ int main(int argc, char *argv[]) {
 							h_vInv_LR	->Fill(1.0/(bdn.v_LR+0.000000001));
 							h_En		->Fill(bdn.En_LR);
 							h_En_LR		->Fill(bdn.En_LR);
+							if (s_ms_since_capt >= 3000) {
+								h_En_137Te_subtract_LR	-> Fill(bdn.En_LR);
+								h_En_137Te_subtract		-> Fill(bdn.En_LR);
+							}
 						}
 						if (s_capt_state == 1) {
 							h_bkgd_tof		->Fill(bdn.tof_LR);
@@ -1500,6 +1511,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_R_fast_lo < bdn.tof_LR && bdn.tof_LR < tof_R_fast_hi) {
 							h_LR_fast_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_fast_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_LR_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nFastCount[LR]		+= 1.0;
@@ -1508,6 +1520,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_R_slow_lo < bdn.tof_LR && bdn.tof_LR < tof_R_slow_hi) {
 							h_LR_slow_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_slow_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_LR_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) {
@@ -1524,6 +1537,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_oops_lo < bdn.tof_LR && bdn.tof_LR < tof_oops_hi) {
 							h_LR_oops_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_oops_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_LR_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 if (s_capt_state == 0) {
@@ -1559,6 +1573,10 @@ int main(int argc, char *argv[]) {
 							h_vInv_BT	->Fill(1.0/(bdn.v_BT+0.000000001));
 							h_En		->Fill(bdn.En_BT);
 							h_En_BT		->Fill(bdn.En_BT);
+							if (s_ms_since_capt >= 3000) {
+								h_En_137Te_subtract_BT	-> Fill(bdn.En_BT);
+								h_En_137Te_subtract		-> Fill(bdn.En_BT);
+							}
 						}
 						if (s_capt_state == 1) {
 							h_bkgd_tof		->Fill(bdn.tof_BT);
@@ -1593,6 +1611,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_T_fast_lo < bdn.tof_BT && bdn.tof_BT < tof_T_fast_hi) {
 							h_BT_fast_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_fast_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_BT_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nFastCount[BT]		+= 1.0;
@@ -1601,6 +1620,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_T_slow_lo < bdn.tof_BT && bdn.tof_BT < tof_T_slow_hi) {
 							h_BT_slow_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_slow_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_BT_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) {
@@ -1617,6 +1637,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_oops_lo < bdn.tof_BT && bdn.tof_BT < tof_oops_hi) {
 							h_BT_oops_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
 							 h_T_oops_mcpMap->Fill(bdn.T_mcpX,bdn.T_mcpY);
+							h_BT_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_T_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 if (s_capt_state == 0) {
@@ -1655,6 +1676,10 @@ int main(int argc, char *argv[]) {
 							h_vInv_BR	->Fill(1.0/(bdn.v_BR+0.000000001));
 							h_En		->Fill(bdn.En_BR);
 							h_En_BR		->Fill(bdn.En_BR);
+							if (s_ms_since_capt >= 3000) {
+								h_En_137Te_subtract_BR	-> Fill(bdn.En_BR);
+								h_En_137Te_subtract		-> Fill(bdn.En_BR);
+							}
 						}
 						if (s_capt_state == 1) {
 							h_bkgd_tof		->Fill(bdn.tof_BR);
@@ -1689,6 +1714,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_R_fast_lo < bdn.tof_BR && bdn.tof_BR < tof_R_fast_hi) {
 							h_BR_fast_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_fast_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_BR_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_fast_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) metadata.nFastCount[BR]		+= 1.0;
@@ -1697,6 +1723,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_R_slow_lo < bdn.tof_BR && bdn.tof_BR < tof_R_slow_hi) {
 							h_BR_slow_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_slow_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_BR_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_slow_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							if (s_capt_state == 0) {
@@ -1713,6 +1740,7 @@ int main(int argc, char *argv[]) {
 						if ( tof_oops_lo < bdn.tof_BR && bdn.tof_BR < tof_oops_hi) {
 							h_BR_oops_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
 							 h_R_oops_mcpMap->Fill(bdn.R_mcpX,bdn.R_mcpY);
+							h_BR_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 h_R_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							   h_oops_vs_cycle_time_observed->Fill(s_ms_since_eject);
 							 if (s_capt_state == 0) {
