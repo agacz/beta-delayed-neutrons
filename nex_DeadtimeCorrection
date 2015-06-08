@@ -1,10 +1,20 @@
 #!/bin/bash
 
-#./DeadtimeCorrection 134sb01
-#./DeadtimeCorrection 134sb02
-#./DeadtimeCorrection 134sb03
-#./DeadtimeCorrection 134sb0103
+./DeadtimeCorrection 134sb01
+./DeadtimeCorrection 134sb02
+./DeadtimeCorrection 134sb03
+./DeadtimeCorrection 134sb0103
+./DeadtimeCorrection 135sb07
 ./DeadtimeCorrection 135sb08
-#./DeadtimeCorrection 136sb01
-#./DeadtimeCorrection 137i07
-#./DeadtimeCorrection 138i07
+./DeadtimeCorrection 135te01
+./DeadtimeCorrection 136sb01
+./DeadtimeCorrection 137i07
+./DeadtimeCorrection 138i05
+./DeadtimeCorrection 138i06
+./DeadtimeCorrection 138i07
+./DeadtimeCorrection 139i01
+./DeadtimeCorrection 140i02
+./DeadtimeCorrection 140i03
+./DeadtimeCorrection 140xe01
+./DeadtimeCorrection 144cs02
+./DeadtimeCorrection 145cs02

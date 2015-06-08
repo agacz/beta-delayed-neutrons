@@ -16,6 +16,10 @@
 
 char *filename = "bdn.root";
 void GetGraphXY (char*, Int_t, Double_t[], Double_t[]);
+Double_t FastIonEfficiencyCorrection_137i07 (Double_t*, Double_t*);
+Double_t FastIonEfficiencyCorrection_135sb08 (Double_t*, Double_t*);
+Double_t FastIonEfficiencyCorrection_136sb01 (Double_t*, Double_t*);
+Double_t DrawEnThreshold (Double_t*, Double_t*);
 
 //Int_t t_trigger_lo = -100;
 //Int_t t_trigger_hi = 0;
@@ -1594,14 +1598,46 @@ void recoil_ion_rates()
 // Added 2014-06-17. Depends on bdn_sort_20140613 updates.
     TTree *meta = (TTree*)tfile->Get("metadata_Tree");
 	Int_t	nRuns		= meta->GetEntries();
-	TLeaf *nNetFastLeaf, *nNetSlowLeaf;
+	TLeaf *nNetFastLeaf, *nNetSlowLeaf, *nOopsLeaf;
+	TLeaf *nBgdFastLeaf, *nBgdSlowLeaf, *nBgdOopsLeaf;
 //	Float_t	nNetFast[] = {0, nNetFastLR = 0.0, nNetFastBT = 0.0, nNetFastBR = 0.0;
 //	Float_t	nNetFastLT = 0.0, nNetFastLR = 0.0, nNetFastBT = 0.0, nNetFastBR = 0.0;
-	Double_t	nNetFastLT = 0.0, nNetFastLR = 0.0, nNetFastBT = 0.0, nNetFastBR = 0.0;
-	Double_t	nNetSlowLT = 0.0, nNetSlowLR = 0.0, nNetSlowBT = 0.0, nNetSlowBR = 0.0;
-	Double_t	nNetFastTot = 0.0, nNetSlowTot = 0.0;
+	Double_t	nFastLT		= 0.0, nFastLR		= 0.0, nFastBT		= 0.0, nFastBR		= 0.0;
+	Double_t	nSlowLT		= 0.0, nSlowLR		= 0.0, nSlowBT		= 0.0, nSlowBR		= 0.0;
+	Double_t	nBgdFastLT	= 0.0, nBgdFastLR	= 0.0, nBgdFastBT	= 0.0, nBgdFastBR	= 0.0;
+	Double_t	nBgdSlowLT	= 0.0, nBgdSlowLR	= 0.0, nBgdSlowBT	= 0.0, nBgdSlowBR	= 0.0;
+	Double_t	nOopsLT 	= 0.0, nOopsLR		= 0.0, nOopsBT		= 0.0, nOopsBR		= 0.0;
+	Double_t	nBgdOopsLT 	= 0.0, nBgdOopsLR	= 0.0, nBgdOopsBT	= 0.0, nBgdOopsBR	= 0.0;
+	Double_t	nNetFastLT	= 0.0, nNetFastLR	= 0.0, nNetFastBT	= 0.0, nNetFastBR	= 0.0;
+	Double_t	nNetSlowLT	= 0.0, nNetSlowLR	= 0.0, nNetSlowBT	= 0.0, nNetSlowBR	= 0.0;
+	Double_t	nNetBgdFastLT	= 0.0, nNetBgdFastLR	= 0.0, nNetBgdFastBT	= 0.0, nNetBgdFastBR	= 0.0;
+	Double_t	nNetBgdSlowLT	= 0.0, nNetBgdSlowLR	= 0.0, nNetBgdSlowBT	= 0.0, nNetBgdSlowBR	= 0.0;
+	
+	Double_t nFastTot, nBgdFastTot;
+	Double_t nSlowTot, nBgdSlowTot;
+	Double_t nOopsTot, nBgdOopsTot;
+	Double_t nNetFastTot, nNetSlowTot;
+	
+	Double_t runTime = 0.0;
+	Double_t triggers = 0.0;
+	
 	for (Int_t iRun = 0; iRun < nRuns; iRun++) {
 		meta->GetEntry(iRun);
+		nFastLeaf = meta->GetLeaf("nFastCount");
+		nFastLT	+= (Double_t)nFastLeaf->GetValue(0);
+		nFastLR	+= (Double_t)nFastLeaf->GetValue(1);
+		nFastBT	+= (Double_t)nFastLeaf->GetValue(2);
+		nFastBR	+= (Double_t)nFastLeaf->GetValue(3);
+		nSlowLeaf = meta->GetLeaf("nSlowCount");
+		nSlowLT	+= (Double_t)nSlowLeaf->GetValue(0);
+		nSlowLR	+= (Double_t)nSlowLeaf->GetValue(1);
+		nSlowBT	+= (Double_t)nSlowLeaf->GetValue(2);
+		nSlowBR	+= (Double_t)nSlowLeaf->GetValue(3);
+		nOopsLeaf	= meta->GetLeaf("nOopsCount");
+		nOopsLT		+= (Double_t)nOopsLeaf->GetValue(0);
+		nOopsLR		+= (Double_t)nOopsLeaf->GetValue(1);
+		nOopsBT		+= (Double_t)nOopsLeaf->GetValue(2);
+		nOopsBR		+= (Double_t)nOopsLeaf->GetValue(3);
 		nNetFastLeaf = meta->GetLeaf("nNetFastCount");
 		nNetFastLT	+= (Double_t)nNetFastLeaf->GetValue(0);
 		nNetFastLR	+= (Double_t)nNetFastLeaf->GetValue(1);
@@ -1612,18 +1648,101 @@ void recoil_ion_rates()
 		nNetSlowLR	+= (Double_t)nNetSlowLeaf->GetValue(1);
 		nNetSlowBT	+= (Double_t)nNetSlowLeaf->GetValue(2);
 		nNetSlowBR	+= (Double_t)nNetSlowLeaf->GetValue(3);
+		
+		nBgdFastLeaf = meta->GetLeaf("nFastBkgdCount");
+		nBgdFastLT	+= (Double_t)nBgdFastLeaf->GetValue(0);
+		nBgdFastLR	+= (Double_t)nBgdFastLeaf->GetValue(1);
+		nBgdFastBT	+= (Double_t)nBgdFastLeaf->GetValue(2);
+		nBgdFastBR	+= (Double_t)nBgdFastLeaf->GetValue(3);
+		nBgdSlowLeaf = meta->GetLeaf("nSlowBkgdCount");
+		nBgdSlowLT	+= (Double_t)nBgdSlowLeaf->GetValue(0);
+		nBgdSlowLR	+= (Double_t)nBgdSlowLeaf->GetValue(1);
+		nBgdSlowBT	+= (Double_t)nBgdSlowLeaf->GetValue(2);
+		nBgdSlowBR	+= (Double_t)nBgdSlowLeaf->GetValue(3);
+		nBgdOopsLeaf	= meta->GetLeaf("nOopsBkgdCount");
+		nBgdOopsLT		+= (Double_t)nBgdOopsLeaf->GetValue(0);
+		nBgdOopsLR		+= (Double_t)nBgdOopsLeaf->GetValue(1);
+		nBgdOopsBT		+= (Double_t)nBgdOopsLeaf->GetValue(2);
+		nBgdOopsBR		+= (Double_t)nBgdOopsLeaf->GetValue(3);
+		nNetBgdFastLeaf = meta->GetLeaf("nNetFastBkgdCount");
+		nNetBgdFastLT	+= (Double_t)nNetBgdFastLeaf->GetValue(0);
+		nNetBgdFastLR	+= (Double_t)nNetBgdFastLeaf->GetValue(1);
+		nNetBgdFastBT	+= (Double_t)nNetBgdFastLeaf->GetValue(2);
+		nNetBgdFastBR	+= (Double_t)nNetBgdFastLeaf->GetValue(3);
+		nNetBgdSlowLeaf = meta->GetLeaf("nNetSlowBkgdCount");
+		nNetBgdSlowLT	+= (Double_t)nNetBgdSlowLeaf->GetValue(0);
+		nNetBgdSlowLR	+= (Double_t)nNetBgdSlowLeaf->GetValue(1);
+		nNetBgdSlowBT	+= (Double_t)nNetBgdSlowLeaf->GetValue(2);
+		nNetBgdSlowBR	+= (Double_t)nNetBgdSlowLeaf->GetValue(3);
+		
+		runTime		+= (Double_t)meta->GetLeaf("run_time_sec")->GetValue();
+		triggers	+= (Double_t)meta->GetLeaf("n_trigs")->GetValue();
 	}
-	nNetFastTot = nNetFastLT + nNetFastLR + nNetFastBT + nNetFastBR;
-	nNetSlowTot = nNetSlowLT + nNetSlowLR + nNetSlowBT + nNetSlowBR;
+	
+	nFastTot	= nFastLT    + nFastLR    + nFastBT    + nFastBR;
+	nBgdFastTot	= nBgdFastLT + nBgdFastLR + nBgdFastBT + nBgdFastBR;
+	
+	nSlowTot	= nSlowLT    + nSlowLR    + nSlowBT    + nSlowBR;
+	nBgdSlowTot	= nBgdSlowLT + nBgdSlowLR + nBgdSlowBT + nBgdSlowBR;
+	
+	nOopsTot	= nOopsLT    + nOopsLR    + nOopsBT    + nOopsBR;
+	nBgdOopsTot	= nBgdOopsLT + nBgdOopsLR + nBgdOopsBT + nBgdOopsBR;
+	
+	nNetFastTot	= nNetFastLT + nNetFastLR + nNetFastBT + nNetFastBR;
+	nNetSlowTot	= nNetSlowLT + nNetSlowLR + nNetSlowBT + nNetSlowBR;
+	
 	cout << endl;
-	cout << "Recoils counted in event loop in sort code:" << endl;
+	
+	cout << "********* BETTER WAY *********" << endl;
+	cout << "(from sort code on isotope-specific TOF ranges)" << endl;
+	printf("Fast ions (T): TOF = %.1f to %.1f ns.\n", (Double_t)meta->GetLeaf("tof_T_fast_lo")->GetValue(), (Double_t)meta->GetLeaf("tof_T_fast_hi")->GetValue());
+	printf("Slow ions (T): TOF = %.1f to %.1f ns.\n", (Double_t)meta->GetLeaf("tof_T_slow_lo")->GetValue(), (Double_t)meta->GetLeaf("tof_T_slow_hi")->GetValue());
+	printf("Fast ions (R): TOF = %.1f to %.1f ns.\n", (Double_t)meta->GetLeaf("tof_R_fast_lo")->GetValue(), (Double_t)meta->GetLeaf("tof_R_fast_hi")->GetValue());
+	printf("Slow ions (R): TOF = %.1f to %.1f ns.\n", (Double_t)meta->GetLeaf("tof_R_slow_lo")->GetValue(), (Double_t)meta->GetLeaf("tof_R_slow_hi")->GetValue());
+	printf("Accidentals  : TOF = %.1f to %.1f ns.\n", tof_oops_lo, tof_oops_hi);
+	
+	cout << endl;
+	cout << "TRAPPING: Recoils counted in event loop in sort code:" << endl;
+	cout << "(Accidentals already subtracted using end of TOF range (the \"Oops\" counts).)" << endl;
+	printf("Combo      Fast        Slow        Oops\n");
+	printf("LT   %10.2f  %10.2f  %10.2f\n", nNetFastLT, nNetSlowLT, nOopsLT);
+	printf("LR   %10.2f  %10.2f  %10.2f\n", nNetFastLR, nNetSlowLR, nOopsLR);
+	printf("BT   %10.2f  %10.2f  %10.2f\n", nNetFastBT, nNetSlowBT, nOopsBT);
+	printf("BR   %10.2f  %10.2f  %10.2f\n", nNetFastBR, nNetSlowBR, nOopsBR);
+	printf("Tot  %10.2f  %10.2f  %10.2f\n", nNetFastTot, nNetSlowTot, nOopsTot);
+	
+	cout << endl;
+	cout << "BACKGROUND: Recoils counted in event loop in sort code:" << endl;
+	cout << "(Accidentals already subtracted using end of TOF range (the \"Oops\" counts).)" << endl;
+	printf("Combo      Fast        Slow        Oops\n");
+	printf("LT   %10.2f  %10.2f  %10.2f\n", nBgdFastLT, nBgdSlowLT, nBgdOopsLT);
+	printf("LR   %10.2f  %10.2f  %10.2f\n", nBgdFastLR, nBgdSlowLR, nBgdOopsLR);
+	printf("BT   %10.2f  %10.2f  %10.2f\n", nBgdFastBT, nBgdSlowBT, nBgdOopsBT);
+	printf("BR   %10.2f  %10.2f  %10.2f\n", nBgdFastBR, nBgdSlowBR, nBgdOopsBR);
+	printf("Tot  %10.2f  %10.2f  %10.2f\n", nBgdFastTot, nBgdSlowTot, nBgdOopsTot);
+	
+	Double_t x = 8.98; // background subtraction factor, must input by hand
+	cout << endl;
+	cout << "Using a background subtraction factor of " << x << " (put in by hand)," << endl;
+	cout << "trapping-interval counts minus the background-interval counts are:" << endl;
+	printf("Combo      Fast        Slow        Oops\n");
+	printf("LT   %10.2f  %10.2f  %10.2f\n", nNetFastLT-x*nBgdFastLT, nNetSlowLT-x*nBgdSlowLT, nBgdOopsLT);
+	printf("LR   %10.2f  %10.2f  %10.2f\n", nNetFastLR-x*nBgdFastLR, nNetSlowLR-x*nBgdSlowLR, nBgdOopsLR);
+	printf("BT   %10.2f  %10.2f  %10.2f\n", nNetFastBT-x*nBgdFastBT, nNetSlowBT-x*nBgdSlowBT, nBgdOopsBT);
+	printf("BR   %10.2f  %10.2f  %10.2f\n", nNetFastBR-x*nBgdFastBR, nNetSlowBR-x*nBgdSlowBR, nBgdOopsBR);
+	
+	cout << endl;
+	cout << "FAST IONS:" << endl;
+	printf("Combo    Trap, Raw    Trap, Oops    Bkgd, Raw    Bkgd, Oops\n");
+	printf("LT     %10.2f    %10.2f    %10.2f    %10.2f\n", nFastLT, nOopsLT, nBgdFastLT, nBgdOopsLT);
+	printf("LR     %10.2f    %10.2f    %10.2f    %10.2f\n", nFastLR, nOopsLR, nBgdFastLR, nBgdOopsLR);
+	printf("BT     %10.2f    %10.2f    %10.2f    %10.2f\n", nFastBT, nOopsBT, nBgdFastBT, nBgdOopsBT);
+	printf("BR     %10.2f    %10.2f    %10.2f    %10.2f\n", nFastBR, nOopsBR, nBgdFastBR, nBgdOopsBR);
+	printf("BR     %10.2f    %10.2f    %10.2f    %10.2f\n", nFastTot, nOopsTot, nBgdFastTot, nBgdOopsTot);
+	
+	cout << endl;
 	cout << "# runs in this file = " << nRuns				<< endl;
-	printf("Combo       Fast       Slow\n");
-	printf("LT       %10.2f      %10.2f\n", nNetFastLT, nNetSlowLT);
-	printf("LR       %10.2f      %10.2f\n", nNetFastLR, nNetSlowLR);
-	printf("BT       %10.2f      %10.2f\n", nNetFastBT, nNetSlowBT);
-	printf("BR       %10.2f      %10.2f\n", nNetFastBR, nNetSlowBR);
-	printf("Tot      %10.2f      %10.2f\n", nNetFastTot, nNetSlowTot);
+	printf("%.0f triggers in total run time of %.0f seconds. (Rate = %f Hz.)\n", triggers, runTime, (triggers/runTime));
     printf("\nrecoil_ion_rates done.\n\n");
 	
 }
@@ -1845,7 +1964,7 @@ void fit_a_gamma_line(char* histo_name, Double_t centroid)
     printf("\nfit_a_gamma_line started.");
 	
 	TFile *tfile = new TFile(filename);
-	TH1I* h = (TH1I*)tfile->Get(histo_name);
+	TH1I *h = (TH1I*)tfile->Get(histo_name);
 /*	if (histo_name=="137i_243keV_line") {
 		TH1I* ha_bg_LT_137i_Te = new TH1I("ha_bg_LT_137i_Te","ADC: (BACKGROUND) Top Ge w/ Left dE coincident in First 10 sec of Background Cycle",4096,0,4096);
 		TH1I* ha_bg_LR_137i_Te = new TH1I("ha_bg_LR_137i_Te","ADC: (BACKGROUND) Top Ge w/ Right dE coincident in First 10 sec of Background Cycle",4096,0,4096);
@@ -1877,10 +1996,11 @@ void fit_a_gamma_line(char* histo_name, Double_t centroid)
 */	
 	Double_t xMin = centroid-15.0;
 	Double_t xMax = centroid+15.0;
-	TF1 *f1 = new TF1("f1","pol1(0)+gaus(2)",xMin,xMax);
+//	TF1 *f1 = new TF1("f1","pol1(0)+gaus(2)",xMin,xMax);
+	TF1 *f1 = new TF1("f1","[0]+[1]*x+[2]/(sqrt(2.0*3.141592654)*[4])*exp(-0.5*((x-[3])/[4])**2)",xMin,xMax);
     //f1->SetParLimits(1,41.0,51.0);
     f1->SetParNames(	"Intercept",	"Slope",	"Amplitude",	"Mean",		"Sigma");//,	"A",	"k",	"phi");
-    f1->SetParameters(	10.0,			0.0,		0.0,		centroid, 		0.5);//,		10.0,	24.0,	0.0);
+    f1->SetParameters(	10.0,			0.0,		500.0,		centroid, 		0.5);//,		10.0,	24.0,	0.0);
 //    f1->FixParameter(3,299.1);
 //    f1->FixParameter(4,2.955);
     
@@ -1892,7 +2012,7 @@ void fit_a_gamma_line(char* histo_name, Double_t centroid)
     TF1 *f_bkgd = new TF1("f_bkgd","pol1(0)",xMin,xMax);
     
     TF1 *fn = (TF1*)f1;
-	TFitResultPtr frp = h->Fit(fn,"MIRLL");
+	TFitResultPtr frp = h->Fit(fn,"MIRLLS");
 	
 	TCanvas *c_all_fit_a_gamma_line = new TCanvas("c_all_fit_a_gamma_line", "Ge ADC data", 945, 600);
 	h->GetXaxis()->SetRangeUser(xMin,xMax);
@@ -1914,7 +2034,7 @@ void fit_a_gamma_line(char* histo_name, Double_t centroid)
 	Double_t bkgd_integral_error = TMath::Sqrt( TMath::Power((xMax-xMin)*c0_err,2.0) + TMath::Power(0.5*(xMax-xMin)*(xMax-xMin)*c1_err,2.0) );
 	
 	Double_t fn_integral = fn->Integral(xMin,xMax);
-	Double_t fn_integral_error = fn->IntegralError( xMin, xMax, frp->GetParams(), frp->GetCovarianceMatrix()->GetMatrixArray() );
+	Double_t fn_integral_error = fn->IntegralError( xMin, xMax, frp->GetParams(), frp->GetCovarianceMatrix().GetMatrixArray() );
 	Double_t net_area = fn_integral - bkgd_integral;
 	Double_t net_area_error = TMath::Sqrt( TMath::Power(fn_integral_error,2.0) + TMath::Power(bkgd_integral_error,2.0) );
 	printf("\n\nFit area = %10.6f+/-%10.6f\nBkgd area = %10.6f+/-%10.6f\nNet area = %10.6f+/-%10.6f",fn_integral,fn_integral_error,bkgd_integral,bkgd_integral_error,net_area,net_area_error);
@@ -3055,11 +3175,11 @@ void draw_slow_recoils_vs_rf_phase ()
 	hPh->Draw("hist");
 	
 // Subtract accidentals
-	TH1D *hPhNet	= hPh		-> Clone("hPhNet");
-	TH1D *hPhNet_LT	= hPh_LT	-> Clone("hPhNet_LT");
-	TH1D *hPhNet_LR	= hPh_LR	-> Clone("hPhNet_LR");
-	TH1D *hPhNet_BT = hPh_BT	-> Clone("hPhNet_BT");
-	TH1D *hPhNet_BR = hPh_BR	-> Clone("hPhNet_BR");
+	TH1D *hPhNet	= hPh		-> Clone("h_slow_vs_rf_phase_net");
+	TH1D *hPhNet_LT	= hPh_LT	-> Clone("h_slow_vs_rf_phase_net_LT");
+	TH1D *hPhNet_LR	= hPh_LR	-> Clone("h_slow_vs_rf_phase_net_LR");
+	TH1D *hPhNet_BT = hPh_BT	-> Clone("h_slow_vs_rf_phase_net_BT");
+	TH1D *hPhNet_BR = hPh_BR	-> Clone("h_slow_vs_rf_phase_net_BR");
 	
 	hPhNet		-> SetTitle("Slow recoils vs (RF Phase / 2pi), Trap Full, Accidentals Subtracted");
 	hPhNet_LT	-> SetTitle("LT Slow recoils vs (RF Phase / 2pi), Trap Full, Accidentals Subtracted");
@@ -3074,6 +3194,12 @@ void draw_slow_recoils_vs_rf_phase ()
 	hPhNet_LR	-> Add(hAcc_LR,	-SlowToAccRatio);
 	hPhNet_BT	-> Add(hAcc_BT,	-SlowToAccRatio);
 	hPhNet_BR	-> Add(hAcc_BR,	-SlowToAccRatio);
+	
+	hPhNet		->SetEntries( hPhNet	->Integral() );
+	hPhNet_LT	->SetEntries( hPhNet_LT	->Integral() );
+	hPhNet_LR	->SetEntries( hPhNet_LR	->Integral() );
+	hPhNet_BT	->SetEntries( hPhNet_BT	->Integral() );
+	hPhNet_BR	->SetEntries( hPhNet_BR	->Integral() );
 	
 	Int_t rebin = 5;
 	hPhNet		->	Rebin(rebin);
@@ -3090,8 +3216,10 @@ void draw_slow_recoils_vs_rf_phase ()
 	TCanvas *c_accidentals_vs_rf_phase = new TCanvas("c_accidentals_vs_rf_phase","Accidental rates versus RF phase",945,600);
 //	hAcc	-> Rebin(rebin);
 //	hAcc	-> Draw("hist");
-	hPh		-> Rebin(rebin);
-	hPh		-> Draw("hist");
+//	hPh		-> Rebin(rebin);
+//	hPh		-> Draw("hist");
+	hPhObs	-> Rebin(rebin);
+	hPhObs	-> Draw("hist");
 	
 	TCanvas *c_slow_recoils_vs_rf_phase = new TCanvas("c_slow_recoils_vs_rf_phase","Slow recoil rates versus RF phase",945,600);
 	hPhNet->Draw("hist");
@@ -3112,9 +3240,17 @@ void draw_slow_recoils_vs_rf_phase ()
 	leg_1->Draw();
 	gPad->Update();
 	
+	TFile *outfile_slow_vs_rf = new TFile("slow_vs_rf.root","recreate");
+	outfile_slow_vs_rf	-> WriteTObject(hPhNet);
+	outfile_slow_vs_rf	-> WriteTObject(hPhNet_LT);
+	outfile_slow_vs_rf	-> WriteTObject(hPhNet_LR);
+	outfile_slow_vs_rf	-> WriteTObject(hPhNet_BT);
+	outfile_slow_vs_rf	-> WriteTObject(hPhNet_BR);
+	
 	cout << "All slows (no deadtime corr.) = " << hPhObs-> Integral() << endl;
 	cout << "All slows (w/ deadtime corr.) = " << hPh	-> Integral() << endl;
 	cout << "Accidentals = " << hAcc   -> Integral() << endl;
+	cout << "(Slow time) / (Accidental time) = " << SlowToAccRatio << endl;
 	cout << "Net slows   = " << hPhNet -> Integral() << endl;
 	
 	printf("\ndraw_slow_recoils_vs_rf_phase done.\n\n");
@@ -3122,13 +3258,150 @@ void draw_slow_recoils_vs_rf_phase ()
 
 void draw_En_and_vInv_spectra ()
 {	
+	using namespace TMath;
 	printf("\ndraw_En_and_vInv_spectra started.\n");
-	TFile *tfile = new TFile(filename);
+	
+	//TFile *tfile = new TFile(filename);
+	
+//////////////////////////////
+// ChHOOSE CASE
+///////////////////////////////
+	char *bdncase;
+//	bdncase = "137i07";
+//	bdncase = "137i07_TeSubtract";
+//	bdncase = "135sb08";
+	bdncase = "136sb01";
 	
 	Double_t c		= 299792.46; // mm/us
 	Double_t rMean	= 55.7222; // mm
-	Double_t massFactor	= 17057609613.0; // keV, m_ion^2/m_neutron, 137i
+//	Double_t massFactor	= 17057609613.0; // keV, m_ion^2/m_neutron, 137i
 //	Double_t massFactor	= 126595730.0; // keV, m_ion^2/m_neutron, 137i
+	
+	if (!std::strcmp(bdncase, "137i07")) {
+		
+		TFile *tfile = new TFile("137i07.root");
+		Double_t EnThresh	 = 100; // keV
+		Double_t QBn		 = 2001.0;
+		Double_t massFactor	 = 17057609613.0; // keV, m_ion^2/m_neutron, 137i
+		Double_t accidentals = 810.0;// found from fitting on 70-220 keV, error bar is 31; fitting on 1500-2000 gives 792(12)
+		//Double_t accidentals = 1.75*453.8;//403.6; // counts/us
+		// above: 453.8 comes from my best estimate using vs cycle time data
+		// 1.75 is a fudge factor: better fit to region between slow and fast ions; better fit 
+		TH1D *hEn		= tfile->Get("h_En");
+		TH1D *hEn_LT	= tfile->Get("h_En_LT");
+		TH1D *hEn_LR	= tfile->Get("h_En_LR");
+		TH1D *hEn_BT	= tfile->Get("h_En_BT");
+		TH1D *hEn_BR	= tfile->Get("h_En_BR");
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr","pol3", 100.0, QBn);
+	//	fnEnCorr->SetParameters(1.28, -7.28*Power(10,-4), 8.94*Power(10,-7), -4.13*Power(10,-10));
+		TF1 *fnEnCorr	= new TF1("fnEnCorr","pol6", 100.0, QBn);
+		fnEnCorr	->SetParameters(1.32, -1.22*Power(10,-3), 2.55*Power(10,-6), -2.35*Power(10,-9), 5.14*Power(10,-13), 3.70*Power(10,-16), -1.67*Power(10,-19));
+		TF1 *fnBetaCorr	= new TF1("fnBetaCorr","pol6", 100.0, QBn);
+		fnBetaCorr	->SetParameters(1.11, 2.99*Power(10,-4), -1.96*Power(10,-6), 4.05*Power(10,-9), -4.13*Power(10,-12), 2.05*Power(10,-15), -4.09*Power(10,-19));
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr",FastIonEfficiencyCorrection_137i07, 0.0, EnMax,2);
+	//	fnEnCorr->SetParameters(EnThresh,QBn);
+		
+		Int_t EnRebin		= 10; // keV
+		Double_t xMin 		= 0.0;//-100.0;
+		Double_t xMax 		= 1.1*QBn;//2000.0;
+		Double_t xMaxCorr	= 0.95*QBn;//2000.0;
+		Double_t yMax		= 100.0;
+		Double_t yMinNet	=-10.0;
+		Double_t yMaxNet	= 60.0;
+	}
+	if (!std::strcmp(bdncase, "137i07_TeSubtract")) {
+		
+		TFile *tfile = new TFile("137i07.root");
+		Double_t EnThresh	 = 100; // keV
+		Double_t QBn		 = 2001.0;
+		Double_t massFactor	 = 17057609613.0; // keV, m_ion^2/m_neutron, 136xe
+		Double_t accidentals = 1.45*216; // counts/us
+		TH1D *hEn		= tfile->Get("h_En_137Te_subtract");
+		TH1D *hEn_LT	= tfile->Get("h_En_137Te_subtract_LT");
+		TH1D *hEn_LR	= tfile->Get("h_En_137Te_subtract_LR");
+		TH1D *hEn_BT	= tfile->Get("h_En_137Te_subtract_BT");
+		TH1D *hEn_BR	= tfile->Get("h_En_137Te_subtract_BR");
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr","pol3", 100.0, QBn);
+	//	fnEnCorr->SetParameters(1.28, -7.28*Power(10,-4), 8.94*Power(10,-7), -4.13*Power(10,-10));
+		TF1 *fnEnCorr	= new TF1("fnEnCorr","pol6", 100.0, QBn);
+		fnEnCorr	->SetParameters(1.32, -1.22*Power(10,-3), 2.55*Power(10,-6), -2.35*Power(10,-9), 5.14*Power(10,-13), 3.70*Power(10,-16), -1.67*Power(10,-19));
+		TF1 *fnBetaCorr	= new TF1("fnBetaCorr","pol6", 100.0, QBn);
+		fnBetaCorr	->SetParameters(1.11, 2.99*Power(10,-4), -1.96*Power(10,-6), 4.05*Power(10,-9), -4.13*Power(10,-12), 2.05*Power(10,-15), -4.09*Power(10,-19));
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr",FastIonEfficiencyCorrection_137i07, 0.0, EnMax);
+	//	fnEnCorr->SetParameters(EnThresh,QBn);
+		
+		Int_t EnRebin		= 10; // keV
+		Double_t xMin 		= 0.0;//-100.0;
+		Double_t xMax 		= 1.1*QBn;//2000.0;
+		Double_t xMaxCorr	= 0.95*QBn;//2000.0;
+		Double_t yMax		= 50.0;
+		Double_t yMinNet	=-10.0;
+		Double_t yMaxNet	= 60.0;
+	}
+// 135-Sb
+	if (!std::strcmp(bdncase, "135sb08")) {
+		
+		TFile *tfile = new TFile("135sb08.root");
+		Double_t EnThresh	 = 100; // keV
+		Double_t QBn		 = 4775.0;
+		Double_t massFactor	 = 16560014372.0; // keV, m_ion^2/m_neutron, 134te
+		Double_t accidentals = 30.4; // counts/us
+		TH1D *hEn		= tfile->Get("h_En");
+		TH1D *hEn_LT	= tfile->Get("h_En_LT");
+		TH1D *hEn_LR	= tfile->Get("h_En_LR");
+		TH1D *hEn_BT	= tfile->Get("h_En_BT");
+		TH1D *hEn_BR	= tfile->Get("h_En_BR");
+		
+		TF1 *fnEnCorr	= new TF1("fnEnCorr","pol6", 100.0, QBn);
+		fnEnCorr	->SetParameters(1.44, 8.42*Power(10,-5), -6.35*Power(10,-7), 7.24*Power(10,-10), -3.58*Power(10,-13), 8.00*Power(10,-17), -6.67*Power(10,-21));
+		TF1 *fnBetaCorr	= new TF1("fnBetaCorr","pol6", 100.0, QBn);
+		fnBetaCorr	->SetParameters(1.28, 4.25*Power(10,-4), -1.01*Power(10,-6), 9.35*Power(10,-10), -4.20*Power(10,-13), 8.95*Power(10,-17), -7.26*Power(10,-21));
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr",FastIonEfficiencyCorrection_137i07, 0.0, EnMax);
+	//	fnEnCorr->SetParameters(EnThresh,QBn);
+		
+		Int_t EnRebin		= 10; // keV
+		Double_t xMin 		= 0.0;//-100.0;
+		Double_t xMax 		= 1.1*QBn;//2000.0;
+		Double_t xMaxCorr	= 0.95*QBn;//2000.0;
+		Double_t yMax		= 50.0;
+		Double_t yMinNet	= -1.0;
+		Double_t yMaxNet	= 20.0;
+	}
+// 136-Sb
+	if (!std::strcmp(bdncase, "136sb01")) {
+		
+		TFile *tfile = new TFile("136sb01.root");
+		Double_t EnThresh	 = 100; // keV
+		Double_t QBn		 = 5146.0;
+		Double_t massFactor	 = 16809554027.0; // keV, m_ion^2/m_neutron, 135te
+		Double_t accidentals = 1.75*23.4; // counts/us
+		TH1D *hEn		= tfile->Get("h_En");
+		TH1D *hEn_LT	= tfile->Get("h_En_LT");
+		TH1D *hEn_LR	= tfile->Get("h_En_LR");
+		TH1D *hEn_BT	= tfile->Get("h_En_BT");
+		TH1D *hEn_BR	= tfile->Get("h_En_BR");
+		
+		TF1 *fnEnCorr	= new TF1("fnEnCorr","pol6", 100.0, QBn);
+		fnEnCorr	->SetParameters(1.37, 3.34*Power(10,-4), -8.31*Power(10,-7), 7.53*Power(10,-10), -3.27*Power(10,-13), 6.63*Power(10,-17), -5.06*Power(10,-21));
+		TF1 *fnBetaCorr	= new TF1("fnBetaCorr","pol6", 100.0, QBn);
+		fnBetaCorr	->SetParameters(1.28, 4.18*Power(10,-4), -8.69*Power(10,-7), 7.28*Power(10,-10), -3.02*Power(10,-13), 5.97*Power(10,-17), -4.51*Power(10,-21));
+		
+	//	TF1 *fnEnCorr	= new TF1("fnEnCorr",FastIonEfficiencyCorrection_137i07, 0.0, EnMax);
+	//	fnEnCorr->SetParameters(EnThresh,QBn);
+		
+		Int_t EnRebin		= 10; // keV
+		Double_t xMin 		= 0.0;//-100.0;
+		Double_t xMax 		= 1.1*QBn;//2000.0;
+		Double_t xMaxCorr	= 0.95*QBn;//2000.0;
+		Double_t yMax		= 15.0;
+		Double_t yMinNet	= -1.0;
+		Double_t yMaxNet	= 15.0;
+	}
 	
 	TH1::SetDefaultSumw2(kTRUE);
 	TH1D *hTOF		= tfile->Get("h_tof");
@@ -3142,44 +3415,60 @@ void draw_En_and_vInv_spectra ()
 	TH1D *hvInv_LR	= tfile->Get("h_vInv_LR");
 	TH1D *hvInv_BT	= tfile->Get("h_vInv_BT");
 	TH1D *hvInv_BR	= tfile->Get("h_vInv_BR");
-	TH1D *hEn		= tfile->Get("h_En");
-	TH1D *hEn_LT	= tfile->Get("h_En_LT");
-	TH1D *hEn_LR	= tfile->Get("h_En_LR");
-	TH1D *hEn_BT	= tfile->Get("h_En_BT");
-	TH1D *hEn_BR	= tfile->Get("h_En_BR");
 	
+	Double_t EnBinWidth = EnRebin*(EnMax-EnMin)/EnBins;
+	Double_t yMin		= -5.0;
+	//Double_t yMax		= EnBinWidth * 10.0;
+		
 //	TH1D *hEnNet	= (TH1D*)hEn->Clone("hEnNet");
 //	hEnNet			-> SetTitle("Neutron energy (keV) w/ accidentals subtracted");
 	
 // Make histo with floating point entries for background subtraction	
-	TH1D *hEnNet = new TH1D("hEnNet","Neutron energy (keV) w/ accidentals subtracted",EnBins,EnMin,EnMax);
-	for (Int_t bin = 1; bin <= EnBins; bin++) hEnNet->SetBinContent(bin,hEn->GetBinContent(bin));
+	TH1D *hEnNet  = new TH1D("hEnNet","Neutron energy (keV) w/ accidentals subtracted",EnBins,EnMin,EnMax);
+	TH1D *hEnFin = new TH1D("hEnNet","Neutron energy, final",EnBins,EnMin,EnMax);
+	for (Int_t bin = 1; bin <= EnBins; bin++) {
+		hEnNet -> SetBinContent(bin,hEn->GetBinContent(bin));
+		hEnFin -> SetBinContent(bin,hEn->GetBinContent(bin));
+	}
 //	Double_t hEnNetArea = hEnNet->Integral(1200,3000);
 //	cout << "Histo area = " << hEnNetArea << endl;
 	
 // Calculate background using flat part of TOF spectrum	
-	Int_t EnRebin = 10; // keV
-	Double_t tof1 = 14000.0;//tof_slow_lo;
-	Double_t tof2 = 21000.0;//tof_slow_hi;
-	Int_t tofBin1	= TMath::Floor(2*(tof1-TOFMin)+1);
-	Int_t tofBin2	= TMath::Floor(2*(tof2-TOFMin)+1);
-	Double_t EnBinWidth = EnRebin*(EnMax-EnMin)/EnBins;
-	Double_t TOFSampleN = hTOF->Integral(tofBin1, tofBin2);
-	Double_t TOFInterval= (tof2 - tof1)/1000.0; // counts/us
-	Double_t TOFBkgd	= 1000.0*TOFSampleN/(tof2 - tof1); // counts/us
+//	Int_t EnRebin = 10; // keV
+//	Double_t tof1 = 15000.0;//tof_slow_lo;
+//	Double_t tof2 = 20000.0;//tof_slow_hi;
+//	Int_t tofBin1	= TMath::Floor(2*(tof1-TOFMin)+1);
+//	Int_t tofBin2	= TMath::Floor(2*(tof2-TOFMin)+1);
+////	Double_t EnBinWidth = EnRebin*(EnMax-EnMin)/EnBins;
+//	Double_t TOFSampleN = hTOF->Integral(tofBin1, tofBin2);
+//	Double_t TOFInterval= (tof2 - tof1)/1000.0; // counts/us
+//	Double_t TOFBkgd	= 1000.0*TOFSampleN/(tof2 - tof1); // counts/us
+	
+	Double_t TOFBkgd	= accidentals; // counts/us
 	TF1 *fnEnBkgd	= new TF1("fn_EnBkgd","[0]*[1]*[2]*[3]*sqrt([4]/(2*x)^3)", 0.1, EnMax);
+//	TF1 *fnEnBkgd	= new TF1("fn_EnBkgd","[0]*[1]*[2]*[3]*sqrt([4]/(2*x)^3)", 70, 200);
+	fnEnBkgd->SetNpx(2000);
 	fnEnBkgd->SetParameters(EnBinWidth, TOFBkgd, rMean, 1.0/c, massFactor);
 	
 // Subtract background
 	hEnNet		-> Rebin(EnRebin);
 	hEnNet		-> Add(fnEnBkgd, -1.0);
 	
-	printf("%f cts in %f ns\n", TOFSampleN, 1000.0*TOFInterval);
+// Initialize final En:
+	hEnFin		-> Rebin(EnRebin);
+	hEnFin		-> Add(fnEnBkgd, -1.0);
+	
+	//for (Int_t bin = 1; bin <= EnBins; bin++) hEnFin->SetBinContent(bin,hEnNet->GetBinContent(bin));	
+	hEnFin		-> Divide(fnEnCorr, 1.0);
+	
+//	printf("%f cts in %f ns\n", TOFSampleN, 1000.0*TOFInterval);
 	printf("TOF Background = %f cts/us\n", TOFBkgd);
 	printf("Bin width = %f keV\n", EnBinWidth);
 	
 	char yAxisTitle[100];
 	sprintf(yAxisTitle, "counts / %d keV", (int)EnBinWidth);
+	char xAxisTitle[100];
+	sprintf(xAxisTitle, "Neutron energy (keV)", (int)EnBinWidth);
 	
 	gStyle->SetOptStat("e");
 //	TCanvas *c_En_combos = new TCanvas("c_En_combos","En spectra by combo",1600,1000);
@@ -3202,46 +3491,213 @@ void draw_En_and_vInv_spectra ()
 //	c_En_combos_4->SetLogy();
 //	h_En_BR->Draw();
 	
-	Double_t xMin 		= 0.0;//-100.0;
-	Double_t xMax 		= 1500.0;
-	Double_t yMin		= 0.0;
-	Double_t yMax		= EnBinWidth * 10.0;
-	Double_t yMinNet	=-EnBinWidth * 4.0;
-	Double_t yMaxNet	= EnBinWidth * 8.0;
+	TLine *EnThreshLine = new TLine(EnThresh,0,EnThresh,yMax);
+  	EnThreshLine->SetLineColor(kBlack);
+  	EnThreshLine->SetLineStyle(2);
+  	EnThreshLine->SetLineWidth(2);
+  	
+  	TLine *QBnLine = new TLine(QBn,0,QBn,yMax);
+  	QBnLine->SetLineColor(kBlack);
+  	QBnLine->SetLineStyle(2);
+  	QBnLine->SetLineWidth(2);
+  	
+  	TLine *EnThreshLineNet = new TLine(EnThresh,0,EnThresh,yMaxNet);
+  	EnThreshLineNet->SetLineColor(kBlack);
+  	EnThreshLineNet->SetLineStyle(2);
+  	EnThreshLineNet->SetLineWidth(2);
+  	
+  	TLine *QBnLineNet = new TLine(QBn,0,QBn,yMaxNet);
+  	QBnLineNet->SetLineColor(kBlack);
+  	QBnLineNet->SetLineStyle(2);
+  	QBnLineNet->SetLineWidth(2);
 	
-	Double_t EnThresh	= 100; // keV
 	Double_t EnMinBin	= (EnThresh-EnMin) / EnBinWidth + 1;
 	Double_t EnMaxBin	= (EnMax-EnMin) / EnBinWidth;
 	printf("Integrating spectrum from bin %d to bin %d\n", EnMinBin, EnMaxBin);
 	
 	TCanvas *c_En = new TCanvas("c_En","Neutron energy spectrum",945,600);
 	hEn			-> Rebin(EnRebin);
-	hEn			-> GetXaxis()->SetTitle("keV");
+	hEn			-> SetTitle("Neutron spectrum, including accidentals");
+	hEn			-> GetXaxis()->SetTitle(xAxisTitle);
 	hEn			-> GetXaxis()->CenterTitle();
 	hEn			-> GetYaxis()->SetTitle(yAxisTitle);
 	hEn			-> GetYaxis()->CenterTitle();
-	hEn			-> GetYaxis()->SetTitleOffset(1.5);
+//	hEn			-> GetYaxis()->SetTitleOffset(1.5);
 	hEn			-> GetXaxis()->SetRangeUser(xMin,xMax);
-	hEn			-> GetYaxis()->SetRangeUser(yMin, yMax);
+	hEn			-> GetYaxis()->SetRangeUser(0.0, yMax);
+	hEn			-> SetEntries( hEn->Integral(EnMinBin,EnMaxBin) );
 	hEn			-> Draw();
+	EnThreshLine->Draw("same");
+  	QBnLine->Draw("same");
+	if (0) {
+		fnEnBkgd->FixParameter(0, EnBinWidth);
+		fnEnBkgd->FixParameter(2, rMean);
+		fnEnBkgd->FixParameter(3, 1.0/c);
+		fnEnBkgd->FixParameter(4, massFactor);
+//		hEn->Fit(fnEnBkgd,"MER");
+//		hEn->Fit(fnEnBkgd,"ME","",70,220);
+//		hEn->Fit(fnEnBkgd,"MELL","",1500,2000);
+		hEn->Fit(fnEnBkgd,"MELL","",3500,5000);
+	}
+	
 	fnEnBkgd	-> Draw("same");
 	
 //	gStyle->SetOptStat("");
 	TCanvas *c_EnNet = new TCanvas("c_EnNet","Neutron energy spectrum",945,600);
 //	c_find_mcp_threshold->SetLogy();
 //	hEnNet		-> Rebin(EnRebin);
-	hEnNet		-> GetXaxis()->SetTitle("keV");
+	hEnNet		-> SetTitle("Neutron spectrum, after accidental subtraction");
+	hEnNet		-> GetXaxis()->SetTitle(xAxisTitle);
 	hEnNet		-> GetXaxis()->CenterTitle();
 	hEnNet		-> GetYaxis()->SetTitle(yAxisTitle);
 	hEnNet		-> GetYaxis()->CenterTitle();
 	hEnNet		-> GetYaxis()->SetTitleOffset(1.2);
 	hEnNet		-> GetXaxis()->SetRangeUser(xMin,xMax);
 //	hEnNet		-> GetYaxis()->SetRangeUser(yMinNet, yMaxNet);
-	hEnNet		-> GetYaxis()->SetRangeUser(yMin, yMax);
+	hEnNet		-> GetYaxis()->SetRangeUser(yMinNet, yMaxNet);
 	hEnNet		-> SetEntries( hEnNet->Integral(EnMinBin,EnMaxBin) );
 	hEnNet		-> Draw();
+	EnThreshLineNet->Draw("same");
+  	QBnLineNet->Draw("same");
+//	hEnFin		-> Draw("same");
 	
-	Int_t graph = 1;
+	TCanvas *c_EnFin = new TCanvas("c_EnFin","Neutron energy spectrum",945,600);
+//	c_find_mcp_threshold->SetLogy();
+//	hEnFin		-> Rebin(EnRebin);
+	hEnFin		-> SetTitle("Neutron spectrum, final");//reduced cycle");//final");
+	hEnFin		-> GetXaxis()->SetTitle(xAxisTitle);
+	hEnFin		-> GetXaxis()->CenterTitle();
+	hEnFin		-> GetYaxis()->SetTitle(yAxisTitle);
+	hEnFin		-> GetYaxis()->CenterTitle();
+	hEnFin		-> GetYaxis()->SetTitleOffset(1.2);
+	hEnFin		-> GetXaxis()->SetRangeUser(xMin,xMax);
+//	hEnFin		-> GetYaxis()->SetRangeUser(yMinFin, yMaxFin);
+	hEnFin		-> GetYaxis()->SetRangeUser(yMinNet, yMaxNet);
+	hEnFin		-> SetEntries( hEnFin->Integral(EnMinBin,EnMaxBin) );
+	hEnFin		-> Draw();
+	EnThreshLineNet->Draw("same");
+  	QBnLineNet->Draw("same");
+	
+	//	TCanvas *c_EnCorr = new TCanvas("c_EnCorr","Neutron energy spectrum",945,600);
+////	c_find_mcp_threshold->SetLogy();
+////	hEnFin		-> Rebin(EnRebin);
+//	hEnFin		-> GetXaxis()->SetTitle("keV");
+//	hEnFin		-> GetXaxis()->CenterTitle();
+//	hEnFin		-> GetYaxis()->SetTitle(yAxisTitle);
+//	hEnFin		-> GetYaxis()->CenterTitle();
+//	hEnFin		-> GetYaxis()->SetTitleOffset(1.2);
+//	hEnFin		-> GetXaxis()->SetRangeUser(xMin,xMax);
+////	hEnFin		-> GetYaxis()->SetRangeUser(yMinCorr, yMaxCorr);
+//	hEnFin		-> GetYaxis()->SetRangeUser(yMin, yMax);
+//	hEnFin		-> SetEntries( hEnFin->Integral(EnMinBin,EnMaxBin) );
+//	hEnFin		-> Draw();
+	
+// Calculate avg efficiency correcion
+	Double_t corrMin = 0.0;
+	Double_t corrMax = xMax;
+	Double_t corrBins= (corrMax-corrMin)/EnBinWidth;
+	Double_t x, after, before, corr, diff;
+	Double_t corrSum = 0.0, corrSumWgtBefore = 0.0, corrSumWgtAfter = 0.0;
+	Double_t beforeSum = 0.0, afterSum = 0.0;
+	
+	Double_t betaCorr;
+	Double_t betaCorrSum = 0.0;
+	
+	Double_t corrRatio;
+	Double_t corrRatioSum = 0.0;
+	
+	Double_t wB, wBR;
+	Double_t wBSum = 0.0, wBRSum = 0.0;
+	
+	TH1D *hEnCorr = new TH1D("hEnCorr","Fast-ion efficiency correction",corrBins,corrMin,corrMax);
+	
+	// Get integral of uncorrected spectrum over needed range
+//	for (bin=1; bin<=corrBins; bin++) {
+//		x = hEnCorr->GetBinCenter(bin);
+//		before = hEnNet->GetBinContent(hEnNet->FindBin(x));
+//		printf("bin=%d, En=%f, before=%f\n", bin, x, before);		
+//	//	beforeSum += before;
+//	}
+	// Do correction
+	for (bin=1; bin<=corrBins; bin++) {
+		x = hEnCorr->GetBinCenter(bin);
+		after  = hEnFin->GetBinContent(hEnFin->FindBin(x));
+		before = hEnNet->GetBinContent(hEnNet->FindBin(x));
+		// corr is ratio of "final" to "net" -- after eff corr / before eff corr. (Net has accidentals subtracted.)
+		if (before != 0) {
+			// corr   = after/before; //gives same result as next line
+			wB		 = fnBetaCorr(x);
+			wBR		 = fnEnCorr(x);
+			corr     = 1.0/wBR;
+			betaCorr = 1.0/wB;
+			corrRatio = corr/betaCorr;
+			corrRatio = fnBetaCorr(x)/fnEnCorr(x);
+		//	printf("bin=%d, En=%f, EnCorr=%f, BetaCorr=%f, Ratio=%f, corrRatio=%f\n", bin, x, corr, betaCorr, corr/betaCorr, corrRatio);
+		}
+		else {
+			wB = 1.0;
+			wBR = 1.0;
+			corr = 1.0;
+			betaCorr = 1.0;
+			corrRatio = 1.0;
+		}
+		if (x >= QBn || x<= EnThresh) corr = 0.0;
+		//printf("bin=%d, En=%f, before=%f, after=%f, corr=%f\n", bin, x, before, after, after/before);
+		
+		diff = 0.0;
+		if (corr != 0) {
+			
+			//corrSum += corr*before;
+			//corrSumWgtBefore += corr*before;
+			corrSumWgtAfter  += corr*after;
+			
+			// These are the numbers I use
+			corrSumWgtBefore += before * corr; // weighted sum
+			betaCorrSum      += before * betaCorr;
+			corrRatioSum     += before * corrRatio;
+			wBSum			 += before * wB;
+			wBRSum			 += before * wBR;
+			
+			beforeSum += before; // sum of weights
+			afterSum  += after;
+			
+			diff = after-before;
+		}
+		hEnCorr->SetBinContent(bin, diff);
+	}
+	
+	printf("beforeSum = %f\n",beforeSum);
+	Double_t avgCorrWgtBefore = corrSumWgtBefore / beforeSum;
+	Double_t avgCorrWgtAfter  = corrSumWgtAfter  / afterSum;
+	Double_t avgCorr          = afterSum / beforeSum;
+	Double_t avgBetaCorr      = betaCorrSum / beforeSum;
+	Double_t avgCorrRatio     = corrRatioSum / beforeSum;
+	Double_t avgwB      	  = wBSum  / beforeSum;
+	Double_t avgwBR     	  = wBRSum / beforeSum;
+	//printf("Efficiency correction (flat)    = %f\n", avgCorr);
+	//printf("Efficiency correction (before)  = %f\n", avgCorrWgtBefore);
+	//printf("Efficiency correction (after)   = %f\n", avgCorrWgtAfter);
+	printf("Efficiency correction <1/wBR>  = %f or %f for fast recoils\n", avgCorr, avgCorrWgtBefore);
+	printf("Efficiency correction <1/wB>   = %f for betas of fast recoils\n", avgBetaCorr);
+	printf("Ratio of averages <wBR>/<wB> = %f\n", avgCorr/avgBetaCorr);
+	printf("Average of <wB>   = %f\n", avgwB);
+	printf("Average of <wBR>  = %f\n", avgwBR);
+	printf("(integral before) / (integral after) = %f\n", beforeSum/afterSum);	
+	
+	
+	
+	TCanvas *c_EnCorr = new TCanvas("c_EnCorr","Neutron energy spectrum",945,600);
+	hEnCorr -> SetEntries(hEnCorr->Integral());
+	hEnCorr -> SetTitle("Neutron spectrum, efficiciency correction");
+	hEnCorr -> GetXaxis()->SetTitle(xAxisTitle);
+	hEnCorr	-> GetXaxis()->CenterTitle();
+	hEnCorr -> GetYaxis()->SetTitle(yAxisTitle);
+	hEnCorr	-> GetYaxis()->CenterTitle();
+	hEnCorr -> Draw();
+	EnThreshLine->Draw("same");
+  	QBnLine->Draw("same");
+	
+	Int_t graph = 0;
 	if (graph) {
 		const int nPoints = 200;
 		double x[nPoints], y[nPoints];
@@ -3290,6 +3746,27 @@ void draw_En_and_vInv_spectra ()
 	printf("\ndraw_En_and_vInv_spectra done.\n\n");
 }
 
+Double_t DrawEnThreshold (Double_t *x, Double_t *a) {
+	if (x[0] < a[0] ) return -1000.0;
+	else return 1000.0;
+}
+
+Double_t FastIonEfficiencyCorrection_137i07 (Double_t *x, Double_t *a) {
+	using namespace TMath;
+	
+	if (x[0] < a[0] || x[0] > a[1]) return 1.0;
+	else {
+		Double_t c0 =  1.28;
+		Double_t c1 = -7.28*Power(10,-4);
+		Double_t c2 =  8.94*Power(10,-7);
+		Double_t c3 = -4.13*Power(10,-10);
+		
+		Double_t f = c0 + c1*x + (c2*x)*x + ((c3*x)*x)*x;
+		printf("f=%f\n",f);
+		return f;
+	}
+}
+
 void GetGraphXY (char *filename, Int_t nPoints, Double_t x[], Double_t y[]) {//TGraph *graph) {
 //	const int nPoints = 200;
 //	double x[nPoints], y[nPoints];
@@ -3334,4 +3811,20 @@ void GetGraphXY (char *filename, Int_t nPoints, Double_t x[], Double_t y[]) {//T
 	file.close();
 //	for (i = 0; i<nPoints; i++) cout << "Point #: " << i << "; (x,y) = (" << x[i] << "," << y[i] << ")" << endl;
 //	*graph = new TGraph(nPoints,x,y);
+}
+
+void print_first_and_last_event_cycle_time () {
+	printf("\ndraw_slow_recoils_vs_rf_phase started.");
+	TFile *tfile = new TFile(filename);
+	TTree *ttree = tfile->Get("bdn_Tree");
+//	for (Int_t i = 0; i<10; i++) {
+//		ttree->GetEntry(i);
+//		printf("\nFirst event cycle time = %d ms",ttree->GetLeaf("s_ms_since_eject")->GetValue());
+//	}
+	ttree->GetEntry(0);
+	printf("\nFirst event cycle time = %d ms",ttree->GetLeaf("s_ms_since_eject")->GetValue());
+	ttree->GetEntry(ttree->GetEntries()-1);
+	printf("\nLast  event (%d) cycle time = %d ms",ttree->GetEntries()-1,ttree->GetLeaf("s_ms_since_eject")->GetValue());
+	
+	printf("\ndraw_slow_recoils_vs_rf_phase done.\n\n");
 }

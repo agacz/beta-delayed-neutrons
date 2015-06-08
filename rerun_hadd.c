@@ -32,13 +32,24 @@
 //	gROOT->ProcessLineSync("hadd_238Pu_R_mcp_NoMask_rawMCP()");
 //	gROOT->ProcessLineSync("hadd_238Pu_T_mcp_NoMask_rawMCP()");
 	
+	gROOT->ProcessLineSync("hadd_137i07()");
+	gROOT->ProcessLineSync("hadd_135sb08()");
+	gROOT->ProcessLineSync("hadd_135te01()");
+	gROOT->ProcessLineSync("hadd_136sb01()");
 	gROOT->ProcessLineSync("hadd_134sb01()");
 	gROOT->ProcessLineSync("hadd_134sb02()");
 	gROOT->ProcessLineSync("hadd_134sb03()");
 	gROOT->ProcessLineSync("hadd_134sb0103()");
-	gROOT->ProcessLineSync("hadd_135sb08()");
-	gROOT->ProcessLineSync("hadd_136sb01()");
-	gROOT->ProcessLineSync("hadd_137i07()");
+	gROOT->ProcessLineSync("hadd_135sb07()");
+	
+	gROOT->ProcessLineSync("hadd_138i05()");
 	gROOT->ProcessLineSync("hadd_138i06()");
 	gROOT->ProcessLineSync("hadd_138i07()");
+	gROOT->ProcessLineSync("hadd_139i01()");
+	gROOT->ProcessLineSync("hadd_140i02()");
+	gROOT->ProcessLineSync("hadd_140i03()");
+	gROOT->ProcessLineSync("hadd_140xe01()");
+	gROOT->ProcessLineSync("hadd_144cs02()");
+	gROOT->ProcessLineSync("hadd_145cs02()");
+	
 }
